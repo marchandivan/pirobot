@@ -7,6 +7,7 @@ name = "pypi"
 django = "*"
 djangorestframework = "*"
 smbus = {version = "*",sys_platform = "!= 'darwin'"}
+fake-rpi = {version = "*",sys_platform = "== 'darwin'"}
 django-cors-headers = "*"
 opencv-python-headless = "*"
 

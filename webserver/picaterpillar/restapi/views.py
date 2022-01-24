@@ -1,10 +1,12 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 
+from restapi.camera import Camera
 from restapi.controller import Controller
 from restapi.serializers import MoveCommandSerializer
 from rest_framework.response import Response
 
+from django.http import StreamingHttpResponse
 
 class RestApiViewSet(viewsets.ViewSet):
 
@@ -31,3 +33,8 @@ class RestApiViewSet(viewsets.ViewSet):
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def stream(self, request):
+        return StreamingHttpResponse(Camera.stream(),
+                                     content_type="multipart/x-mixed-replace;boundary=FRAME")

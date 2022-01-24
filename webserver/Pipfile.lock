@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "4b792fbbd9ac8586fc0911a67a8280c289704ecb90c83c742e8a9e6e519ab7e3"
+            "sha256": "74161cbbb2a3acd6c9d13268c85e703ea505e594c0a2dc9f000949bc3b5babb8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -47,6 +47,15 @@
             ],
             "index": "pypi",
             "version": "==3.13.1"
+        },
+        "fake-rpi": {
+            "hashes": [
+                "sha256:2ca5af521c095fcfd1d368a4e96d6b4445b3ad673470d63f0867d3411ac38ceb",
+                "sha256:9194842c49ad17afa5b492c52172d7e15790563e36a01fc5f525b606416e00ee"
+            ],
+            "index": "pypi",
+            "markers": "sys_platform == 'darwin'",
+            "version": "==0.7.1"
         },
         "numpy": {
             "hashes": [
@@ -103,7 +112,7 @@
                 "sha256:b467235734ae5c147c4ec0eff1afb9dba189d9d3cc086ed7e0d3dbf0ae485230",
                 "sha256:f96d345e0aa10053a8a4917634f1dc37ba1f656fa5cace7629b71777e90855c6"
             ],
-            "index": "pypi",
+            "markers": "sys_platform != 'darwin'",
             "version": "==1.1.post2"
         },
         "sqlparse": {
