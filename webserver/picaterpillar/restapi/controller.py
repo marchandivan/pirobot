@@ -1,9 +1,14 @@
+import sys
 from threading import Timer
 
-from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC as Motor
+if sys.platform != "darwin":  # Mac OS
+    from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC as Motor
+    motor = Motor(1, 0x10)
+else:
+    from unittest.mock import Mock
+    motor = Mock()
 
 # Initialization
-motor = Motor(1, 0x10)
 motor.set_addr(0x10)
 motor.set_encoder_enable(motor.ALL)
 motor.set_encoder_reduction_ratio(motor.ALL, 43)
