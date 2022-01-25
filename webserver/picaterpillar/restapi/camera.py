@@ -1,5 +1,6 @@
 import io
 import sys
+import time
 import traceback
 
 # from restapi.models import Config
@@ -30,7 +31,7 @@ class CaptureDevice(object):
 
         # Visor
         radius = 30
-        y_offest = 50
+        y_offest = 30
         center_x = self.res_x // 2
         center_y = self.res_y // 2 + y_offest
         cv2.line(frame, (center_x, center_y + (radius + 10)), (center_x, center_y - (radius + 10)), color, thickness)
@@ -38,7 +39,7 @@ class CaptureDevice(object):
         cv2.circle(frame, (center_x, center_y), radius, color, thickness)
 
         # Path
-        path_bottom = 30
+        path_bottom = 100
         cv2.line(frame, (center_x, center_y), (path_bottom, self.res_y), color, thickness)
         cv2.line(frame, (center_x, center_y), (self.res_x - path_bottom, self.res_y), color, thickness)
 
@@ -51,7 +52,7 @@ class CaptureDevice(object):
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
 
                 yield cv2.imencode('.jpg', rgb)[1].tostring()
-                cv2.waitKey(1000 // self.framerate)
+                time.sleep(1.0 // self.framerate)
         else:
             for frame in self.device.capture_continuous(stream,
                                                         format=format,
