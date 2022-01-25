@@ -16,17 +16,38 @@ class CaptureDevice(object):
         self.framerate = framerate
         if self.capturing_device == "usb":  # USB Camera?
             self.device = cv2.VideoCapture(0)
-            #self.device.set(cv2.CAP_PROP_FPS, framerate)
-            res_x, res_y = resolution.split('x')
-            self.device.set(3, float(res_x))
-            self.device.set(4, float(res_y))
+            self.res_x, self.res_y = resolution.split('x')
+            self.res_x, self.res_y = int(self.res_x), int(self.res_y)
+            self.device.set(3, self.res_x)
+            self.device.set(4, self.res_y)
         else:
             self.device = picamera.PiCamera(resolution=resolution, framerate=framerate)
 
+    def _add_lines(self, frame):
+        color = (0, 255, 0)
+        thickness = 2
+
+
+        # Visor
+        radius = 30
+        y_offest = 50
+        center_x = self.res_x // 2
+        center_y = self.res_y // 2 + y_offest
+        cv2.line(frame, (center_x, center_y + (radius + 10)), (center_x, center_y - (radius + 10)), color, thickness)
+        cv2.line(frame, (center_x + (radius + 10), center_y), (center_x - (radius + 10), center_y), color, thickness)
+        cv2.circle(frame, (center_x, center_y), radius, color, thickness)
+
+        # Path
+        path_bottom = 30
+        cv2.line(frame, (center_x, center_y), (path_bottom, self.res_y), color, thickness)
+        cv2.line(frame, (center_x, center_y), (self.res_x - path_bottom, self.res_y), color, thickness)
+
     def capture_continuous(self, stream, format='jpeg'):
         if self.capturing_device == "usb":
-            while (True):
+            while True:
                 ret, frame = self.device.read()
+                self._add_lines(frame)
+
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
 
                 yield cv2.imencode('.jpg', rgb)[1].tostring()

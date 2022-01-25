@@ -34,6 +34,14 @@ class RestApiViewSet(viewsets.ViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'])
+    def stop(self, request):
+        Controller.stop()
+        return Response({
+            'status': 'OK',
+            'robot': Controller.serialize()
+            })
+
     @action(detail=False, methods=['get'])
     def stream(self, request):
         return StreamingHttpResponse(Camera.stream(),
