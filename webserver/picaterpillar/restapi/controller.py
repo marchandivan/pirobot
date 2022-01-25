@@ -43,6 +43,7 @@ class Controller:
     def move(left_orientation, left_speed, right_orientation, right_speed, duration):
         motor.motor_movement([motor.M1], motor.CW if right_orientation == "F" else motor.CCW, right_speed)
         motor.motor_movement([motor.M2], motor.CW if left_orientation == "F" else motor.CCW, left_speed)
+        Controller._cancel_event()
         Controller._schedule_event(duration, Controller.stop)
 
     @staticmethod
