@@ -19,6 +19,7 @@ class CaptureDevice(object):
     def __init__(self, resolution, framerate, capturing_device):
         self.capturing_device = capturing_device
         self.framerate = framerate
+        self.frame_counter = 0
         if self.capturing_device == "usb":  # USB Camera?
             self.device = cv2.VideoCapture(0)
             self.res_x, self.res_y = resolution.split('x')
@@ -75,8 +76,9 @@ class CaptureDevice(object):
         if self.capturing_device == "usb":
             while True:
                 ret, frame = self.device.read()
+                self.frame_counter += 1
 
-                if CaptureDevice.target is not None:
+                if CaptureDevice.target is not None and self.frame_counter % 8 == 0:
                     self._add_target(frame)
 
                 self._add_lines(frame)
@@ -89,6 +91,7 @@ class CaptureDevice(object):
             for frame in self.device.capture_continuous(stream,
                                                         format=format,
                                                         use_video_port=True):
+                self.frame_counter += 1
                 yield frame.getvalue()
 
     def close(self):
