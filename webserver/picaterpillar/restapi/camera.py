@@ -32,7 +32,7 @@ class CaptureDevice(object):
     def _add_target(self, frame):
         rect_size = 70
         center = [int((CaptureDevice.target[0] * self.res_x) / 100), int((CaptureDevice.target[1] * self.res_y) / 100)]
-        if CaptureDevice.target_img is not None:
+        if CaptureDevice.target_img is not None and self.frame_counter % 10 == 0:
 
             result = cv2.matchTemplate(frame, CaptureDevice.target_img, cv2.TM_CCORR_NORMED)
             # We want the minimum squared difference
@@ -40,7 +40,6 @@ class CaptureDevice(object):
 
             # Draw the rectangle:
             # Extract the coordinates of our best match
-            print(mxLoc, mx)
             if mx > 0.95:
                 center = [mxLoc[0] + rect_size, mxLoc[1] + rect_size]
                 CaptureDevice.target_img = frame[center[1] - rect_size:center[1] + rect_size, center[0] - rect_size:center[0] + rect_size]
@@ -78,7 +77,7 @@ class CaptureDevice(object):
                 ret, frame = self.device.read()
                 self.frame_counter += 1
 
-                if CaptureDevice.target is not None and self.frame_counter % 8 == 0:
+                if CaptureDevice.target is not None:
                     self._add_target(frame)
 
                 self._add_lines(frame)
