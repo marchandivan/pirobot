@@ -1,3 +1,5 @@
+from threading import Timer
+
 try:
     import RPi.GPIO as GPIO
 except:
@@ -9,18 +11,34 @@ except:
 
 LEFT_LIGHT_PIN = 16
 RIGHT_LIGHT_PIN = 17
+BLINK_DURATION = 1
+NB_OF_BLINKS = 10
 
 
 class Light(object):
     left_on = False
     right_on = False
 
+    Timers = []
+
+    @staticmethod
+    def _cancel_event():
+        for timer in Controller.Timers:
+            timer.cancel()
+        Motor.Timers = []
+
+    @staticmethod
+    def _schedule_event(delay, function, args=[], kwargs={}):
+        timer = Timer(delay, function, args, kwargs)
+        timer.start()
+        Light.Timers.append(timer)
+
     @staticmethod
     def setup():
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(LEFT_LIGHT_PIN, GPIO.OUT)
-        GPIO.setup(LEFT_LIGHT_PIN, GPIO.OUT)
+        GPIO.setup(RIGHT_LIGHT_PIN, GPIO.OUT)
         GPIO.output(LEFT_LIGHT_PIN, GPIO.LOW)
         GPIO.output(RIGHT_LIGHT_PIN, GPIO.LOW)
         Light.left_on = False
@@ -28,6 +46,13 @@ class Light(object):
 
     @staticmethod
     def set(left_on, right_on):
+        Light._cancel_event()
+        Light.left_on = left_on
+        Light.right_on = right_on
+        Light._set(left_on, right_on)
+
+    @staticmethod
+    def _set(left_on, right_on):
         GPIO.output(LEFT_LIGHT_PIN, GPIO.HIGH if left_on else GPIO.LOW)
         GPIO.output(RIGHT_LIGHT_PIN, GPIO.HIGH if right_on else GPIO.LOW)
 
@@ -37,3 +62,14 @@ class Light(object):
             'left_on': Light.left_on,
             'right_on': Light.right_on
         }
+
+    @staticmethod
+    def blink(left_on, right_on):
+        if left_on or right_on:
+            time = 0
+            for i in range(NB_OF_BLINKS):
+                Light._schedule_event(time, Light._set, kwargs=dict(left_on=left_on, right_on=right_on))
+                time += BLINK_DURATION
+                Light._schedule_event(time, Light._set, kwargs=dict(left_on=False, right_on=False))
+                time += BLINK_DURATION
+        Light.set(Light.left_on, Light.right_on)

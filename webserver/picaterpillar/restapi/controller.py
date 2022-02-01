@@ -54,6 +54,10 @@ class Controller:
         Light.set(left_on, right_on)
 
     @staticmethod
+    def blink_light(left_on, right_on):
+        Light.blink(left_on, right_on)
+
+    @staticmethod
     def serialize():
         return {
             'light': Light.serialize()

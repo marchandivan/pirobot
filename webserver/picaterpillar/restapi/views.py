@@ -56,6 +56,20 @@ class RestApiViewSet(viewsets.ViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'])
+    def blink_light(self, request):
+        serializer = LightCommandSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.blink_light(serializer.data['left_on'],
+                                   serializer.data['right_on'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['get'])
     def stream(self, request):
         return StreamingHttpResponse(Camera.stream(),
