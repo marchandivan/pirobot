@@ -9,8 +9,12 @@ import cv2
 if sys.platform != "darwin":  # Mac OS
     import picamera
 
+target = None
+
 
 class CaptureDevice(object):
+    target = None
+    target_img = None
 
     def __init__(self, resolution, framerate, capturing_device):
         self.capturing_device = capturing_device
@@ -24,10 +28,34 @@ class CaptureDevice(object):
         else:
             self.device = picamera.PiCamera(resolution=resolution, framerate=framerate)
 
+    def _add_target(self, frame):
+        rect_size = 70
+        center = [int((CaptureDevice.target[0] * self.res_x) / 100), int((CaptureDevice.target[1] * self.res_y) / 100)]
+        if CaptureDevice.target_img is not None:
+
+            result = cv2.matchTemplate(frame, CaptureDevice.target_img, cv2.TM_CCORR_NORMED)
+            # We want the minimum squared difference
+            mn, mx, mnLoc, mxLoc = cv2.minMaxLoc(result)
+
+            # Draw the rectangle:
+            # Extract the coordinates of our best match
+            print(mxLoc, mx)
+            if mx > 0.95:
+                center = [mxLoc[0] + rect_size, mxLoc[1] + rect_size]
+                CaptureDevice.target_img = frame[center[1] - rect_size:center[1] + rect_size, center[0] - rect_size:center[0] + rect_size]
+        else:
+            CaptureDevice.target_img = frame[center[1] - rect_size:center[1] + rect_size, center[0] - rect_size:center[0] + rect_size]
+
+
+
+        CaptureDevice.target = [100 * center[0] / self.res_x, 100 * center[1] / self.res_y]
+
+
+        cv2.rectangle(frame, [center[0] - 10, center[1] - 10], [center[0] + 10, center[1] + 10], (0, 0, 255), 2)
+
     def _add_lines(self, frame):
         color = (0, 255, 0)
         thickness = 2
-
 
         # Visor
         radius = 30
@@ -47,6 +75,10 @@ class CaptureDevice(object):
         if self.capturing_device == "usb":
             while True:
                 ret, frame = self.device.read()
+
+                if CaptureDevice.target is not None:
+                    self._add_target(frame)
+
                 self._add_lines(frame)
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
@@ -98,6 +130,11 @@ class Camera(object):
         finally:
             capture_device.close()
             Camera.streaming = False
+
+    @staticmethod
+    def select_target(x, y):
+        CaptureDevice.target = [x, y]
+
 
     @staticmethod
     def serialize():
