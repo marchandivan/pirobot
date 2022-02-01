@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 
 from restapi.camera import Camera
 from restapi.controller import Controller
-from restapi.serializers import MoveCommandSerializer
+from restapi.serializers import MoveCommandSerializer, LightCommandSerializer
 from rest_framework.response import Response
 
 from django.http import StreamingHttpResponse
@@ -41,6 +41,20 @@ class RestApiViewSet(viewsets.ViewSet):
             'status': 'OK',
             'robot': Controller.serialize()
             })
+
+    @action(detail=False, methods=['post'])
+    def set_light(self, request):
+        serializer = LightCommandSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.set_light(serializer.data['left_on'],
+                                 serializer.data['right_on'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def stream(self, request):
