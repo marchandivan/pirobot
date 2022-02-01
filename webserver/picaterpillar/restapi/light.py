@@ -23,9 +23,9 @@ class Light(object):
 
     @staticmethod
     def _cancel_event():
-        for timer in Controller.Timers:
+        for timer in Light.Timers:
             timer.cancel()
-        Motor.Timers = []
+        Light.Timers = []
 
     @staticmethod
     def _schedule_event(delay, function, args=[], kwargs={}):
