@@ -12,3 +12,8 @@ class MoveCommandSerializer(serializers.Serializer):
 class LightCommandSerializer(serializers.Serializer):
     left_on = serializers.BooleanField(default=False)
     right_on = serializers.BooleanField(default=False)
+
+
+class SelectTargetSerializer(serializers.Serializer):
+    x = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)
+    y = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)

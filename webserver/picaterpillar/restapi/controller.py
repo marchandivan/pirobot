@@ -1,6 +1,7 @@
 import sys
 from threading import Timer
 from restapi.light import Light
+from restapi.camera import Camera
 
 if sys.platform != "darwin":  # Mac OS
     from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC as Motor
@@ -56,6 +57,10 @@ class Controller:
     @staticmethod
     def blink_light(left_on, right_on):
         Light.blink(left_on, right_on)
+
+    @staticmethod
+    def select_target(x, y):
+        Camera.select_target(x, y)
 
     @staticmethod
     def serialize():
