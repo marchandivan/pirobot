@@ -1,4 +1,5 @@
 import sys
+from PIL import Image
 from threading import Timer
 from restapi.light import Light
 from restapi.camera import Camera
@@ -6,16 +7,25 @@ from restapi.camera import Camera
 if sys.platform != "darwin":  # Mac OS
     from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC as Motor
     motor = Motor(1, 0x10)
+    from lcd.LCD_2inch import LCD_2inch
 else:
     from unittest.mock import Mock
     motor = Mock()
+    from lcd.LCD_Mock import LCD_2inch
 
-# Initialization
+# Motor Initialization
 motor.set_addr(0x10)
 motor.set_encoder_enable(motor.ALL)
 motor.set_encoder_reduction_ratio(motor.ALL, 43)
 motor.set_moter_pwm_frequency(1000)
 Light.setup()
+
+# LCD Initialization
+RST = 24
+DC = 25
+BL = 23
+lcd = LCD_2inch(rst=RST, dc=DC, bl=BL)
+
 
 
 class Controller:
@@ -61,6 +71,12 @@ class Controller:
     @staticmethod
     def select_target(x, y):
         Camera.select_target(x, y)
+
+    @staticmethod
+    def capture_image(destination):
+        if destination == "lcd":
+            img = Image.fromarray(Camera.capture_image())
+            lcd.ShowImage(img)
 
     @staticmethod
     def serialize():

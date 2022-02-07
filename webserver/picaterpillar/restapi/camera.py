@@ -1,6 +1,7 @@
 import io
 import sys
 import time
+import threading
 import traceback
 
 # from restapi.models import Config
@@ -10,11 +11,13 @@ if sys.platform != "darwin":  # Mac OS
     import picamera
 
 target = None
+camera_semaphore = threading.Semaphore()
 
 
 class CaptureDevice(object):
     target = None
     target_img = None
+    catpures = []
 
     def __init__(self, resolution, framerate, capturing_device):
         self.capturing_device = capturing_device
@@ -71,14 +74,23 @@ class CaptureDevice(object):
         cv2.line(frame, (center_x, center_y), (path_bottom, self.res_y), color, thickness)
         cv2.line(frame, (center_x, center_y), (self.res_x - path_bottom, self.res_y), color, thickness)
 
+    def capture(self):
+        if self.capturing_device == "usb":
+            camera_semaphore.acquire()
+            ret, frame = self.device.read()
+            camera_semaphore.release()
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
     def capture_continuous(self, stream, format='jpeg'):
         if self.capturing_device == "usb":
             while True:
+                camera_semaphore.acquire()
                 ret, frame = self.device.read()
+                camera_semaphore.release()
                 self.frame_counter += 1
 
-                if CaptureDevice.target is not None:
-                    self._add_target(frame)
+                #if CaptureDevice.target is not None:
+                #    self._add_target(frame)
 
                 self._add_lines(frame)
 
@@ -137,6 +149,13 @@ class Camera(object):
     def select_target(x, y):
         CaptureDevice.target = [x, y]
 
+    @staticmethod
+    def capture_image(resolution="1280x720"):
+        capture_device = CaptureDevice(resolution=resolution,
+                                       framerate=5,
+                                       capturing_device="usb")
+
+        return capture_device.capture()
 
     @staticmethod
     def serialize():

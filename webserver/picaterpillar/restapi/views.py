@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 
 from restapi.camera import Camera
 from restapi.controller import Controller
-from restapi.serializers import MoveCommandSerializer, LightCommandSerializer, SelectTargetSerializer
+from restapi.serializers import MoveCommandSerializer, LightCommandSerializer, SelectTargetSerializer, CapturePictureSerializer
 from rest_framework.response import Response
 
 from django.http import StreamingHttpResponse
@@ -76,6 +76,19 @@ class RestApiViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             Controller.select_target(serializer.data['x'],
                                      serializer.data['y'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def capture_image(self, request):
+        serializer = CapturePictureSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.capture_image(serializer.data['destination'])
             return Response({
                 'status': 'OK',
                 'robot': Controller.serialize()

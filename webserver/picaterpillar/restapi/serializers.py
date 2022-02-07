@@ -17,3 +17,7 @@ class LightCommandSerializer(serializers.Serializer):
 class SelectTargetSerializer(serializers.Serializer):
     x = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)
     y = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)
+
+
+class CapturePictureSerializer(serializers.Serializer):
+    destination = serializers.ChoiceField(choices=['lcd'], default='lcd')
