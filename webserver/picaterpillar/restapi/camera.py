@@ -131,7 +131,7 @@ class Camera(object):
         stream = io.BytesIO()
         try:
             Camera.streaming = True
-            for frame in capture_device.capture_continuous(stream, format='jpeg'):
+            for frame in Camera.capture_device.capture_continuous(stream, format='jpeg'):
                 stream.truncate()
                 stream.seek(0)
                 yield "--FRAME\r\n"
@@ -143,7 +143,7 @@ class Camera(object):
         except Exception as e:
             traceback.print_exc()
         finally:
-            capture_device.close()
+            Camera.capture_device.close()
             Camera.streaming = False
             Camera.capture_device = None
 
