@@ -10,10 +10,11 @@ smbus = {version = "*",sys_platform = "!= 'darwin'"}
 fake-rpi = {version = "*",sys_platform = "== 'darwin'"}
 django-cors-headers = "*"
 opencv-python-headless = "*"
-picamera = "*"
-"rpi.gpio" = "*"
-spidev = "*"
+picamera = {version = "*",sys_platform = "!= 'darwin'"}
+"rpi.gpio" = {version = "*",sys_platform = "!= 'darwin'"}
+spidev = {version = "*",sys_platform = "!= 'darwin'"}
 pillow = "*"
+matplotlib = {version = "*",sys_platform = "== 'darwin'"}
 
 [dev-packages]
 
