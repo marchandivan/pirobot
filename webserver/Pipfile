@@ -12,6 +12,8 @@ django-cors-headers = "*"
 opencv-python-headless = "*"
 picamera = "*"
 "rpi.gpio" = "*"
+spidev = "*"
+pillow = "*"
 
 [dev-packages]
 
