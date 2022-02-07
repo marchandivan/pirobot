@@ -7,6 +7,7 @@ class LCD_2inch(object):
         pass
 
     def ShowImage(self, image, Xstart=0, Ystart=0):
-        image.save('capture.png')
+        image = image.rotate(180)
+        image.show()
 
 
