@@ -25,7 +25,7 @@ RST = 24
 DC = 25
 BL = 23
 lcd = LCD_2inch(rst=RST, dc=DC, bl=BL)
-
+lcd.ShowImage(Image.open('assets/logo.png'))
 
 
 class Controller:

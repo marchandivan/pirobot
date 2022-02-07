@@ -154,13 +154,16 @@ class Camera(object):
     @staticmethod
     def capture_image(resolution="1280x720"):
         if Camera.capture_device is not None:
-            capture_device = Camera.capture_device
+            return Camera.capture_device.capture()
         else:
             capture_device = CaptureDevice(resolution=resolution,
                                            framerate=5,
                                            capturing_device="usb")
+            image = capture_device.capture()
+            capture_device.close()
+            return image
 
-        return capture_device.capture()
+
 
     @staticmethod
     def serialize():
