@@ -76,6 +76,8 @@ class Controller:
     def capture_image(destination):
         if destination == "lcd":
             img = Image.fromarray(Camera.capture_image())
+            img = img.resize((lcd.height, lcd.width))
+            img = img.rotate(180)
             lcd.ShowImage(img)
 
     @staticmethod
