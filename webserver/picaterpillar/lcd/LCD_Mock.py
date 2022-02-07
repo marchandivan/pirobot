@@ -6,8 +6,13 @@ class LCD_2inch(object):
     def __init__(self, rst = 27,dc = 25,bl = 18):
         pass
 
+    def Init(self):
+        print("Using mock LCD")
+
+    def clear(self):
+        pass
+
     def ShowImage(self, image, Xstart=0, Ystart=0):
-        image = image.rotate(180)
         image.show()
 
 

@@ -25,6 +25,8 @@ RST = 24
 DC = 25
 BL = 23
 lcd = LCD_2inch(rst=RST, dc=DC, bl=BL)
+lcd.Init()
+lcd.clear()
 lcd.ShowImage(Image.open('assets/logo.png'))
 
 
@@ -77,7 +79,6 @@ class Controller:
         if destination == "lcd":
             img = Image.fromarray(Camera.capture_image())
             img = img.resize((lcd.height, lcd.width))
-            img = img.rotate(180)
             lcd.ShowImage(img)
 
     @staticmethod
