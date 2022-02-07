@@ -138,6 +138,7 @@ class LCD_2inch(lcdconfig.RaspberryPi):
     def ShowImage(self, Image, Xstart=0, Ystart=0):
         """Set buffer to value of Python Imaging Library image."""
         """Write display buffer to physical display"""
+        Image = Image.rotate(180)
         imwidth, imheight = Image.size
         if imwidth == self.height and imheight ==  self.width:
             img = self.np.asarray(Image)
