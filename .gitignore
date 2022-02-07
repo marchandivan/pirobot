@@ -131,6 +131,3 @@ dmypy.json
 
 #PyCharm
 .idea
-
-# Images
-*.png
