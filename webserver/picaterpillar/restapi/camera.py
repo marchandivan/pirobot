@@ -114,6 +114,7 @@ class CaptureDevice(object):
 
 class Camera(object):
     streaming = False
+    capture_device = None
 
     @staticmethod
     def stream():
@@ -124,9 +125,9 @@ class Camera(object):
         else:
             capturing_device = config.get('capturing_device', 'usb')
             resolution = config.get('capturing_resolution', '1280x720')
-        capture_device = CaptureDevice(resolution=resolution,
-                                       framerate=int(config.get('capturing_framerate', 5)),
-                                       capturing_device=capturing_device)
+        Camera.capture_device = CaptureDevice(resolution=resolution,
+                                              framerate=int(config.get('capturing_framerate', 5)),
+                                              capturing_device=capturing_device)
         stream = io.BytesIO()
         try:
             Camera.streaming = True
@@ -144,6 +145,7 @@ class Camera(object):
         finally:
             capture_device.close()
             Camera.streaming = False
+            Camera.capture_device = None
 
     @staticmethod
     def select_target(x, y):
@@ -151,9 +153,12 @@ class Camera(object):
 
     @staticmethod
     def capture_image(resolution="1280x720"):
-        capture_device = CaptureDevice(resolution=resolution,
-                                       framerate=5,
-                                       capturing_device="usb")
+        if Camera.capture_device is not None:
+            capture_device = Camera.capture_device
+        else:
+            capture_device = CaptureDevice(resolution=resolution,
+                                           framerate=5,
+                                           capturing_device="usb")
 
         return capture_device.capture()
 
