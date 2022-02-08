@@ -3,6 +3,7 @@ from PIL import Image
 from threading import Timer
 from restapi.light import Light
 from restapi.camera import Camera
+from terminal import Terminal
 
 if sys.platform != "darwin":  # Mac OS
     from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC as Motor
@@ -13,21 +14,29 @@ else:
     motor = Mock()
     from lcd.LCD_Mock import LCD_2inch
 
-# Motor Initialization
-motor.set_addr(0x10)
-motor.set_encoder_enable(motor.ALL)
-motor.set_encoder_reduction_ratio(motor.ALL, 43)
-motor.set_moter_pwm_frequency(1000)
-Light.setup()
-
-# LCD Initialization
+# LCD & terminal Initialization
 RST = 24
 DC = 25
 BL = 23
 lcd = LCD_2inch(rst=RST, dc=DC, bl=BL)
 lcd.Init()
 lcd.clear()
-lcd.ShowImage(Image.open('assets/logo.png'))
+terminal = Terminal("Courier", lcd)
+terminal.header("Buddy Bot v1.0")
+terminal.text("Starting...")
+
+# Motor Initialization
+terminal.text("Motor setup...")
+motor.set_addr(0x10)
+motor.set_encoder_enable(motor.ALL)
+motor.set_encoder_reduction_ratio(motor.ALL, 43)
+motor.set_moter_pwm_frequency(1000)
+
+# Light
+terminal.text("Light setup...")
+Light.setup()
+
+terminal.text("Ready!")
 
 
 class Controller:
@@ -37,7 +46,7 @@ class Controller:
     def _cancel_event():
         for timer in Controller.Timers:
             timer.cancel()
-        Motor.Timers = []
+        Controller.Timers = []
 
     @staticmethod
     def _schedule_event(delay, function, args=[], kwargs={}):
@@ -80,6 +89,19 @@ class Controller:
             img = Image.fromarray(Camera.capture_image())
             img = img.resize((lcd.height, lcd.width))
             lcd.ShowImage(img)
+
+    @staticmethod
+    def set_lcd_brightness(brightness):
+        lcd.bl_DutyCycle(brightness)
+
+    @staticmethod
+    def reset_lcd():
+        terminal.reset()
+
+    @staticmethod
+    def say(destination, text):
+        if destination == "lcd":
+            terminal.text(text, reset=True)
 
     @staticmethod
     def serialize():

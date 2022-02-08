@@ -31,6 +31,8 @@ import time
 import spidev
 import logging
 import numpy as np
+import RPi.GPIO
+
 
 class RaspberryPi:
     def __init__(self,
@@ -39,10 +41,7 @@ class RaspberryPi:
                  rst=24,
                  dc=25,
                  bl=23,
-                 bl_freq=1000,
-                 i2c=None,
-                 i2c_freq=100000):
-        import RPi.GPIO      
+                 bl_freq=1000):
         self.np=np
         self.RST_PIN= rst
         self.DC_PIN = dc
@@ -50,16 +49,16 @@ class RaspberryPi:
         self.SPEED  =spi_freq
         self.BL_freq=bl_freq
         self.GPIO = RPi.GPIO
-        #self.GPIO.cleanup()
         self.GPIO.setmode(self.GPIO.BCM)
         self.GPIO.setwarnings(False)
         self.GPIO.setup(self.RST_PIN,   self.GPIO.OUT)
         self.GPIO.setup(self.DC_PIN,    self.GPIO.OUT)
         self.GPIO.setup(self.BL_PIN,    self.GPIO.OUT)
         self.GPIO.output(self.BL_PIN,   self.GPIO.HIGH)        
-        #Initialize SPI
+
+        # Initialize SPI
         self.SPI = spi
-        if self.SPI!=None :
+        if self.SPI is not None:
             self.SPI.max_speed_hz = spi_freq
             self.SPI.mode = 0b00
 
@@ -69,23 +68,21 @@ class RaspberryPi:
     def digital_read(self, pin):
         return self.GPIO.input(pin)
 
-    def delay_ms(self, delaytime):
-        time.sleep(delaytime / 1000.0)
-
     def spi_writebyte(self, data):
-        if self.SPI!=None :
+        if self.SPI is not None:
             self.SPI.writebytes(data)
+
     def bl_DutyCycle(self, duty):
         self._pwm.ChangeDutyCycle(duty)
         
-    def bl_Frequency(self,freq):
+    def bl_Frequency(self, freq):
         self._pwm.ChangeFrequency(freq)
            
     def module_init(self):
         self.GPIO.setup(self.RST_PIN, self.GPIO.OUT)
         self.GPIO.setup(self.DC_PIN, self.GPIO.OUT)
         self.GPIO.setup(self.BL_PIN, self.GPIO.OUT)
-        self._pwm=self.GPIO.PWM(self.BL_PIN,self.BL_freq)
+        self._pwm = self.GPIO.PWM(self.BL_PIN,self.BL_freq)
         self._pwm.start(100)
         if self.SPI!=None :
             self.SPI.max_speed_hz = self.SPEED        
@@ -103,7 +100,6 @@ class RaspberryPi:
         self._pwm.stop()
         time.sleep(0.001)
         self.GPIO.output(self.BL_PIN, 1)
-        #self.GPIO.cleanup()
 
 
 ### END OF FILE ###

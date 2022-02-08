@@ -6,7 +6,8 @@ from lcd import lcdconfig
 class LCD_2inch(lcdconfig.RaspberryPi):
 
     width = 240
-    height = 320 
+    height = 320
+
     def command(self, cmd):
         self.digital_write(self.DC_PIN, self.GPIO.LOW)
         self.spi_writebyte([cmd])
@@ -14,6 +15,7 @@ class LCD_2inch(lcdconfig.RaspberryPi):
     def data(self, val):
         self.digital_write(self.DC_PIN, self.GPIO.HIGH)
         self.spi_writebyte([val])
+
     def reset(self):
         """Reset the display"""
         self.GPIO.output(self.RST_PIN,self.GPIO.HIGH)
@@ -119,14 +121,14 @@ class LCD_2inch(lcdconfig.RaspberryPi):
 
   
     def SetWindows(self, Xstart, Ystart, Xend, Yend):
-        #set the X coordinates
+        # Set the X coordinates
         self.command(0x2A)
-        self.data(Xstart>>8)        #Set the horizontal starting point to the high octet
-        self.data(Xstart & 0xff)    #Set the horizontal starting point to the low octet
-        self.data(Xend>>8)          #Set the horizontal end to the high octet
-        self.data((Xend - 1) & 0xff)#Set the horizontal end to the low octet 
+        self.data(Xstart>>8)          # Set the horizontal starting point to the high octet
+        self.data(Xstart & 0xff)      # Set the horizontal starting point to the low octet
+        self.data(Xend>>8)            # Set the horizontal end to the high octet
+        self.data((Xend - 1) & 0xff)  # Set the horizontal end to the low octet
 
-        #set the Y coordinates
+        # Set the Y coordinates
         self.command(0x2B)
         self.data(Ystart>>8)
         self.data((Ystart & 0xff))
@@ -135,7 +137,7 @@ class LCD_2inch(lcdconfig.RaspberryPi):
 
         self.command(0x2C)    
         
-    def ShowImage(self, Image, Xstart=0, Ystart=0):
+    def ShowImage(self, Image):
         """Set buffer to value of Python Imaging Library image."""
         """Write display buffer to physical display"""
         Image = Image.rotate(180)
