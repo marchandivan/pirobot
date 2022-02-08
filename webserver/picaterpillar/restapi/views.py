@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 
 from restapi.camera import Camera
 from restapi.controller import Controller
-from restapi.serializers import MoveCommandSerializer, LightCommandSerializer, SelectTargetSerializer, CapturePictureSerializer
+from restapi import serializers
 from rest_framework.response import Response
 
 from django.http import StreamingHttpResponse
@@ -19,7 +19,7 @@ class RestApiViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def move(self, request):
-        serializer = MoveCommandSerializer(data=request.data)
+        serializer = serializers.MoveCommandSerializer(data=request.data)
         if serializer.is_valid():
             Controller.move(serializer.data['left_orientation'],
                             serializer.data['left_speed'],
@@ -44,7 +44,7 @@ class RestApiViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def set_light(self, request):
-        serializer = LightCommandSerializer(data=request.data)
+        serializer = serializers.LightCommandSerializer(data=request.data)
         if serializer.is_valid():
             Controller.set_light(serializer.data['left_on'],
                                  serializer.data['right_on'])
@@ -58,7 +58,7 @@ class RestApiViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def blink_light(self, request):
-        serializer = LightCommandSerializer(data=request.data)
+        serializer = serializers.LightCommandSerializer(data=request.data)
         if serializer.is_valid():
             Controller.blink_light(serializer.data['left_on'],
                                    serializer.data['right_on'])
@@ -72,7 +72,7 @@ class RestApiViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def select_target(self, request):
-        serializer = SelectTargetSerializer(data=request.data)
+        serializer = serializers.SelectTargetSerializer(data=request.data)
         if serializer.is_valid():
             Controller.select_target(serializer.data['x'],
                                      serializer.data['y'])
@@ -86,9 +86,43 @@ class RestApiViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
     def capture_image(self, request):
-        serializer = CapturePictureSerializer(data=request.data)
+        serializer = serializers.CapturePictureSerializer(data=request.data)
         if serializer.is_valid():
             Controller.capture_image(serializer.data['destination'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def set_lcd_brightness(self, request):
+        serializer = serializers.SetLcdBrightnessSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.set_lcd_brightness(serializer.data['brightness'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def reset_lcd(self, request):
+        Controller.reset_lcd()
+        return Response({
+            'status': 'OK',
+            'robot': Controller.serialize()
+            })
+
+    @action(detail=False, methods=['post'])
+    def say(self, request):
+        serializer = serializers.TextToSpeachSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.say(serializer.data['destination'], serializer.data['text'])
             return Response({
                 'status': 'OK',
                 'robot': Controller.serialize()

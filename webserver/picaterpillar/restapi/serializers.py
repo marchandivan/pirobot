@@ -21,3 +21,12 @@ class SelectTargetSerializer(serializers.Serializer):
 
 class CapturePictureSerializer(serializers.Serializer):
     destination = serializers.ChoiceField(choices=['lcd'], default='lcd')
+
+
+class SetLcdBrightnessSerializer(serializers.Serializer):
+    brightness = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)
+
+
+class TextToSpeachSerializer(serializers.Serializer):
+    destination = serializers.ChoiceField(choices=['lcd'], default='lcd')
+    text = serializers.CharField()
