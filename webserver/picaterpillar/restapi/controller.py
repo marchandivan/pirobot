@@ -103,7 +103,7 @@ class Controller:
     @staticmethod
     def say(destination, text):
         if destination == "lcd":
-            terminal.text(text, reset=True)
+            terminal.text(text)
 
     @staticmethod
     def set_mood(mood):

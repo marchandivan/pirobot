@@ -3,7 +3,7 @@ from PIL import Image, ImageFont, ImageDraw
 
 class Terminal(object):
 
-    def __init__(self, font, lcd, background="BLACK", color="GREEN", font_size=25, interline=6):
+    def __init__(self, font, lcd, background="BLACK", color=(0, 255, 0), font_size=30, interline=6):
         font_filepath = os.path.join("assets/Fonts", f"{font}.ttf")
         self._lcd = lcd
         if not os.path.isfile(font_filepath):
