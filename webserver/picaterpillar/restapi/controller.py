@@ -118,6 +118,7 @@ class Controller:
         file_path = os.path.join('assets/Pics/', f"{name}.png")
         if os.path.isfile(file_path):
             image = Image.open(file_path)
+            image = image.resize((lcd.height, lcd.width))
             lcd.ShowImage(image)
 
     @staticmethod
