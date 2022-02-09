@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from eye_generator import EyeGenerator
 
 class MoveCommandSerializer(serializers.Serializer):
     left_orientation = serializers.ChoiceField(choices=['F', 'B'])
@@ -30,3 +30,11 @@ class SetLcdBrightnessSerializer(serializers.Serializer):
 class TextToSpeachSerializer(serializers.Serializer):
     destination = serializers.ChoiceField(choices=['lcd'], default='lcd')
     text = serializers.CharField()
+
+
+class SetMoodSerializer(serializers.Serializer):
+    mood = serializers.ChoiceField(choices=EyeGenerator.get_moods(), default='relaxed')
+
+
+class SetLcdPictureSerializer(serializers.Serializer):
+    name = serializers.CharField()

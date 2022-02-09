@@ -1,7 +1,5 @@
 import Grid from '@material-ui/core/Grid';
 import Slider from '@material-ui/core/Slider';
-import Switch from '@material-ui/core/Switch'
-import FormControlLabel from '@material-ui/core/FormControlLabel'
 import TextField from "@material-ui/core/TextField";
 import React from 'react';
 import './App.css';
@@ -9,6 +7,16 @@ import DirectionCross from "./DirectionCross";
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import IconButton from "@material-ui/core/IconButton";
 import BackspaceIcon from '@mui/icons-material/Backspace';
+import FlashlightOnIcon from '@mui/icons-material/FlashlightOn';
+import FlashlightOffIcon from '@mui/icons-material/FlashlightOff';
+import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
+import BrightnessHighIcon from '@mui/icons-material/BrightnessHigh';
+import BrightnessMediumIcon from '@mui/icons-material/BrightnessMedium';
+import BrightnessLowIcon from '@mui/icons-material/BrightnessLow';
+import Divider from '@material-ui/core/Divider';
+import Select from "@material-ui/core/Select";
+import MenuItem from "@material-ui/core/MenuItem";
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
 const KEY_UP = 38
 const KEY_DOWN = 40
@@ -20,12 +28,8 @@ const KEY_0 = 48
 const KEY_9 = 57
 const KEY_PLUS = 187
 const KEY_MINUS = 189
-const KEY_I = 73
-const KEY_J = 74
-const KEY_K = 76
-const KEY_L = 77
 
-const MOVE_KEYS = [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_I, KEY_J, KEY_K, KEY_L]
+const MOVE_KEYS = [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]
 
 const MOVE_INTENT_FORWARD = 0
 const MOVE_INTENT_FORWARD_RIGHT = 1
@@ -55,7 +59,9 @@ class App extends React.Component {
             duration_step: 0.2,
             mouse_x: 0,
             mouse_y: 0,
-            lcd_brightness: 100
+            lcd_brightness: 100,
+            mood: "relaxed",
+            moods: []
         };
         this.key_down = {};
     }
@@ -117,25 +123,25 @@ class App extends React.Component {
 
     moveKeyDown = () => {
         let move_intent = MOVE_INTENT_STOP;
-        if (this.key_down[KEY_UP] || this.key_down[KEY_I]) {
-            if (this.key_down[KEY_LEFT] || this.key_down[KEY_J]) {
+        if (this.key_down[KEY_UP]) {
+            if (this.key_down[KEY_LEFT]) {
                 move_intent = MOVE_INTENT_FORWARD_LEFT;
-            } else if (this.key_down[KEY_RIGHT] || this.key_down[KEY_L]) {
+            } else if (this.key_down[KEY_RIGHT]) {
                 move_intent = MOVE_INTENT_FORWARD_RIGHT;
             } else {
                 move_intent = MOVE_INTENT_FORWARD
             }
-        } else if (this.key_down[KEY_DOWN] || this.key_down[KEY_K]) {
-            if (this.key_down[KEY_LEFT] || this.key_down[KEY_J]) {
+        } else if (this.key_down[KEY_DOWN]) {
+            if (this.key_down[KEY_LEFT]) {
                 move_intent = MOVE_INTENT_BACKWARD_LEFT;
-            } else if (this.key_down[KEY_RIGHT] || this.key_down[KEY_L]) {
+            } else if (this.key_down[KEY_RIGHT]) {
                 move_intent = MOVE_INTENT_BACKWARD_RIGHT;
             } else {
                 move_intent = MOVE_INTENT_BACKWARD
             }
-        } else if (this.key_down[KEY_LEFT] || this.key_down[KEY_J]) {
+        } else if (this.key_down[KEY_LEFT]) {
             move_intent = MOVE_INTENT_LEFT;
-        } else if (this.key_down[KEY_RIGHT] || this.key_down[KEY_L]) {
+        } else if (this.key_down[KEY_RIGHT]) {
             move_intent = MOVE_INTENT_RIGHT;
         }
 
@@ -145,7 +151,8 @@ class App extends React.Component {
     updateState = (data) => {
         this.setState({
             left_on: data.robot.light.left_on,
-            right_on: data.robot.light.right_on
+            right_on: data.robot.light.right_on,
+            moods: data.robot.moods
         });
     }
 
@@ -385,6 +392,57 @@ class App extends React.Component {
             });
     }
 
+    updateMood = (event) => {
+        this.setState({
+            mood: event.target.value
+        })
+        this.setMood();
+    }
+
+    setMood = () => {
+        let url = '/api/mood/';
+        if(process.env.REACT_APP_API_URL) {
+            url = process.env.REACT_APP_API_URL + url;
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mood: this.state.mood,
+            })
+        })
+            .then(response => response.json())
+            .then(data => this.updateState(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+    setLcdPicture = (name) => {
+        let url = '/api/lcd_picture/';
+        if(process.env.REACT_APP_API_URL) {
+            url = process.env.REACT_APP_API_URL + url;
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+            })
+        })
+            .then(response => response.json())
+            .then(data => this.updateState(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
     captureImage = () => {
         let url = '/api/capture_image/';
         if(process.env.REACT_APP_API_URL) {
@@ -407,7 +465,7 @@ class App extends React.Component {
             });
     }
 
-    updateLcdBrightness = (event, value) => {
+    updateLcdBrightness = (value) => {
         this.setState({
             lcd_brightness: value
         })
@@ -459,31 +517,80 @@ class App extends React.Component {
                         <Grid item xl={2} md={2} sm={2} xs={12}>
                             <Grid container spacing={2}>
                                 <Grid item xl={12} md={12} sm={12} xs={12}>
-                                    <FormControlLabel control={<Switch onChange={this.switchFrontLight}/>} label="Front Light" />
+                                    <p>
+                                        Front Light
+                                    </p>
+                                </Grid>
+                                <Grid item xl={4} md={4} sm={4} xs={4}/>
+                                <Grid item xl={2} md={2} sm={2} xs={2}>
+                                    <IconButton onClick={this.setLight.bind(this, false, false)}><FlashlightOffIcon/></IconButton>
+                                </Grid>
+                                <Grid item xl={2} md={2} sm={2} xs={2}>
+                                    <IconButton onClick={this.setLight.bind(this, true, true)}><FlashlightOnIcon/></IconButton>
                                 </Grid>
                             </Grid>
+                            <Divider/>
+                            <Grid container>
+                                <Grid item xl={12} md={12} sm={12} xs={12}>
+                                    <p>
+                                        Screen
+                                    </p>
+                                </Grid>
+                                <Grid item xl={1} md={1} sm={1} xs={1}/>
+                                <Grid item xl={2} md={2} sm={2} xs={2}>
+                                    <IconButton onClick={this.resetLcdScreen}><BackspaceIcon/></IconButton>
+                                </Grid>
+                                <Grid item xl={2} md={2} sm={2} xs={2}>
+                                    <IconButton onClick={this.updateLcdBrightness.bind(this, 0)}><PowerSettingsNewIcon/></IconButton>
+                                </Grid>
+                                <Grid item xl={2} md={2} sm={2} xs={2}>
+                                    <IconButton onClick={this.updateLcdBrightness.bind(this, 20)}><BrightnessLowIcon/></IconButton>
+                                </Grid>
+                                <Grid item xl={2} md={2} sm={2} xs={2}>
+                                    <IconButton onClick={this.updateLcdBrightness.bind(this, 60)}><BrightnessMediumIcon/></IconButton>
+                                </Grid>
+                                <Grid item xl={2} md={2} sm={2} xs={2}>
+                                    <IconButton onClick={this.updateLcdBrightness.bind(this, 100)}><BrightnessHighIcon/></IconButton>
+                                </Grid>
+                            </Grid>
+                            <Grid container>
+                                <Grid item xl={1} md={1} sm={1} xs={1}/>
+                                <Grid item xl={2} md={2} sm={2} xs={2}>
+                                    <IconButton onClick={this.setLcdPicture.bind(this, "heart")}><FavoriteIcon/></IconButton>
+                                </Grid>
+                            </Grid>
+                            <Grid container>
+                                <Grid item xl={12} md={12} sm={12} xs={12}>
+                                    <p>
+                                        Mood
+                                    </p>
+                                </Grid>
+                                <Grid item xl={1} md={1} sm={1} xs={1}/>
+                                <Grid item xl={9} md={9} sm={9} xs={9}>
+                                  <Select
+                                    fullWidth
+                                    value={this.state.mood}
+                                    label="Age"
+                                    onChange={this.updateMood}
+                                  >
+                                    {
+                                        this.state.moods.map((mood) =>
+                                        <MenuItem value={mood}>{mood}</MenuItem>)
+                                    }
+                                  </Select>
+                                </Grid>
+                            </Grid>
+                            <p/>
+                            <Divider/>
                             <Grid container>
                                 <Grid item xl={12} md={12} sm={12} xs={12}>
                                     <p>
                                         Say Something
                                     </p>
                                 </Grid>
-                                <Grid item xl={12} md={12} sm={12} xs={12}>
-                                    <TextField onKeyDown={this.keyPress} fullWidth={true}/>
-                                </Grid>
                                 <Grid item xl={1} md={1} sm={1} xs={1}/>
-                                <Grid item xl={10} md={10} sm={10} xs={10}>
-                                    <p>
-                                        Screen Brightness
-                                    </p>
-                                    <Slider
-                                        value={this.state.lcd_brightness}
-                                        valueLabelDisplay="on"
-                                        min={0}
-                                        max={100}
-                                        onChange={this.updateLcdBrightness}
-                                        aria-label="Speed Slider" />
-                                    <IconButton onClick={this.resetLcdScreen}><BackspaceIcon/></IconButton>
+                                <Grid item xl={11} md={11} sm={11} xs={11}>
+                                    <TextField onKeyDown={this.keyPress} fullWidth={true}/>
                                 </Grid>
                             </Grid>
                         </Grid>
