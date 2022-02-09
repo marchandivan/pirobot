@@ -131,6 +131,39 @@ class RestApiViewSet(viewsets.ViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'])
+    def mood(self, request):
+        serializer = serializers.SetMoodSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.set_mood(serializer.data['mood'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def moods(self, request):
+        return Response({
+            'status': 'OK',
+            'moods': Controller.get_moods()
+            })
+
+    @action(detail=False, methods=['post'])
+    def lcd_picture(self, request):
+        serializer = serializers.SetLcdPictureSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.set_lcd_picture(serializer.data['name'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['get'])
     def stream(self, request):
         return StreamingHttpResponse(Camera.stream(),

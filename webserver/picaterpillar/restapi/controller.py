@@ -1,8 +1,10 @@
+import os
 import sys
 from PIL import Image
 from threading import Timer
 from restapi.light import Light
 from restapi.camera import Camera
+from eye_generator import EyeGenerator
 from terminal import Terminal
 
 if sys.platform != "darwin":  # Mac OS
@@ -104,7 +106,23 @@ class Controller:
             terminal.text(text, reset=True)
 
     @staticmethod
+    def set_mood(mood):
+        lcd.ShowImage(EyeGenerator.generate_eyes(mood))
+
+    @staticmethod
+    def get_moods():
+        return EyeGenerator.get_moods()
+
+    @staticmethod
+    def set_lcd_picture(name):
+        file_path = os.path.join('assets/Pics/', f"{name}.png")
+        if os.path.isfile(file_path):
+            image = Image.open(file_path)
+            lcd.ShowImage(image)
+
+    @staticmethod
     def serialize():
         return {
-            'light': Light.serialize()
+            'light': Light.serialize(),
+            'moods': EyeGenerator.get_moods()
         }
