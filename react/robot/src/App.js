@@ -396,10 +396,10 @@ class App extends React.Component {
         this.setState({
             mood: event.target.value
         })
-        this.setMood();
+        this.setMood(event.target.value);
     }
 
-    setMood = () => {
+    setMood = (mood) => {
         let url = '/api/mood/';
         if(process.env.REACT_APP_API_URL) {
             url = process.env.REACT_APP_API_URL + url;
@@ -411,7 +411,7 @@ class App extends React.Component {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                mood: this.state.mood,
+                mood: mood,
             })
         })
             .then(response => response.json())
