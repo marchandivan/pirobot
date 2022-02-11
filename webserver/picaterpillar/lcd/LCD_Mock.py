@@ -13,7 +13,8 @@ class LCD_2inch(object):
         pass
 
     def ShowImage(self, image, Xstart=0, Ystart=0):
-        image.show()
+        # image.show()
+        pass
 
     def bl_DutyCycle(self, dc):
         print(f"Set back light duty cycle to {dc}")

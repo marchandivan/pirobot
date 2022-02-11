@@ -97,7 +97,7 @@ class DFRobot_DC_Motor:
 
   def set_addr(self, addr):
     '''
-      @brief    Set board controler address, reboot module to make it effective
+      @brief    Set board controller address, reboot module to make it effective
       @param address: int    Address to set, range in 1 to 127
     '''
     if addr < 1 or addr > 127:
@@ -231,7 +231,6 @@ class DFRobot_DC_Motor_IIC(DFRobot_DC_Motor):
 
   def _write_bytes(self, reg, buf):
     self.last_operate_status = self.STA_ERR_DEVICE_NOT_DETECTED
-    # print("write byte: ", hex(reg), buf)
     try:
       self._bus.write_i2c_block_data(self._addr, reg, buf)
       self.last_operate_status = self.STA_OK
