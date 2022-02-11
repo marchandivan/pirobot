@@ -83,16 +83,16 @@ class CaptureDevice(object):
 
         motor_status = Motor.serialize()
         # Left
-        cv2.putText(frame, f"{motor_status['left_speed_rpm']} RPM", (5, self.res_y - 15), font, fontScale, color, thickness)
+        cv2.putText(frame, f"{motor_status['left']['speed_rpm']} RPM", (5, self.res_y - 15), font, fontScale, color, thickness)
         cv2.rectangle(frame, (5, self.res_y - 50), (5 + 40, self.res_y - 50 - 400), color, thickness)
-        cv2.rectangle(frame, (5, self.res_y - 50 - 200), (5 + 40, self.res_y - 50 - 200 - int(motor_status['left_dc'] * 2)), color, -1)
+        cv2.rectangle(frame, (5, self.res_y - 50 - 200), (5 + 40, self.res_y - 50 - 200 - int(motor_status['left']['duty'] * 2)), color, -1)
 
         # Right
-        right_speed_str = f"{motor_status['right_speed_rpm']} RPM"
+        right_speed_str = f"{motor_status['right']['speed_rpm']} RPM"
         text_w, text_h = cv2.getTextSize(text=right_speed_str, fontFace=font, fontScale=fontScale, thickness=thickness)[0]
         cv2.putText(frame, right_speed_str, (self.res_x - text_w - 5, self.res_y - 15), font, fontScale, color, thickness)
         cv2.rectangle(frame, (self.res_x - 5, self.res_y - 50), (self.res_x - 5 - 40, self.res_y - 50 - 400), color, thickness)
-        cv2.rectangle(frame, (self.res_x - 5, self.res_y - 50 - 200), (self.res_x - 5 - 40, self.res_y - 50 - 200 - int(motor_status['right_dc'] * 2)), color, -1)
+        cv2.rectangle(frame, (self.res_x - 5, self.res_y - 50 - 200), (self.res_x - 5 - 40, self.res_y - 50 - 200 - int(motor_status['right']['duty'] * 2)), color, -1)
 
     def capture(self):
         if self.capturing_device == "usb":
