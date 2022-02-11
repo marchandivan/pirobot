@@ -36,7 +36,7 @@ Light.setup()
 terminal.text("Ready!")
 
 
-class Controller:
+class Controller(object):
     Timers = []
 
     @staticmethod
