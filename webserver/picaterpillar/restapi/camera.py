@@ -4,6 +4,7 @@ import time
 import threading
 import traceback
 
+from restapi.motor import Motor
 # from restapi.models import Config
 
 import cv2
@@ -74,6 +75,25 @@ class CaptureDevice(object):
         cv2.line(frame, (center_x, center_y), (path_bottom, self.res_y), color, thickness)
         cv2.line(frame, (center_x, center_y), (self.res_x - path_bottom, self.res_y), color, thickness)
 
+    def _add_speed(self, frame):
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 1
+        color = (0, 255, 0)
+        thickness = 2
+
+        motor_status = Motor.serialize()
+        # Left
+        cv2.putText(frame, f"{motor_status['left_speed_rpm']} RPM", (5, self.res_y - 15), font, fontScale, color, thickness)
+        cv2.rectangle(frame, (5, self.res_y - 50), (5 + 40, self.res_y - 50 - 400), color, thickness)
+        cv2.rectangle(frame, (5, self.res_y - 50 - 200), (5 + 40, self.res_y - 50 - 200 - int(motor_status['left_dc'] * 2)), color, -1)
+
+        # Right
+        right_speed_str = f"{motor_status['left_speed_rpm']} RPM"
+        text_w, text_h = cv2.getTextSize(text=right_speed_str, fontFace=font, fontScale=fontScale, thickness=thickness)[0]
+        cv2.putText(frame, right_speed_str, (self.res_x - text_w - 5, self.res_y - 15), font, fontScale, color, thickness)
+        cv2.rectangle(frame, (self.res_x - 5, self.res_y - 50), (self.res_x - 5 - 40, self.res_y - 50 - 400), color, thickness)
+        cv2.rectangle(frame, (self.res_x - 5, self.res_y - 50 - 200), (self.res_x - 5 - 40, self.res_y - 50 - 200 - int(motor_status['right_dc'] * 2)), color, -1)
+
     def capture(self):
         if self.capturing_device == "usb":
             camera_semaphore.acquire()
@@ -93,6 +113,7 @@ class CaptureDevice(object):
                 #    self._add_target(frame)
 
                 self._add_lines(frame)
+                self._add_speed(frame)
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
 

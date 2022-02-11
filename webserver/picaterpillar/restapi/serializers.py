@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from eye_generator import EyeGenerator
 
+
 class MoveCommandSerializer(serializers.Serializer):
     left_orientation = serializers.ChoiceField(choices=['F', 'B'])
     left_speed = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)

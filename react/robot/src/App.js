@@ -251,38 +251,38 @@ class App extends React.Component {
                 break;
             case MOVE_INTENT_FORWARD_SLIGHT_LEFT:
                 left_orientation = 'F';
-                left_speed = 1.0;
-                right_orientation ='F'
-                right_speed = 0.5;
-                break;
-            case MOVE_INTENT_FORWARD_LEFT:
-                left_orientation = 'F';
-                left_speed = 1.0;
-                right_orientation ='F'
-                right_speed = 0.0;
-                break;
-            case MOVE_INTENT_FORWARD_SLIGHT_RIGHT:
-                left_orientation = 'F';
                 left_speed = 0.5;
                 right_orientation ='F'
                 right_speed = 1.0;
                 break;
-            case MOVE_INTENT_FORWARD_RIGHT:
+            case MOVE_INTENT_FORWARD_LEFT:
                 left_orientation = 'F';
                 left_speed = 0.0;
                 right_orientation ='F'
                 right_speed = 1.0;
                 break;
-            case MOVE_INTENT_LEFT:
+            case MOVE_INTENT_FORWARD_SLIGHT_RIGHT:
                 left_orientation = 'F';
                 left_speed = 1.0;
-                right_orientation ='B'
-                right_speed = 1.0;
+                right_orientation ='F'
+                right_speed = 0.5;
                 break;
-            case MOVE_INTENT_RIGHT:
+            case MOVE_INTENT_FORWARD_RIGHT:
+                left_orientation = 'F';
+                left_speed = 1.0;
+                right_orientation ='F'
+                right_speed = 0.0;
+                break;
+            case MOVE_INTENT_LEFT:
                 left_orientation = 'B';
                 left_speed = 1.0;
                 right_orientation ='F'
+                right_speed = 1.0;
+                break;
+            case MOVE_INTENT_RIGHT:
+                left_orientation = 'F';
+                left_speed = 1.0;
+                right_orientation ='B'
                 right_speed = 1.0;
                 break;
             case MOVE_INTENT_BACKWARD:
@@ -293,27 +293,27 @@ class App extends React.Component {
                 break;
             case MOVE_INTENT_BACKWARD_SLIGHT_LEFT:
                 left_orientation = 'B';
-                left_speed = 1.0;
-                right_orientation ='B'
-                right_speed = 0.5;
-                break;
-            case MOVE_INTENT_BACKWARD_LEFT:
-                left_orientation = 'B';
-                left_speed = 1.0;
-                right_orientation ='B'
-                right_speed = 0.0;
-                break;
-            case MOVE_INTENT_BACKWARD_SLIGHT_RIGHT:
-                left_orientation = 'B';
                 left_speed = 0.5;
                 right_orientation ='B'
                 right_speed = 1.0;
                 break;
-            case MOVE_INTENT_BACKWARD_RIGHT:
+            case MOVE_INTENT_BACKWARD_LEFT:
                 left_orientation = 'B';
                 left_speed = 0.0;
                 right_orientation ='B'
                 right_speed = 1.0;
+                break;
+            case MOVE_INTENT_BACKWARD_SLIGHT_RIGHT:
+                left_orientation = 'B';
+                left_speed = 1.0;
+                right_orientation ='B'
+                right_speed = 0.5;
+                break;
+            case MOVE_INTENT_BACKWARD_RIGHT:
+                left_orientation = 'B';
+                left_speed = 1.0;
+                right_orientation ='B'
+                right_speed = 0.0;
                 break;
             case MOVE_INTENT_STOP:
             default:

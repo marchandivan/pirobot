@@ -1,19 +1,17 @@
 import os
 import sys
-from PIL import Image
 from threading import Timer
-from restapi.light import Light
-from restapi.camera import Camera
+
+from PIL import Image
 from eye_generator import EyeGenerator
+from restapi.camera import Camera
+from restapi.light import Light
+from restapi.motor import Motor
 from terminal import Terminal
 
 if sys.platform != "darwin":  # Mac OS
-    from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC as Motor
-    motor = Motor(1, 0x10)
     from lcd.LCD_2inch import LCD_2inch
 else:
-    from unittest.mock import Mock
-    motor = Mock()
     from lcd.LCD_Mock import LCD_2inch
 
 # LCD & terminal Initialization
@@ -29,10 +27,7 @@ terminal.text("Starting...")
 
 # Motor Initialization
 terminal.text("Motor setup...")
-motor.set_addr(0x10)
-motor.set_encoder_enable(motor.ALL)
-motor.set_encoder_reduction_ratio(motor.ALL, 43)
-motor.set_moter_pwm_frequency(1000)
+Motor.setup()
 
 # Light
 terminal.text("Light setup...")
@@ -58,20 +53,11 @@ class Controller:
 
     @staticmethod
     def stop():
-        motor.motor_stop(motor.ALL)
-        Controller._cancel_event()
-
-    @staticmethod
-    def emergency_stop():
-        Motor.emergency_stop()
-        Controller._cancel_event()
+        Motor.stop ()
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration):
-        motor.motor_movement([motor.M1], motor.CW if right_orientation == "F" else motor.CCW, right_speed)
-        motor.motor_movement([motor.M2], motor.CW if left_orientation == "F" else motor.CCW, left_speed)
-        Controller._cancel_event() # Cancel any previously running events
-        Controller._schedule_event(duration, Controller.stop)
+        Motor.move(left_orientation, left_speed, right_orientation, right_speed, duration)
 
     @staticmethod
     def set_light(left_on, right_on):
