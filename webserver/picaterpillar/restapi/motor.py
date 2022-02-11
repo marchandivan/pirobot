@@ -30,8 +30,7 @@ class Motor:
     @staticmethod
     def setup():
         # Motor Initialization
-        Motor._iic_motor = DFRobot_DC_Motor_IIC(1, 0x10)
-        Motor._iic_motor.set_addr(0x10)
+        Motor._iic_motor = DFRobot_DC_Motor_IIC(1, 0x11)
         Motor._iic_motor.set_encoder_enable(DFRobot_DC_Motor_IIC.ALL)
         Motor._iic_motor.set_encoder_reduction_ratio(DFRobot_DC_Motor_IIC.ALL, 150)
         Motor._iic_motor.set_moter_pwm_frequency(1000)
