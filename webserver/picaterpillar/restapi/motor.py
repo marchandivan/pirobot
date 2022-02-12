@@ -1,5 +1,6 @@
 import sys
-from threading import Timer
+import time
+from threading import Timer, Semaphore
 if sys.platform == "darwin":  # Mac OS
     import unittest.mock as mock
 
@@ -61,6 +62,7 @@ class SpeedController(object):
 class Motor(object):
     Timers = []
     _iic_motor = None
+    _iic_semaphore = Semaphore()
 
     left_speed_controller = SpeedController()
     right_speed_controller = SpeedController()
@@ -94,15 +96,21 @@ class Motor(object):
 
     @staticmethod
     def _speed_control():
-        left_speed_rpm, right_speed_rpm = Motor._iic_motor.get_encoder_speed(DFRobot_DC_Motor_IIC.ALL)
-        Motor.right_speed_controller.update_dc(right_speed_rpm)
-        Motor.left_speed_controller.update_dc(left_speed_rpm)
+        try:
+            start = time.time()
+            Motor._iic_semaphore.acquire()
+            left_speed_rpm, right_speed_rpm = Motor._iic_motor.get_encoder_speed(DFRobot_DC_Motor_IIC.ALL)
+            Motor.right_speed_controller.update_dc(right_speed_rpm)
+            Motor.left_speed_controller.update_dc(left_speed_rpm)
 
-        right_direction = DFRobot_DC_Motor_IIC.CW if Motor.right_speed_controller.duty >= 0 else DFRobot_DC_Motor_IIC.CCW
-        left_direction = DFRobot_DC_Motor_IIC.CW if Motor.left_speed_controller.duty >= 0 else DFRobot_DC_Motor_IIC.CCW
-        Motor._iic_motor.motor_movement([DFRobot_DC_Motor_IIC.M2], right_direction, abs(Motor.right_speed_controller.duty))
-        Motor._iic_motor.motor_movement([DFRobot_DC_Motor_IIC.M1], left_direction, abs(Motor.left_speed_controller.duty))
-        Motor._schedule_event(SPEED_REFRESH_INTERVAL, Motor._speed_control)
+            right_direction = DFRobot_DC_Motor_IIC.CW if Motor.right_speed_controller.duty >= 0 else DFRobot_DC_Motor_IIC.CCW
+            left_direction = DFRobot_DC_Motor_IIC.CW if Motor.left_speed_controller.duty >= 0 else DFRobot_DC_Motor_IIC.CCW
+            Motor._iic_motor.motor_movement([DFRobot_DC_Motor_IIC.M2], right_direction, abs(Motor.right_speed_controller.duty))
+            Motor._iic_motor.motor_movement([DFRobot_DC_Motor_IIC.M1], left_direction, abs(Motor.left_speed_controller.duty))
+            Motor._schedule_event(SPEED_REFRESH_INTERVAL, Motor._speed_control)
+            print(f"Duration: {time.time() - start}")
+        finally:
+            Motor._iic_semaphore.release()
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration):
