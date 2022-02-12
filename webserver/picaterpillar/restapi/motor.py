@@ -165,7 +165,7 @@ class Motor(object):
 
     @staticmethod
     def move_to_target(x, y, speed, timeout):
-        orientation = 'F' if y >=0 else 'B'
+        orientation = 'F' if y >= 0 else 'B'
         if x == 0:
             Motor.move(left_orientation=orientation,
                        left_speed=speed,
@@ -176,7 +176,7 @@ class Motor(object):
         else:
             R = (y*y + x*x) / (2 * x)
             alpha = math.asin(y / R)
-            target_distance = R * alpha
+            target_distance = abs(R * alpha)
             d_left = 2 * R * alpha + (alpha * ROBOT_WIDTH) / 2000
             d_right = 2 * R * alpha - (alpha * ROBOT_WIDTH) / 2000
             if x > 0:
