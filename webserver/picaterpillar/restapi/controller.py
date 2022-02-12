@@ -56,8 +56,12 @@ class Controller(object):
         Motor.stop ()
 
     @staticmethod
-    def move(left_orientation, left_speed, right_orientation, right_speed, duration):
-        Motor.move(left_orientation, left_speed, right_orientation, right_speed, duration)
+    def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance):
+        Motor.move(left_orientation, left_speed, right_orientation, right_speed, duration, distance)
+
+    @staticmethod
+    def move_to_target(x, y, speed, timeout):
+        Motor.move_to_target(x, y, speed, timeout)
 
     @staticmethod
     def set_light(left_on, right_on):
@@ -111,5 +115,6 @@ class Controller(object):
     def serialize():
         return {
             'light': Light.serialize(),
-            'moods': EyeGenerator.get_moods()
+            'moods': EyeGenerator.get_moods(),
+            'motor': Motor.serialize()
         }

@@ -25,7 +25,24 @@ class RestApiViewSet(viewsets.ViewSet):
                             serializer.data['left_speed'],
                             serializer.data['right_orientation'],
                             serializer.data['right_speed'],
-                            serializer.data['duration'])
+                            serializer.data['duration'],
+                            serializer.data['distance'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def move_to_target(self, request):
+        serializer = serializers.MoveToTargetCommandSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.move_to_target(serializer.data['x'],
+                                      serializer.data['y'],
+                                      serializer.data['speed'],
+                                      serializer.data['timeout'])
             return Response({
                 'status': 'OK',
                 'robot': Controller.serialize()
