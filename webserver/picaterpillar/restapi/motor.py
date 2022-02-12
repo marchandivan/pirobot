@@ -17,7 +17,7 @@ if sys.platform == "darwin":  # Mac OS
     sys.modules['smbus'] = mock_smbus
 from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC
 
-SPEED_REFRESH_INTERVAL = 0.2 # in seconds
+SPEED_REFRESH_INTERVAL = 0.1 # in seconds
 MAX_RPM = 52
 
 class SpeedController(object):
@@ -25,7 +25,7 @@ class SpeedController(object):
     Inspired by
     https://www.instructables.com/Speed-Control-of-DC-Motor-Using-PID-Algorithm-STM3/
     """
-    KP = 0.8
+    KP = 0.4 * SPEED_REFRESH_INTERVAL
     KI = 100/MAX_RPM
     KD = 0.06 * SPEED_REFRESH_INTERVAL
 
@@ -107,8 +107,9 @@ class Motor(object):
             left_direction = DFRobot_DC_Motor_IIC.CW if Motor.left_speed_controller.duty >= 0 else DFRobot_DC_Motor_IIC.CCW
             Motor._iic_motor.motor_movement([DFRobot_DC_Motor_IIC.M2], right_direction, abs(Motor.right_speed_controller.duty))
             Motor._iic_motor.motor_movement([DFRobot_DC_Motor_IIC.M1], left_direction, abs(Motor.left_speed_controller.duty))
-            Motor._schedule_event(SPEED_REFRESH_INTERVAL, Motor._speed_control)
-            print(f"Duration: {time.time() - start}")
+            if Motor.right_speed_controller.ref_speed != 0 or Motor.left_speed_controller.ref_speed != 0:
+            	Motor._schedule_event(SPEED_REFRESH_INTERVAL, Motor._speed_control)
+            print(f"Duration: {time.time() - start} - {time.time()}")
         finally:
             Motor._iic_semaphore.release()
 
