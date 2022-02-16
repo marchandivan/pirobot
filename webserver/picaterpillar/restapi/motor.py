@@ -19,9 +19,9 @@ if sys.platform == "darwin":  # Mac OS
 from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC
 
 SPEED_REFRESH_INTERVAL = 0.1 # in seconds
-MAX_RPM = 52
+MAX_RPM = 42
 WHEEL_D = 75  # in mm
-ROBOT_WIDTH = 170 # in mm
+ROBOT_WIDTH = 560 # in mm
 TIMEOUT = 30 # in seconds
 
 class SpeedController(object):
@@ -101,7 +101,7 @@ class Motor(object):
         # Motor Initialization
         Motor._iic_motor = DFRobot_DC_Motor_IIC(1, 0x11)
         Motor._iic_motor.set_encoder_enable(DFRobot_DC_Motor_IIC.ALL)
-        Motor._iic_motor.set_encoder_reduction_ratio(DFRobot_DC_Motor_IIC.ALL, 150)
+        Motor._iic_motor.set_encoder_reduction_ratio(DFRobot_DC_Motor_IIC.ALL, 190)
         Motor._iic_motor.set_moter_pwm_frequency(1000)
 
     @staticmethod
@@ -177,15 +177,12 @@ class Motor(object):
             R = (y*y + x*x) / (2 * x)
             alpha = math.asin(y / R)
             target_distance = abs(R * alpha)
-            d_left = 2 * R * alpha + (alpha * ROBOT_WIDTH) / 2000
-            d_right = 2 * R * alpha - (alpha * ROBOT_WIDTH) / 2000
             if x > 0:
                 left_speed = speed
-                right_speed = speed * d_right / d_left
+                right_speed = speed * (R / (R + ROBOT_WIDTH / 1000))
             else:
                 right_speed = speed
-                left_speed = speed * d_left / d_right
-
+                left_speed = speed * (R / (R + ROBOT_WIDTH / 1000))
             Motor.move(left_orientation=orientation,
                        left_speed=left_speed,
                        right_orientation=orientation,
