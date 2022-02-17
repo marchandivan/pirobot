@@ -61,7 +61,8 @@ class Controller(object):
 
     @staticmethod
     def move_to_target(x, y, speed, timeout):
-        Motor.move_to_target(x, y, speed, timeout)
+        x_pos, y_pos = Camera.get_target_position(x, y)
+        Motor.move_to_target(x_pos, y_pos, speed, timeout)
 
     @staticmethod
     def set_light(left_on, right_on):
