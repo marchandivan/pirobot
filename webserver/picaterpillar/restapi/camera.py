@@ -1,15 +1,30 @@
 import io
+import math
 import sys
-import time
 import threading
+import time
 import traceback
 
-from restapi.motor import Motor
-# from restapi.models import Config
-
 import cv2
+import numpy as np
+from restapi.motor import Motor
+
+# from restapi.models import Config
 if sys.platform != "darwin":  # Mac OS
     import picamera
+
+
+# Calculate model to covert the position of a pixel to the physical position on the floor,
+# using measurements (distances & y_pos) & polynomial regression
+H = 70
+reference = dict(
+    distances=[d / 100 for d in [15, 20, 30, 40, 50, 60, 68, 80, 90, 120, 150, 180]],
+    y_pos=[100 - n for n in [100, 91.3, 79.2, 73.4, 69.9, 67.15, 65.6, 64.23, 62.86, 61.1, 59.9, 58.96]]
+)
+# Angle of the target
+alpha = np.arctan([d / H for d in reference['distances']])
+poly_coefficients = np.polyfit(reference['y_pos'], alpha, 3)
+max_y_pos = 42
 
 target = None
 camera_semaphore = threading.Semaphore()
@@ -176,6 +191,16 @@ class Camera(object):
     @staticmethod
     def select_target(x, y):
         CaptureDevice.target = [x, y]
+
+    @staticmethod
+    def get_target_position(x, y):
+        # Distance on y axis
+        a = 0
+        for n, p in enumerate(reversed(poly_coefficients)):
+            a += p * math.pow(min(max_y_pos, (100 - y)), n)
+        y_pos = H * math.tan(a)
+
+        return 0, y_pos
 
     @staticmethod
     def capture_image(resolution="1280x720"):

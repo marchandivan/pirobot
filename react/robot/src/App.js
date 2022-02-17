@@ -181,19 +181,20 @@ class App extends React.Component {
     }
 
     onMouseMove = (e) => {
-        this.setState({ mouse_x: 100 * (e.clientX - e.target.x + 1) / e.target.width,
-                              mouse_y: 100 * (e.clientY - e.target.y + 1) / e.target.height });
+        let client_rect = e.target.getBoundingClientRect()
+        this.setState({ mouse_x: 100 * (e.clientX - client_rect.x + 1) / client_rect.width,
+                              mouse_y: 100 * (e.clientY - client_rect.y + 1) / client_rect.height });
     }
 
     onStreamClick = (e) => {
         // Double click
         if (e.detail === 2) {
-            this.selectTarget();
+            this.moveToTarget();
         }
     }
 
-    selectTarget = (e) => {
-        let url = '/api/select_target/';
+    moveToTarget = (e) => {
+        let url = '/api/move_to_target/';
         if(process.env.REACT_APP_API_URL) {
             url = process.env.REACT_APP_API_URL + url;
         }
@@ -205,7 +206,9 @@ class App extends React.Component {
             },
             body: JSON.stringify({
                 x: this.state.mouse_x,
-                y: this.state.mouse_y
+                y: this.state.mouse_y,
+                speed: this.state.speed,
+                timeout: this.state.duration
             })
         })
             .then(response => response.json())
