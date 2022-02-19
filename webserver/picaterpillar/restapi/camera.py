@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from restapi.motor import Motor
 
-# from restapi.models import Config
+from restapi.models import Config
 if sys.platform != "darwin":  # Mac OS
     import picamera
 
@@ -159,7 +159,7 @@ class Camera(object):
 
     @staticmethod
     def stream():
-        config = {} # Config.get_config()
+        config = Config.get_config()
         if sys.platform == "darwin":
             capturing_device = "usb"
             resolution = '1280x720'

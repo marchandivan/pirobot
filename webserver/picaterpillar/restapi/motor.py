@@ -1,21 +1,6 @@
 import math
-import sys
 import time
 from threading import Timer, Semaphore
-if sys.platform == "darwin":  # Mac OS
-    import unittest.mock as mock
-
-    # Mock smbus (i2c) on Mac OS
-    mock_smbus_smbus = mock.Mock()
-    # mock_smbus_smbus.write_i2c_block_data = lambda *args: print("SMBus.write_i2c_block_data{}".format(args))
-    def __mock_read_i2c_block_data(*args):
-        # print("SMBus.read_i2c_block_data{}".format(args))
-        return bytes([0, 40])
-    mock_smbus_smbus.read_i2c_block_data = __mock_read_i2c_block_data
-    mock_smbus = mock.Mock()
-    mock_smbus.SMBus = mock.Mock(return_value=mock_smbus_smbus)
-
-    sys.modules['smbus'] = mock_smbus
 from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC
 
 SPEED_REFRESH_INTERVAL = 0.1 # in seconds

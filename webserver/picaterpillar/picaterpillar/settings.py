@@ -11,6 +11,22 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import sys
+
+if sys.platform == "darwin":  # Mac OS
+    import unittest.mock as mock
+
+    # Mock smbus (i2c) on Mac OS
+    mock_smbus_smbus = mock.Mock()
+    mock_smbus_smbus.write_i2c_block_data = lambda *args: print("SMBus.write_i2c_block_data{}".format(args))
+    def __mock_read_i2c_block_data(*args):
+        print("SMBus.read_i2c_block_data{}".format(args))
+        return bytes([0, 40])
+    mock_smbus_smbus.read_i2c_block_data = __mock_read_i2c_block_data
+    mock_smbus = mock.Mock()
+    mock_smbus.SMBus = mock.Mock(return_value=mock_smbus_smbus)
+
+    sys.modules['smbus'] = mock_smbus
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
