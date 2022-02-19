@@ -4,6 +4,7 @@ from threading import Timer
 
 from PIL import Image
 from eye_generator import EyeGenerator
+from restapi.arm import Arm
 from restapi.camera import Camera
 from restapi.light import Light
 from restapi.motor import Motor
@@ -32,6 +33,10 @@ Motor.setup()
 # Light
 terminal.text("Light setup...")
 Light.setup()
+
+# Arm
+terminal.text("Arm setup...")
+Arm.setup()
 
 terminal.text("Ready!")
 
@@ -112,10 +117,21 @@ class Controller(object):
             image = image.resize((lcd.height, lcd.width))
             lcd.ShowImage(image)
 
+    # Arm
+    @staticmethod
+    def move_arm(id, angle):
+        return Arm.move(id, angle)
+
+    @staticmethod
+    def move_arm_to_position(position_id):
+        return Arm.move_to_position(position_id)
+
+
     @staticmethod
     def serialize():
         return {
             'light': Light.serialize(),
             'moods': EyeGenerator.get_moods(),
-            'motor': Motor.serialize()
+            'motor': Motor.serialize(),
+            'arm': Arm.serialize()
         }

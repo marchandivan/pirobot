@@ -1,12 +1,11 @@
+from django.http import StreamingHttpResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-
+from rest_framework.response import Response
+from restapi import serializers
 from restapi.camera import Camera
 from restapi.controller import Controller
-from restapi import serializers
-from rest_framework.response import Response
 
-from django.http import StreamingHttpResponse
 
 class RestApiViewSet(viewsets.ViewSet):
 
@@ -185,3 +184,44 @@ class RestApiViewSet(viewsets.ViewSet):
     def stream(self, request):
         return StreamingHttpResponse(Camera.stream(),
                                      content_type="multipart/x-mixed-replace;boundary=FRAME")
+
+    # Arm
+    @action(detail=False, methods=['post'])
+    def move_arm(self, request):
+        serializer = serializers.MoveArmCommandSerializer(data=request.data)
+        if serializer.is_valid():
+            success, message = Controller.move_arm(serializer.data['id'],
+                                                   serializer.data['angle'])
+            if success:
+                return Response({
+                    'status': 'OK',
+                    'robot': Controller.serialize()
+                    })
+            else:
+                return Response({
+                    'status': 'KO',
+                    'message': message
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def move_arm_to_position(self, request):
+        serializer = serializers.MoveArmToPositionCommandSerializer(data=request.data)
+        if serializer.is_valid():
+            success, message = Controller.move_arm_to_position(serializer.data['position_id'])
+            if success:
+                return Response({
+                    'status': 'OK',
+                    'robot': Controller.serialize()
+                    })
+            else:
+                return Response({
+                    'status': 'KO',
+                    'message': message
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+

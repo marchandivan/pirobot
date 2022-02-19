@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from eye_generator import EyeGenerator
-
+from restapi.arm import Arm
 
 class MoveCommandSerializer(serializers.Serializer):
     left_orientation = serializers.ChoiceField(choices=['F', 'B'])
@@ -47,3 +47,12 @@ class SetMoodSerializer(serializers.Serializer):
 
 class SetLcdPictureSerializer(serializers.Serializer):
     name = serializers.CharField()
+
+
+class MoveArmCommandSerializer(serializers.Serializer):
+    id = serializers.ChoiceField(choices=Arm.get_ids())
+    angle = serializers.IntegerField()
+
+
+class MoveArmToPositionCommandSerializer(serializers.Serializer):
+    position_id = serializers.ChoiceField(choices=Arm.get_position_ids())
