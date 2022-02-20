@@ -65,6 +65,14 @@ PRESET_POSITIONS = {
             {"id": FOREARM, "angle": 180},
         ]
     },
+    "grab": {
+        "name": "Grab From Floor",
+        "moves": [
+            {"id": SHOULDER, "angle": 42},
+            {"id": WRIST, "angle": 160},
+            {"id": FOREARM, "angle": 120},
+        ]
+    },
     "drop": {
         "name": "Drop on platform",
         "moves": [
@@ -156,5 +164,8 @@ class Arm(object):
     @staticmethod
     def serialize():
         return {
-            "position": Arm.position
+            "position": Arm.position,
+            "ids": Arm.get_ids(),
+            "position_ids": Arm.get_position_ids(),
+            "config": SERVOS_CONFIG
         }

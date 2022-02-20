@@ -1,9 +1,11 @@
 import Grid from '@material-ui/core/Grid';
 import Slider from '@material-ui/core/Slider';
+import Stack from '@mui/material/Stack';
 import TextField from "@material-ui/core/TextField";
 import React from 'react';
 import './App.css';
 import DirectionCross from "./DirectionCross";
+import ArmControl from "./ArmContorl"
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import IconButton from "@material-ui/core/IconButton";
 import BackspaceIcon from '@mui/icons-material/Backspace';
@@ -53,7 +55,7 @@ class App extends React.Component {
             left_on: false,
             right_on: false,
             speed: 100,
-            duration: 2.0,
+            duration: 10.0,
             min_duration: 0.2,
             max_duration: 30.0,
             duration_step: 0.2,
@@ -61,8 +63,12 @@ class App extends React.Component {
             mouse_y: 0,
             lcd_brightness: 100,
             mood: "relaxed",
-            moods: []
-        };
+            moods: [],
+            arm_position_claw: 0,
+            arm_position_wrist: 0,
+            arm_position_forearm: 0,
+            arm_position_shoulder: 0
+        }
         this.key_down = {};
     }
 
@@ -88,7 +94,6 @@ class App extends React.Component {
       }
 
     keyDown = (event) => {
-        console.log("Key Down " + event.keyCode)
         this.key_down[event.keyCode] = true;
         if (event.keyCode === KEY_ESC || event.keyCode === KEY_SPACE) {
             this.stopRobot()
@@ -117,7 +122,6 @@ class App extends React.Component {
     }
 
     keyUp = (event) => {
-        console.log("Key Up " + event.keyCode)
         this.key_down[event.keyCode] = false;
     }
 
@@ -149,11 +153,23 @@ class App extends React.Component {
     }
 
     updateState = (data) => {
-        this.setState({
-            left_on: data.robot.light.left_on,
-            right_on: data.robot.light.right_on,
-            moods: data.robot.moods
-        });
+        if (data.status === "OK") {
+            this.setState({
+                left_on: data.robot.light.left_on,
+                right_on: data.robot.light.right_on,
+                moods: data.robot.moods,
+                arm_position_claw: data.robot.arm.position.claw,
+                arm_max_angle_claw: data.robot.arm.config.claw.max_angle,
+                arm_position_wrist: data.robot.arm.position.wrist,
+                arm_max_angle_wrist: data.robot.arm.config.wrist.max_angle,
+                arm_position_forearm: data.robot.arm.position.forearm,
+                arm_max_angle_forearm: data.robot.arm.config.forearm.max_angle,
+                arm_position_shoulder: data.robot.arm.position.shoulder,
+                arm_max_angle_shoulder: data.robot.arm.config.shoulder.max_angle,
+            });
+        } else {
+            console.error(data.message);
+        }
     }
 
     updateSpeed = (event, value) => {
@@ -512,6 +528,52 @@ class App extends React.Component {
             });
     }
 
+    moveArm = (id, event, value) => {
+        let url = '/api/move_arm/';
+        if(process.env.REACT_APP_API_URL) {
+            url = process.env.REACT_APP_API_URL + url;
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: id,
+                angle: value
+            })
+        })
+            .then(response => response.json())
+            .then(data => this.updateState(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+    moveArmToPosition = (position_id) => {
+        console.log(position_id)
+        let url = '/api/move_arm_to_position/';
+        if(process.env.REACT_APP_API_URL) {
+            url = process.env.REACT_APP_API_URL + url;
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                position_id: position_id
+            })
+        })
+            .then(response => response.json())
+            .then(data => this.updateState(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
     render() {
         return (
             <div className="App" >
@@ -612,29 +674,27 @@ class App extends React.Component {
                             </Grid>
                         </Grid>
                         <Grid item xl={2} md={2} sm={2} xs={12}>
-                            <Grid item xl={1} md={1} sm={1} xs={12}/>
                             <Grid item xl={10} md={10} sm={10} xs={12}>
-                                <p>
-                                    Speed
-                                </p>
-                                <Slider
-                                    value={this.state.speed}
-                                    valueLabelDisplay="on"
-                                    min={0}
-                                    max={100}
-                                    onChange={this.updateSpeed}
-                                    aria-label="Speed Slider" />
-                                <p>
-                                    Duration
-                                </p>
-                                <Slider
-                                    value={this.state.duration}
-                                    valueLabelDisplay="on"
-                                    min={this.state.min_duration}
-                                    max={this.state.max_duration}
-                                    step={this.state.duration_step}
-                                    onChange={this.updateDuration}
-                                    aria-label="Duration Slider" />
+                                <p>Speed - Timeout</p>
+                                <Stack spacing={1} direction="row" alignItems="center">
+                                    <Slider
+                                        value={this.state.speed}
+                                        min={0}
+                                        max={100}
+                                        onChange={this.updateSpeed}
+                                        aria-label="Speed Slider" />
+                                    <p style={{fontSize: 16, width: 70}}>{this.state.speed}%</p>
+                                </Stack>
+                                <Stack spacing={1} direction="row" alignItems="center">
+                                    <Slider
+                                        value={this.state.duration}
+                                        min={this.state.min_duration}
+                                        max={this.state.max_duration}
+                                        step={this.state.duration_step}
+                                        onChange={this.updateDuration}
+                                        aria-label="Duration Slider" />
+                                    <p style={{fontSize: 16, width: 70}}>{this.state.duration}s</p>
+                                </Stack>
                                 <DirectionCross
                                     forward_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD)}
                                     forward_slight_left_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD_SLIGHT_LEFT)}
@@ -652,6 +712,26 @@ class App extends React.Component {
                                 />
                             </Grid>
                             <Grid item xl={1} md={1} sm={1} xs={12}/>
+                            <Grid item xl={1} md={1} sm={1} xs={12}/>
+                            <Divider/>
+                            <Grid item xl={10} md={10} sm={10} xs={12}>
+                                <ArmControl
+                                    position_claw={this.state.arm_position_claw}
+                                    move_claw_callback={this.moveArm.bind(this, "claw")}
+                                    close_claw_callback={this.moveArm.bind(this, "claw", null, 90)}
+                                    open_claw_callback={this.moveArm.bind(this, "claw", null, 0)}
+                                    position_wrist={this.state.arm_position_wrist}
+                                    max_angle_wrist={this.state.arm_max_angle_wrist}
+                                    move_wrist_callback={this.moveArm.bind(this, "wrist")}
+                                    position_forearm={this.state.arm_position_forearm}
+                                    max_angle_forearm={this.state.arm_max_angle_forearm}
+                                    move_forearm_callback={this.moveArm.bind(this, "forearm")}
+                                    position_shoulder={this.state.arm_position_shoulder}
+                                    max_angle_shoulder={this.state.arm_max_angle_shoulder}
+                                    move_shoulder_callback={this.moveArm.bind(this, "shoulder")}
+                                    move_to_position_callback={this.moveArmToPosition}
+                                />
+                            </Grid>
                         </Grid>
                     </Grid>
                 </header>
