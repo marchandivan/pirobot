@@ -46,7 +46,7 @@ PRESET_POSITIONS = {
         "moves": [
             {"id": FOREARM, "angle": 60},
             {"id": WRIST, "angle": 60},
-            {"id": SHOULDER, "angle": 27},
+            {"id": SHOULDER, "angle": 42},
         ]
     },
     "backup_camera": {
@@ -54,13 +54,13 @@ PRESET_POSITIONS = {
         "moves": [
             {"id": FOREARM, "angle": 15},
             {"id": WRIST, "angle": 180},
-            {"id": SHOULDER, "angle": 27},
+            {"id": SHOULDER, "angle": 42},
         ]
     },
     "pickup": {
         "name": "Pickup From Floor",
         "moves": [
-            {"id": SHOULDER, "angle": 27},
+            {"id": SHOULDER, "angle": 42},
             {"id": WRIST, "angle": 15},
             {"id": FOREARM, "angle": 180},
         ]
@@ -68,9 +68,9 @@ PRESET_POSITIONS = {
     "drop": {
         "name": "Drop on platform",
         "moves": [
-            {"id": SHOULDER, "angle": 27},
-            {"id": WRIST, "angle": 180},
-            {"id": FOREARM, "angle": 15},
+            {"id": FOREARM, "angle": 85},
+            {"id": WRIST, "angle": 120},
+            {"id": SHOULDER, "angle": 215},
         ]
     },
 }
@@ -87,13 +87,14 @@ class Arm(object):
 
     @staticmethod
     def setup():
-        Arm.io_board = Board(1, 0x10)  # Select i2c bus 1, set address to 0x10
+        Arm.io_board = Board(1, 0x12)  # Select i2c bus 1, set address to 0x10
         Arm.servo_controller = Servo(Arm.io_board)
         if Arm.io_board.begin() != Arm.io_board.STA_OK:    # Board begin and check board status
             print("Unable to connect to IO board")
         else:
             Arm.servo_controller.begin()  # servo control begin
         Arm.move_to_position("zero")
+        Arm.move_to_position("backup_camera")
 
     @staticmethod
     def _in_exclusion_zone(id, angle):
