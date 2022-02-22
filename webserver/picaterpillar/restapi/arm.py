@@ -46,7 +46,7 @@ DEFAULT_EXCLUSION_ZONES = [
         SHOULDER: [43, 180]
     },
     {
-        FOREARM: [0, 170],
+        FOREARM: [171, 180],
         SHOULDER: [42, 42]
     },
 ]
