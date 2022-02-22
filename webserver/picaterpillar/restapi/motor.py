@@ -115,6 +115,9 @@ class Motor(object):
 
     @staticmethod
     def _speed_control():
+        # Were motors stopped?
+        if Motor.right_speed_controller.previous_ts == 0:
+            return
         try:
             Motor._iic_semaphore.acquire()
             left_speed_rpm, right_speed_rpm = Motor._iic_motor.get_encoder_speed(DFRobot_DC_Motor_IIC.ALL)
@@ -135,8 +138,7 @@ class Motor(object):
                 Motor._iic_motor.motor_movement([DFRobot_DC_Motor_IIC.M2], right_direction, abs(Motor.right_speed_controller.duty))
                 Motor._iic_motor.motor_movement([DFRobot_DC_Motor_IIC.M1], left_direction, abs(Motor.left_speed_controller.duty))
 
-                if Motor.right_speed_controller.ref_speed != 0 or Motor.left_speed_controller.ref_speed != 0:
-                    Motor._schedule_event(SPEED_REFRESH_INTERVAL, Motor._speed_control)
+                Motor._schedule_event(SPEED_REFRESH_INTERVAL, Motor._speed_control)
         finally:
             Motor._iic_semaphore.release()
 
