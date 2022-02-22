@@ -35,7 +35,7 @@ SERVOS_CONFIG = {
 DEFAULT_EXCLUSION_ZONES = [
     {
         FOREARM: [100, 180],
-        SHOULDER: [127, 180]
+        SHOULDER: [127, 270]
     },
     {
         FOREARM: [145, 180],
@@ -44,6 +44,10 @@ DEFAULT_EXCLUSION_ZONES = [
     {
         FOREARM: [145, 180],
         SHOULDER: [43, 180]
+    },
+    {
+        FOREARM: [0, 170],
+        SHOULDER: [42, 42]
     },
 ]
 EXCLUSION_ZONES = Config.get("exclusion_zones", DEFAULT_EXCLUSION_ZONES)
@@ -70,7 +74,7 @@ PRESET_POSITIONS = {
         "moves": [
             {"id": SHOULDER, "angle": 42},
             {"id": WRIST, "angle": 15},
-            {"id": FOREARM, "angle": 180},
+            {"id": FOREARM, "angle": 170},
         ]
     },
     "grab": {
@@ -149,11 +153,11 @@ class Arm(object):
             return False, "Moving to an exclusion zone"
 
         Arm.servo_controller.move(servo_config.get("id"), angle * 180 / max_angle)
-        Arm.position[id] = angle
 
         if wait:
             speed = servo_config.get('speed')
-            time.sleep(speed * angle / 60)
+            time.sleep(1.5 * speed * abs(Arm.position[id] - angle) / 60)
+        Arm.position[id] = angle
         return  True, "Success"
 
     @staticmethod
