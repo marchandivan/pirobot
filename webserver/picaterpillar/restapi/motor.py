@@ -68,6 +68,7 @@ class SpeedController(object):
             speed_rpm=self.speed_rpm,
         )
 
+
 class Motor(object):
     Timers = []
     _iic_motor = None
@@ -104,9 +105,13 @@ class Motor(object):
     @staticmethod
     def stop():
         Motor._cancel_event()
-        Motor._iic_motor.motor_stop(DFRobot_DC_Motor_IIC.ALL)
-        Motor.left_speed_controller.clear()
-        Motor.right_speed_controller.clear()
+        try:
+            Motor._iic_semaphore.acquire()
+            Motor._iic_motor.motor_stop(DFRobot_DC_Motor_IIC.ALL)
+            Motor.left_speed_controller.clear()
+            Motor.right_speed_controller.clear()
+        finally:
+            Motor._iic_semaphore.release()
 
     @staticmethod
     def _speed_control():
@@ -139,7 +144,7 @@ class Motor(object):
     def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance):
         right_ref_speed = (right_speed if right_orientation == "F" else -right_speed) * (MAX_RPM/100)
         left_ref_speed = (left_speed if left_orientation == "F" else -left_speed) * (MAX_RPM/100)
-        Motor._cancel_event() # Cancel any previously running events
+        Motor._cancel_event()  # Cancel any previously running events
 
         Motor.right_speed_controller.start(ref_speed=right_ref_speed)
         Motor.left_speed_controller.start(ref_speed=left_ref_speed)
