@@ -12,7 +12,7 @@ from restapi.motor import Motor
 from restapi.models import Config
 if sys.platform != "darwin":  # Mac OS
     import picamera
-
+    from picamera.array import PiRGBArray
 
 # Calculate model to covert the position of a pixel to the physical position on the floor,
 # using measurements (distances & y_pos) & polynomial regression
@@ -35,9 +35,8 @@ class CaptureDevice(object):
     target_img = None
     catpures = []
 
-    def __init__(self, resolution, framerate, capturing_device):
+    def __init__(self, resolution, capturing_device):
         self.capturing_device = capturing_device
-        self.framerate = framerate
         self.frame_counter = 0
         if self.capturing_device == "usb":  # USB Camera?
             self.device = cv2.VideoCapture(0)
@@ -46,7 +45,7 @@ class CaptureDevice(object):
             self.device.set(3, self.res_x)
             self.device.set(4, self.res_y)
         else:
-            self.device = picamera.PiCamera(resolution=resolution, framerate=framerate)
+            self.device = picamera.PiCamera(resolution=resolution)
 
     def _add_target(self, frame):
         rect_size = 70
@@ -72,7 +71,15 @@ class CaptureDevice(object):
 
         cv2.rectangle(frame, [center[0] - 10, center[1] - 10], [center[0] + 10, center[1] + 10], (0, 0, 255), 2)
 
-    def _add_lines(self, frame):
+    def add_overlay(self, frame, overlay_frame, pos, size):
+        resized = cv2.resize(overlay_frame,
+                             [int((size[0] * self.res_x) / 100), int((size[1] * self.res_y) / 100)],
+                             interpolation=cv2.INTER_AREA)
+        x_offset, y_offset = [int((pos[0] * self.res_x) / 100), int((pos[1] * self.res_y) / 100)]
+
+        frame[y_offset:y_offset + resized.shape[0], x_offset:x_offset + resized.shape[1]] = resized
+
+    def add_navigation_lines(self, frame):
         color = (0, 255, 0)
         thickness = 2
 
@@ -90,7 +97,7 @@ class CaptureDevice(object):
         cv2.line(frame, (center_x, center_y), (path_bottom, self.res_y), color, thickness)
         cv2.line(frame, (center_x, center_y), (self.res_x - path_bottom, self.res_y), color, thickness)
 
-    def _add_speed(self, frame):
+        # Speed and distance
         font = cv2.FONT_HERSHEY_SIMPLEX
         fontScale = 1
         color = (0, 255, 0)
@@ -115,11 +122,22 @@ class CaptureDevice(object):
         cv2.rectangle(frame, (self.res_x - 5, self.res_y - 50 - 200), (self.res_x - 5 - 40, self.res_y - 50 - 200 - int(motor_status['right']['duty'] * 2)), color, -1)
 
     def capture(self):
-        if self.capturing_device == "usb":
-            camera_semaphore.acquire()
-            ret, frame = self.device.read()
-            camera_semaphore.release()
-            return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        max_retries = 3
+        while max_retries > 0:
+            max_retries -= 1
+            try:
+                if self.capturing_device == "usb":
+                    camera_semaphore.acquire()
+                    ret, frame = self.device.read()
+                    camera_semaphore.release()
+                    return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+                else:  # picamera
+                    output = PiRGBArray(self.device)
+                    camera.capture(output, format="rgb")
+                    return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
+            except:
+                print ("Failed to capture image, retrying")
+                time.sleep(0.1)
 
     def capture_continuous(self, stream, format='jpeg'):
         if self.capturing_device == "usb":
@@ -132,13 +150,11 @@ class CaptureDevice(object):
                 #if CaptureDevice.target is not None:
                 #    self._add_target(frame)
 
-                self._add_lines(frame)
-                self._add_speed(frame)
+                self.add_navigation_lines(frame)
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
 
                 yield cv2.imencode('.jpg', rgb)[1].tostring()
-                time.sleep(1.0 // self.framerate)
         else:
             for frame in self.device.capture_continuous(stream,
                                                         format=format,
@@ -155,24 +171,43 @@ class CaptureDevice(object):
 
 class Camera(object):
     streaming = False
-    capture_device = None
+    front_capture_device = None
+    back_capture_device = None
 
     @staticmethod
     def stream():
         config = Config.get_config()
         if sys.platform == "darwin":
-            capturing_device = "usb"
-            resolution = '1280x720'
+            front_capturing_device = "usb"
+            front_resolution = '1280x720'
         else:
-            capturing_device = config.get('capturing_device', 'usb')
-            resolution = config.get('capturing_resolution', '1280x720')
-        Camera.capture_device = CaptureDevice(resolution=resolution,
-                                              framerate=int(config.get('capturing_framerate', 5)),
-                                              capturing_device=capturing_device)
+            front_capturing_device = config.get('front_capturing_device', 'usb')
+            front_resolution = config.get('front_capturing_resolution', '1280x720')
+            back_capturing_device = config.get('back_capturing_device', 'picamera')
+            back_resolution = config.get('back_capturing_resolution', '640x480')
+        Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
+                                                    capturing_device=front_capturing_device)
+        if sys.platform == "darwin":
+            Camera.back_capture_device = Camera.front_capture_device
+        else:
+            Camera.front_capture_device = CaptureDevice(resolution=back_resolution,
+                                                        capturing_device=back_capturing_device)
+
+        framerate = int(config.get('capturing_framerate', 5))
         stream = io.BytesIO()
         try:
             Camera.streaming = True
-            for frame in Camera.capture_device.capture_continuous(stream, format='jpeg'):
+            while Camera.streaming:
+                front_frame = Camera.front_capture_device.capture()
+                back_frame = Camera.back_capture_device.capture()
+
+                # Navigation
+                Camera.front_capture_device.add_navigation_lines(front_frame)
+
+                # Overlay backup camera
+                Camera.front_capture_device.add_overlay(front_frame, back_frame, [75, 0], [25, 25])
+
+                frame = cv2.imencode('.jpg', front_frame)[1].tostring()
                 stream.truncate()
                 stream.seek(0)
                 yield "--FRAME\r\n"
@@ -181,12 +216,13 @@ class Camera(object):
                 yield "\r\n"
                 yield frame
                 yield "\r\n"
+                time.sleep(1.0 // framerate)
         except Exception as e:
             traceback.print_exc()
         finally:
-            Camera.capture_device.close()
+            Camera.front_capture_device.close()
             Camera.streaming = False
-            Camera.capture_device = None
+            Camera.front_capture_device = None
 
     @staticmethod
     def select_target(x, y):
@@ -204,8 +240,8 @@ class Camera(object):
 
     @staticmethod
     def capture_image(resolution="1280x720"):
-        if Camera.capture_device is not None:
-            return Camera.capture_device.capture()
+        if Camera.front_capture_device is not None:
+            return Camera.front_capture_device.capture()
         else:
             capture_device = CaptureDevice(resolution=resolution,
                                            framerate=5,
