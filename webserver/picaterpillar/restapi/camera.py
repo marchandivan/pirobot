@@ -133,11 +133,12 @@ class CaptureDevice(object):
                     return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
                 else:  # picamera
                     output = PiRGBArray(self.device)
-                    camera.capture(output, format="rgb")
+                    self.device.capture(output, format="rgb")
                     return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
             except:
                 print ("Failed to capture image, retrying")
                 time.sleep(0.1)
+                raise
 
     def capture_continuous(self, stream, format='jpeg'):
         if self.capturing_device == "usb":
@@ -190,8 +191,8 @@ class Camera(object):
         if sys.platform == "darwin":
             Camera.back_capture_device = Camera.front_capture_device
         else:
-            Camera.front_capture_device = CaptureDevice(resolution=back_resolution,
-                                                        capturing_device=back_capturing_device)
+            Camera.back_capture_device = CaptureDevice(resolution=back_resolution,
+                                                       capturing_device=back_capturing_device)
 
         framerate = int(config.get('capturing_framerate', 5))
         stream = io.BytesIO()
