@@ -73,7 +73,7 @@ PRESET_POSITIONS = {
         "name": "Pickup From Floor",
         "moves": [
             {"id": SHOULDER, "angle": 42},
-            {"id": WRIST, "angle": 15},
+            {"id": WRIST, "angle": 30},
             {"id": FOREARM, "angle": 170},
         ]
     },
