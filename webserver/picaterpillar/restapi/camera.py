@@ -199,32 +199,36 @@ class Camera(object):
         stream = io.BytesIO()
         try:
             Camera.streaming = True
+            frame_delay = 1.0 // framerate
+            last_frame_ts = 0
             while Camera.streaming:
                 front_frame = Camera.front_capture_device.capture()
                 back_frame = Camera.back_capture_device.capture()
 
-                # Navigation
-                Camera.front_capture_device.add_navigation_lines(front_frame)
+                if time.time() > last_frame_ts + frame_delay:
+                    # Navigation
+                    Camera.front_capture_device.add_navigation_lines(front_frame)
 
-                # Overlay backup camera
-                Camera.front_capture_device.add_overlay(front_frame, back_frame, [75, 0], [25, 25])
+                    # Overlay backup camera
+                    Camera.front_capture_device.add_overlay(front_frame, back_frame, [75, 0], [25, 25])
 
-                frame = cv2.imencode('.jpg', front_frame)[1].tostring()
-                stream.truncate()
-                stream.seek(0)
-                yield "--FRAME\r\n"
-                yield "Content-Type: image/jpeg\r\n"
-                yield "Content-Length: %i\r\n" % len(frame)
-                yield "\r\n"
-                yield frame
-                yield "\r\n"
-                time.sleep(1.0 // framerate)
+                    frame = cv2.imencode('.jpg', front_frame)[1].tostring()
+                    stream.truncate()
+                    stream.seek(0)
+                    yield "--FRAME\r\n"
+                    yield "Content-Type: image/jpeg\r\n"
+                    yield "Content-Length: %i\r\n" % len(frame)
+                    yield "\r\n"
+                    yield frame
+                    yield "\r\n"
         except Exception as e:
             traceback.print_exc()
         finally:
             Camera.front_capture_device.close()
-            Camera.streaming = False
             Camera.front_capture_device = None
+            Camera.back_capture_device.close()
+            Camera.back_capture_device = None
+            Camera.streaming = False
 
     @staticmethod
     def select_target(x, y):
