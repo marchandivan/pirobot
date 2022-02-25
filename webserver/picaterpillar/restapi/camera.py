@@ -137,6 +137,7 @@ class CaptureDevice(object):
                     return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
             except:
                 print ("Failed to capture image, retrying")
+                traceback.print_exc()
                 time.sleep(0.1)
                 raise
 
@@ -245,7 +246,6 @@ class Camera(object):
             return Camera.front_capture_device.capture()
         else:
             capture_device = CaptureDevice(resolution=resolution,
-                                           framerate=5,
                                            capturing_device="usb")
             image = capture_device.capture()
             capture_device.close()
