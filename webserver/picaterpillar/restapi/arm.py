@@ -113,7 +113,6 @@ class Arm(object):
             print("Unable to connect to IO board")
         else:
             Arm.servo_controller.begin()  # servo control begin
-        Arm.move_to_position("zero")
         Arm.move_to_position("backup_camera")
 
     @staticmethod
