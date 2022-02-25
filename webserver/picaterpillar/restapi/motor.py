@@ -3,11 +3,11 @@ import time
 from threading import Timer, Semaphore
 from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC
 
-SPEED_REFRESH_INTERVAL = 0.1 # in seconds
+SPEED_REFRESH_INTERVAL = 0.1  # in seconds
 MAX_RPM = 42
 WHEEL_D = 75  # in mm
-ROBOT_WIDTH = 560 # in mm
-TIMEOUT = 30 # in seconds
+ROBOT_WIDTH = 560  # in mm
+TIMEOUT = 30  # in seconds
 
 class SpeedController(object):
     """
@@ -15,7 +15,7 @@ class SpeedController(object):
     https://www.instructables.com/Speed-Control-of-DC-Motor-Using-PID-Algorithm-STM3/
     """
     KP = 1.0
-    KI = 100/MAX_RPM
+    KI = 100 / MAX_RPM
     KD = 0.1 * SPEED_REFRESH_INTERVAL
 
     def __init__(self, interval):
@@ -130,7 +130,9 @@ class Motor(object):
 
             # Reached target distance, if any?
             if Motor.target_distance is not None and Motor.abs_distance > Motor.target_distance:
-                Motor.stop()
+                Motor._iic_motor.motor_stop(DFRobot_DC_Motor_IIC.ALL)
+                Motor.left_speed_controller.clear()
+                Motor.right_speed_controller.clear()
                 Motor.target_distance = None
             else:
                 right_direction = DFRobot_DC_Motor_IIC.CW if Motor.right_speed_controller.duty >= 0 else DFRobot_DC_Motor_IIC.CCW
