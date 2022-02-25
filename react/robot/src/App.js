@@ -63,7 +63,7 @@ class App extends React.Component {
             mouse_y: 0,
             lcd_brightness: 100,
             mood: "relaxed",
-            moods: [],
+            moods: ["relaxed"],
             arm_position_claw: 0,
             arm_position_wrist: 0,
             arm_position_forearm: 0,
@@ -528,7 +528,7 @@ class App extends React.Component {
             });
     }
 
-    moveArm = (id, event, value) => {
+    moveArm = (id, value) => {
         let url = '/api/move_arm/';
         if(process.env.REACT_APP_API_URL) {
             url = process.env.REACT_APP_API_URL + url;
@@ -640,7 +640,7 @@ class App extends React.Component {
                                   >
                                     {
                                         this.state.moods.map((mood) =>
-                                        <MenuItem value={mood}>{mood}</MenuItem>)
+                                        <MenuItem key={mood} value={mood}>{mood}</MenuItem>)
                                     }
                                   </Select>
                                 </Grid>
@@ -717,9 +717,8 @@ class App extends React.Component {
                             <Grid item xl={10} md={10} sm={10} xs={12}>
                                 <ArmControl
                                     position_claw={this.state.arm_position_claw}
+                                    max_angle_claw={150}
                                     move_claw_callback={this.moveArm.bind(this, "claw")}
-                                    close_claw_callback={this.moveArm.bind(this, "claw", null, 90)}
-                                    open_claw_callback={this.moveArm.bind(this, "claw", null, 0)}
                                     position_wrist={this.state.arm_position_wrist}
                                     max_angle_wrist={this.state.arm_max_angle_wrist}
                                     move_wrist_callback={this.moveArm.bind(this, "wrist")}
