@@ -4,13 +4,12 @@ import Stack from '@mui/material/Stack';
 import TextField from "@material-ui/core/TextField";
 import React from 'react';
 import './App.css';
-import DirectionCross from "./DirectionCross";
 import ArmControl from "./ArmContorl"
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import DirectionCross from "./DirectionCross";
+import LightControl from "./LightControl"
+import VideoStreamControl from "./VideoStreamControl";
 import IconButton from "@material-ui/core/IconButton";
 import BackspaceIcon from '@mui/icons-material/Backspace';
-import FlashlightOnIcon from '@mui/icons-material/FlashlightOn';
-import FlashlightOffIcon from '@mui/icons-material/FlashlightOff';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import BrightnessHighIcon from '@mui/icons-material/BrightnessHigh';
 import BrightnessMediumIcon from '@mui/icons-material/BrightnessMedium';
@@ -54,6 +53,7 @@ class App extends React.Component {
         this.state = {
             left_on: false,
             right_on: false,
+            arm_on: false,
             speed: 100,
             duration: 10.0,
             min_duration: 0.2,
@@ -61,6 +61,8 @@ class App extends React.Component {
             duration_step: 0.2,
             mouse_x: 0,
             mouse_y: 0,
+            selected_camera: "front",
+            stream_overlay: true,
             lcd_brightness: 100,
             mood: "relaxed",
             moods: ["relaxed"],
@@ -157,7 +159,11 @@ class App extends React.Component {
             this.setState({
                 left_on: data.robot.light.left_on,
                 right_on: data.robot.light.right_on,
+                arm_on: data.robot.light.arm_on,
                 moods: data.robot.moods,
+                streaming: data.robot.camera.streaming,
+                selected_camera: data.robot.camera.selected_camera,
+                stream_overlay: data.robot.camera.overlay,
                 arm_position_claw: data.robot.arm.position.claw,
                 arm_max_angle_claw: data.robot.arm.config.claw.max_angle,
                 arm_position_wrist: data.robot.arm.position.wrist,
@@ -183,11 +189,6 @@ class App extends React.Component {
             duration: value
         })
     }
-
-    switchFrontLight = (event, checked) => {
-        this.setLight (checked, checked);
-    }
-
 
     keyPress = (e) => {
         if(e.keyCode === 13 && e.target.value !== ""){
@@ -388,7 +389,7 @@ class App extends React.Component {
             });
     }
 
-    setLight = (left_on, right_on) => {
+    setLight = (left_on, right_on, arm_on) => {
         let url = '/api/set_light/';
         if(process.env.REACT_APP_API_URL) {
             url = process.env.REACT_APP_API_URL + url;
@@ -401,7 +402,31 @@ class App extends React.Component {
             },
             body: JSON.stringify({
                 left_on: left_on,
-                right_on: right_on
+                right_on: right_on,
+                arm_on: arm_on
+            })
+        })
+            .then(response => response.json())
+            .then(data => this.updateState(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+    setupStream = (selected_camera, overlay) => {
+        let url = '/api/stream_setup/';
+        if(process.env.REACT_APP_API_URL) {
+            url = process.env.REACT_APP_API_URL + url;
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                selected_camera: selected_camera,
+                overlay: overlay
             })
         })
             .then(response => response.json())
@@ -580,20 +605,14 @@ class App extends React.Component {
                 <header className="App-header">
                     <Grid container spacing={0} direction="row" justifyContent="center" alignItems="center">
                         <Grid item xl={2} md={2} sm={2} xs={12}>
-                            <Grid container spacing={2}>
-                                <Grid item xl={12} md={12} sm={12} xs={12}>
-                                    <p>
-                                        Front Light
-                                    </p>
-                                </Grid>
-                                <Grid item xl={4} md={4} sm={4} xs={4}/>
-                                <Grid item xl={2} md={2} sm={2} xs={2}>
-                                    <IconButton onClick={this.setLight.bind(this, false, false)}><FlashlightOffIcon/></IconButton>
-                                </Grid>
-                                <Grid item xl={2} md={2} sm={2} xs={2}>
-                                    <IconButton onClick={this.setLight.bind(this, true, true)}><FlashlightOnIcon/></IconButton>
-                                </Grid>
-                            </Grid>
+                            <Grid item xl={12} md={12} sm={12} xs={12}>
+                                <LightControl
+                                    set_light_callback={this.setLight}
+                                    left_on={this.state.left_on}
+                                    right_on={this.state.right_on}
+                                    arm_on={this.state.arm_on}
+                                />
+                             </Grid>
                             <Divider/>
                             <Grid container>
                                 <Grid item xl={12} md={12} sm={12} xs={12}>
@@ -660,18 +679,14 @@ class App extends React.Component {
                             </Grid>
                         </Grid>
                         <Grid item xl={8} md={8} sm={8} xs={12}>
-                            <Grid item xl={12} md={12} sm={12} xs={12}>
-                                <img
-                                    src={(process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : "") + "/api/stream/"}
-                                    width="95%"
-                                    alt="Camera Feed"
-                                    onMouseMove={this.onMouseMove}
-                                    onClick={this.onStreamClick}
-                                />
-                            </Grid>
-                            <Grid item xl={12} md={12} sm={12} xs={12}>
-                              <IconButton onClick={this.captureImage}><CameraAltIcon/></IconButton>
-                            </Grid>
+                            <VideoStreamControl
+                                onMouseMove={this.onMouseMove}
+                                onClick={this.onStreamClick}
+                                capture_image_callback={this.captureImage}
+                                stream_setup_callback={this.setupStream}
+                                selected_camera={this.state.selected_camera}
+                                overlay={this.state.stream_overlay}
+                            />
                         </Grid>
                         <Grid item xl={2} md={2} sm={2} xs={12}>
                             <Grid item xl={10} md={10} sm={10} xs={12}>

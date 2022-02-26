@@ -35,11 +35,11 @@ class CaptureDevice(object):
     target_img = None
     catpures = []
 
-    def __init__(self, resolution, capturing_device):
+    def __init__(self, resolution, capturing_device, device_id):
         self.capturing_device = capturing_device
         self.frame_counter = 0
         if self.capturing_device == "usb":  # USB Camera?
-            self.device = cv2.VideoCapture(1)
+            self.device = cv2.VideoCapture(device_id)
             self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
             self.res_x, self.res_y = resolution.split('x')
             self.res_x, self.res_y = int(self.res_x), int(self.res_y)
@@ -187,8 +187,10 @@ class CaptureDevice(object):
 
 class Camera(object):
     streaming = False
+    overlay = True
+    selected_camera = "front"
     front_capture_device = None
-    back_capture_device = None
+    arm_capture_device = None
 
     @staticmethod
     def stream():
@@ -196,18 +198,23 @@ class Camera(object):
         if sys.platform == "darwin":
             front_capturing_device = "usb"
             front_resolution = '1280x720'
+            front_device_id = 0
         else:
             front_capturing_device = config.get('front_capturing_device', 'usb')
             front_resolution = config.get('front_capturing_resolution', '1280x720')
-            back_capturing_device = config.get('back_capturing_device', 'picamera')
-            back_resolution = config.get('back_capturing_resolution', '640x480')
+            front_device_id = int(config.get('front_device_id', '1'))
+            arm_capturing_device = config.get('arm_capturing_device', 'picamera')
+            arm_resolution = config.get('back_capturing_resolution', '640x480')
+            arm_device_id = int(config.get('arm_device_id', '0'))
         Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
-                                                    capturing_device=front_capturing_device)
+                                                    capturing_device=front_capturing_device,
+                                                    device_id=front_device_id)
         if sys.platform == "darwin":
-            Camera.back_capture_device = Camera.front_capture_device
+            Camera.arm_capture_device = Camera.front_capture_device
         else:
-            Camera.back_capture_device = CaptureDevice(resolution=back_resolution,
-                                                       capturing_device=back_capturing_device)
+            Camera.arm_capture_device = CaptureDevice(resolution=arm_resolution,
+                                                       capturing_device=arm_capturing_device,
+                                                       device_id=arm_device_id)
 
         framerate = int(config.get('capturing_framerate', 5))
         stream = io.BytesIO()
@@ -217,19 +224,27 @@ class Camera(object):
             last_frame_ts = 0
             while Camera.streaming:
                 Camera.front_capture_device.grab()
-                Camera.back_capture_device.grab()
+                Camera.arm_capture_device.grab()
 
                 if time.time() > last_frame_ts + frame_delay:
-                    front_frame = Camera.front_capture_device.retrieve()
-                    back_frame = Camera.back_capture_device.retrieve()
                     last_frame_ts = time.time()
-                    # Navigation
-                    Camera.front_capture_device.add_navigation_lines(front_frame)
+                    if Camera.selected_camera == "front":
+                        frame = Camera.front_capture_device.retrieve()
+                        # Navigation
+                        Camera.front_capture_device.add_navigation_lines(frame)
+                    else:
+                        frame = Camera.arm_capture_device.retrieve()
 
-                    # Overlay backup camera
-                    Camera.front_capture_device.add_overlay(front_frame, back_frame, [75, 0], [25, 25])
+                    if Camera.overlay:
+                        if Camera.selected_camera == "front":
+                            overlay_frame = Camera.arm_capture_device.retrieve()
+                            Camera.front_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
+                        else:
+                            overlay_frame = Camera.front_capture_device.retrieve()
+                            Camera.arm_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
 
-                    frame = cv2.imencode('.jpg', front_frame)[1].tostring()
+
+                    frame = cv2.imencode('.jpg', frame)[1].tostring()
                     stream.truncate()
                     stream.seek(0)
                     yield "--FRAME\r\n"
@@ -243,9 +258,14 @@ class Camera(object):
         finally:
             Camera.front_capture_device.close()
             Camera.front_capture_device = None
-            Camera.back_capture_device.close()
-            Camera.back_capture_device = None
+            Camera.arm_capture_device.close()
+            Camera.arm_capture_device = None
             Camera.streaming = False
+
+    @staticmethod
+    def stream_setup(selected_camera, overlay):
+        Camera.selected_camera = selected_camera
+        Camera.overlay = overlay
 
     @staticmethod
     def select_target(x, y):
@@ -273,9 +293,10 @@ class Camera(object):
             return image
 
 
-
     @staticmethod
     def serialize():
         return {
-            'streaming': Camera.streaming
+            'streaming': Camera.streaming,
+            'overlay': Camera.overlay,
+            'selected_camera': Camera.selected_camera
         }

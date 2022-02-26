@@ -63,7 +63,8 @@ class RestApiViewSet(viewsets.ViewSet):
         serializer = serializers.LightCommandSerializer(data=request.data)
         if serializer.is_valid():
             Controller.set_light(serializer.data['left_on'],
-                                 serializer.data['right_on'])
+                                 serializer.data['right_on'],
+                                 serializer.data['arm_on'])
             return Response({
                 'status': 'OK',
                 'robot': Controller.serialize()
@@ -184,6 +185,20 @@ class RestApiViewSet(viewsets.ViewSet):
     def stream(self, request):
         return StreamingHttpResponse(Camera.stream(),
                                      content_type="multipart/x-mixed-replace;boundary=FRAME")
+
+    @action(detail=False, methods=['post'])
+    def stream_setup(self, request):
+        serializer = serializers.VideoStreamSetupSerializer(data=request.data)
+        if serializer.is_valid():
+            Camera.stream_setup(serializer.data['selected_camera'],
+                                                   serializer.data['overlay'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
     # Arm
     @action(detail=False, methods=['post'])

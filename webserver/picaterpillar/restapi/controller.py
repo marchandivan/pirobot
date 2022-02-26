@@ -70,8 +70,8 @@ class Controller(object):
         Motor.move_to_target(x_pos, y_pos, speed, timeout)
 
     @staticmethod
-    def set_light(left_on, right_on):
-        Light.set(left_on, right_on)
+    def set_light(left_on, right_on, arm_on):
+        Light.set(left_on, right_on, arm_on)
 
     @staticmethod
     def blink_light(left_on, right_on):
@@ -133,5 +133,6 @@ class Controller(object):
             'light': Light.serialize(),
             'moods': EyeGenerator.get_moods(),
             'motor': Motor.serialize(),
-            'arm': Arm.serialize()
+            'arm': Arm.serialize(),
+            'camera': Camera.serialize()
         }
