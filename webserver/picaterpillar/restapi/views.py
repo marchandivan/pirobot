@@ -206,7 +206,8 @@ class RestApiViewSet(viewsets.ViewSet):
         serializer = serializers.MoveArmCommandSerializer(data=request.data)
         if serializer.is_valid():
             success, message = Controller.move_arm(serializer.data['id'],
-                                                   serializer.data['angle'])
+                                                   serializer.data['angle'],
+                                                   serializer.data['lock_wrist'])
             if success:
                 return Response({
                     'status': 'OK',

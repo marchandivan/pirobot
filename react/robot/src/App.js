@@ -68,6 +68,7 @@ class App extends React.Component {
             moods: ["relaxed"],
             arm_position_claw: 0,
             arm_position_wrist: 0,
+            lock_wrist: false,
             arm_position_forearm: 0,
             arm_position_shoulder: 0
         }
@@ -566,7 +567,8 @@ class App extends React.Component {
             },
             body: JSON.stringify({
                 id: id,
-                angle: value
+                angle: value,
+                lock_wrist: this.state.lock_wrist
             })
         })
             .then(response => response.json())
@@ -597,6 +599,12 @@ class App extends React.Component {
             .catch((error) => {
                 console.error('Error:', error);
             });
+    }
+
+    setWristLock = (locked) => {
+        this.setState({
+            lock_wrist: !this.state.lock_wrist
+        })
     }
 
     render() {
@@ -732,11 +740,13 @@ class App extends React.Component {
                             <Grid item xl={10} md={10} sm={10} xs={12}>
                                 <ArmControl
                                     position_claw={this.state.arm_position_claw}
-                                    max_angle_claw={150}
+                                    max_angle_claw={this.state.arm_max_angle_claw}
                                     move_claw_callback={this.moveArm.bind(this, "claw")}
                                     position_wrist={this.state.arm_position_wrist}
                                     max_angle_wrist={this.state.arm_max_angle_wrist}
                                     move_wrist_callback={this.moveArm.bind(this, "wrist")}
+                                    lock_wrist_callback={this.setWristLock.bind(this, !this.state.lock_wrist)}
+                                    lock_wrist={this.state.lock_wrist}
                                     position_forearm={this.state.arm_position_forearm}
                                     max_angle_forearm={this.state.arm_max_angle_forearm}
                                     move_forearm_callback={this.moveArm.bind(this, "forearm")}

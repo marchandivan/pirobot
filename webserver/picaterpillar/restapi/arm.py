@@ -1,3 +1,4 @@
+import math
 import time
 
 from restapi.DFRobot_RaspberryPi_Expansion_Board import DFRobot_Expansion_Board_IIC as Board
@@ -81,8 +82,8 @@ PRESET_POSITIONS = {
         "name": "Grab From Floor",
         "moves": [
             {"id": SHOULDER, "angle": 42},
-            {"id": WRIST, "angle": 160},
-            {"id": FOREARM, "angle": 120},
+            {"id": WRIST, "angle": 165},
+            {"id": FOREARM, "angle": 110},
         ]
     },
     "drop": {
@@ -114,6 +115,7 @@ class Arm(object):
         else:
             Arm.servo_controller.begin()  # servo control begin
         Arm.move_to_position("backup_camera")
+        Arm.move(CLAW, SERVOS_CONFIG[CLAW]['max_angle'])
 
     @staticmethod
     def _in_exclusion_zone(id, angle):
@@ -139,7 +141,8 @@ class Arm(object):
         return list(PRESET_POSITIONS.keys())
 
     @staticmethod
-    def move(id, angle, wait=True):
+    def move(id, angle, wait=True, lock_wrist=False):
+        print(dict(id=id, angle=angle, wait=wait, lock_wrist=lock_wrist))
         servo_config = SERVOS_CONFIG.get(id)
         if servo_config is None:
             return False, f"Unknown servo ID: {id}"
@@ -151,12 +154,20 @@ class Arm(object):
         if Arm._in_exclusion_zone(id, angle):
             return False, "Moving to an exclusion zone"
 
-        Arm.servo_controller.move(servo_config.get("id"), angle * 180 / max_angle)
+        if id == FOREARM and lock_wrist:
+            forearm_angle = Arm.position[FOREARM]
+            wrist_angle = Arm.position[WRIST]
+            step = int(math.copysign(1, angle - forearm_angle))
+            for i in range(abs(angle - forearm_angle)):
+                Arm.move(id=FOREARM, angle=forearm_angle + (i + 1) * step, wait=wait, lock_wrist=False)
+                Arm.move(id=WRIST, angle=wrist_angle - (i + 1) * step, wait=wait, lock_wrist=False)
+        else:
+            Arm.servo_controller.move(servo_config.get("id"), angle * 180 / max_angle)
 
-        if wait:
-            speed = servo_config.get('speed')
-            time.sleep(1.5 * speed * abs(Arm.position[id] - angle) / 60)
-        Arm.position[id] = angle
+            if wait:
+                speed = servo_config.get('speed')
+                time.sleep(1.5 * speed * abs(Arm.position[id] - angle) / 60)
+            Arm.position[id] = angle
         return  True, "Success"
 
     @staticmethod
@@ -165,7 +176,19 @@ class Arm(object):
         if position is None:
             return False, f"Unknown position ID: {position_id}"
 
-        for move in position.get("moves"):
+        moves = position.get("moves")
+        sorted_moves = []
+        nb_of_moves = len(sorted_moves)
+        while nb_of_moves < len(moves):
+            for move in position.get("moves"):
+                if not Arm._in_exclusion_zone(move.get("id"), move.get("angle")):
+                    sorted_moves.append(move)
+            # No new moves found?
+            if len(sorted_moves) == nb_of_moves:
+                return False, "Moving to an exclusion zone"
+            nb_of_moves = len(sorted_moves)
+
+        for move in sorted_moves:
             success, message = Arm.move(move.get("id"), move.get("angle"))
             if not success:
                 return False, message
