@@ -21,6 +21,7 @@ class MoveToTargetCommandSerializer(serializers.Serializer):
 class LightCommandSerializer(serializers.Serializer):
     left_on = serializers.BooleanField(default=False)
     right_on = serializers.BooleanField(default=False)
+    arm_on = serializers.BooleanField(default=False)
 
 
 class SelectTargetSerializer(serializers.Serializer):
@@ -30,6 +31,11 @@ class SelectTargetSerializer(serializers.Serializer):
 
 class CapturePictureSerializer(serializers.Serializer):
     destination = serializers.ChoiceField(choices=['lcd'], default='lcd')
+
+
+class VideoStreamSetupSerializer(serializers.Serializer):
+    selected_camera = serializers.ChoiceField(choices=['front', 'arm'], default='front')
+    overlay = serializers.BooleanField(default=False)
 
 
 class SetLcdBrightnessSerializer(serializers.Serializer):

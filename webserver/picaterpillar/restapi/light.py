@@ -11,6 +11,7 @@ except:
 
 LEFT_LIGHT_PIN = 16
 RIGHT_LIGHT_PIN = 17
+ARM_LIGHT_PIN = 21
 BLINK_DURATION = 1
 NB_OF_BLINKS = 10
 
@@ -18,6 +19,7 @@ NB_OF_BLINKS = 10
 class Light(object):
     left_on = False
     right_on = False
+    arm_on = False
 
     Timers = []
 
@@ -39,28 +41,34 @@ class Light(object):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(LEFT_LIGHT_PIN, GPIO.OUT)
         GPIO.setup(RIGHT_LIGHT_PIN, GPIO.OUT)
+        GPIO.setup(ARM_LIGHT_PIN, GPIO.OUT)
         GPIO.output(LEFT_LIGHT_PIN, GPIO.LOW)
         GPIO.output(RIGHT_LIGHT_PIN, GPIO.LOW)
+        GPIO.output(ARM_LIGHT_PIN, GPIO.LOW)
         Light.left_on = False
         Light.right_on = False
+        Light.arm_on = False
 
     @staticmethod
-    def set(left_on, right_on):
+    def set(left_on, right_on, arm_on):
         Light._cancel_event()
         Light.left_on = left_on
         Light.right_on = right_on
-        Light._set(left_on, right_on)
+        Light.arm_on = arm_on
+        Light._set(left_on, right_on, arm_on)
 
     @staticmethod
-    def _set(left_on, right_on):
+    def _set(left_on, right_on, arm_on):
         GPIO.output(LEFT_LIGHT_PIN, GPIO.HIGH if left_on else GPIO.LOW)
         GPIO.output(RIGHT_LIGHT_PIN, GPIO.HIGH if right_on else GPIO.LOW)
+        GPIO.output(ARM_LIGHT_PIN, GPIO.HIGH if arm_on else GPIO.LOW)
 
     @staticmethod
     def serialize():
         return {
             'left_on': Light.left_on,
-            'right_on': Light.right_on
+            'right_on': Light.right_on,
+            'arm_on': Light.arm_on
         }
 
     @staticmethod
