@@ -39,7 +39,8 @@ class CaptureDevice(object):
         self.capturing_device = capturing_device
         self.frame_counter = 0
         if self.capturing_device == "usb":  # USB Camera?
-            self.device = cv2.VideoCapture(0)
+            self.device = cv2.VideoCapture(1)
+            self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
             self.res_x, self.res_y = resolution.split('x')
             self.res_x, self.res_y = int(self.res_x), int(self.res_y)
             self.device.set(3, self.res_x)
@@ -121,6 +122,19 @@ class CaptureDevice(object):
         cv2.rectangle(frame, (self.res_x - 5, self.res_y - 50), (self.res_x - 5 - 40, self.res_y - 50 - 400), color, thickness)
         cv2.rectangle(frame, (self.res_x - 5, self.res_y - 50 - 200), (self.res_x - 5 - 40, self.res_y - 50 - 200 - int(motor_status['right']['duty'] * 2)), color, -1)
 
+    def grab(self):
+        if self.capturing_device == "usb":
+            self.device.grab()
+
+    def retrieve(self):
+        if self.capturing_device == "usb":
+            ret, frame = self.device.retrieve()
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+        else:  # picamera
+            output = PiRGBArray(self.device)
+            self.device.capture(output, format="rgb", use_video_port=True)
+            return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
+ 
     def capture(self):
         max_retries = 3
         while max_retries > 0:
@@ -134,7 +148,7 @@ class CaptureDevice(object):
                 else:  # picamera
                     output = PiRGBArray(self.device)
                     self.device.capture(output, format="rgb")
-                    return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
+                    return cv2.cvtColor(output.array, cv2.COLOR_BGRA2BGR)
             except:
                 print ("Failed to capture image, retrying")
                 traceback.print_exc()
@@ -202,10 +216,13 @@ class Camera(object):
             frame_delay = 1.0 // framerate
             last_frame_ts = 0
             while Camera.streaming:
-                front_frame = Camera.front_capture_device.capture()
-                back_frame = Camera.back_capture_device.capture()
+                Camera.front_capture_device.grab()
+                Camera.back_capture_device.grab()
 
                 if time.time() > last_frame_ts + frame_delay:
+                    front_frame = Camera.front_capture_device.retrieve()
+                    back_frame = Camera.back_capture_device.retrieve()
+                    last_frame_ts = time.time()
                     # Navigation
                     Camera.front_capture_device.add_navigation_lines(front_frame)
 
