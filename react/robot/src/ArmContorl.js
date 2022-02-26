@@ -12,6 +12,8 @@ import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
 import FastRewindIcon from '@mui/icons-material/FastRewind';
 import FastForwardIcon from '@mui/icons-material/FastForward';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 
 class ArmControl extends React.Component {
 
@@ -41,6 +43,7 @@ class ArmControl extends React.Component {
                         <IconButton style={{paddingBlock: 0}} edge={"start"} onClick={this.props.move_wrist_callback.bind(this, this.props.position_wrist + 1)}><ArrowRightIcon/></IconButton>
                         <IconButton style={{paddingBlock: 0}} edge={"start"} onClick={this.props.move_wrist_callback.bind(this, this.props.position_wrist + 5)}><FastForwardIcon/></IconButton>
                         <p style={{fontSize: 16, margin: 0}}>{this.props.position_wrist}°</p>
+                        <IconButton style={{paddingBlock: 0}} edge={"start"} onClick={this.props.lock_wrist_callback}>{this.props.lock_wrist ? (<LockIcon/>) : (<LockOpenIcon/>)}</IconButton>
                     </Stack>
                 </Grid>
                 <Grid item xl={12} md={12} sm={12} xs={12}>

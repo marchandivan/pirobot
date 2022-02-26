@@ -119,8 +119,8 @@ class Controller(object):
 
     # Arm
     @staticmethod
-    def move_arm(id, angle):
-        return Arm.move(id, angle)
+    def move_arm(id, angle, lock_wrist):
+        return Arm.move(id=id, angle=angle, wait=True, lock_wrist=lock_wrist)
 
     @staticmethod
     def move_arm_to_position(position_id):

@@ -58,6 +58,7 @@ class SetLcdPictureSerializer(serializers.Serializer):
 class MoveArmCommandSerializer(serializers.Serializer):
     id = serializers.ChoiceField(choices=Arm.get_ids())
     angle = serializers.IntegerField()
+    lock_wrist = serializers.BooleanField(default=False)
 
 
 class MoveArmToPositionCommandSerializer(serializers.Serializer):
