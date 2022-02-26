@@ -38,11 +38,11 @@ class CaptureDevice(object):
     def __init__(self, resolution, capturing_device, device_id):
         self.capturing_device = capturing_device
         self.frame_counter = 0
+        self.res_x, self.res_y = resolution.split('x')
+        self.res_x, self.res_y = int(self.res_x), int(self.res_y)
         if self.capturing_device == "usb":  # USB Camera?
             self.device = cv2.VideoCapture(device_id)
             self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
-            self.res_x, self.res_y = resolution.split('x')
-            self.res_x, self.res_y = int(self.res_x), int(self.res_y)
             self.device.set(3, self.res_x)
             self.device.set(4, self.res_y)
         else:
@@ -132,7 +132,7 @@ class CaptureDevice(object):
             return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
         else:  # picamera
             output = PiRGBArray(self.device)
-            self.device.capture(output, format="rgb", use_video_port=True)
+            self.device.capture(output, format="bgr", use_video_port=True)
             return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
  
     def capture(self):
