@@ -591,7 +591,8 @@ class App extends React.Component {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                position_id: position_id
+                position_id: position_id,
+                lock_wrist: this.state.lock_wrist
             })
         })
             .then(response => response.json())
