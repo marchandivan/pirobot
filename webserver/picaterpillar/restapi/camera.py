@@ -202,7 +202,7 @@ class Camera(object):
         else:
             front_capturing_device = config.get('front_capturing_device', 'usb')
             front_resolution = config.get('front_capturing_resolution', '1280x720')
-            front_device_id = int(config.get('front_device_id', '1'))
+            front_device_id = int(config.get('front_device_id', '0'))
             arm_capturing_device = config.get('arm_capturing_device', 'picamera')
             arm_resolution = config.get('back_capturing_resolution', '640x480')
             arm_device_id = int(config.get('arm_device_id', '0'))
