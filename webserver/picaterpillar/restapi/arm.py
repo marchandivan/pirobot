@@ -145,6 +145,7 @@ class Arm(object):
 
     @staticmethod
     def move(id, angle, wait=True, lock_wrist=False):
+        print(dict(id=id, angle=angle, wait=wait, lock_wrist=lock_wrist))
         servo_config = SERVOS_CONFIG.get(id)
         if servo_config is None:
             return False, f"Unknown servo ID: {id}"
@@ -173,12 +174,25 @@ class Arm(object):
         return  True, "Success"
 
     @staticmethod
-    def move_to_position(position_id):
+    def move_to_position(position_id, lock_wrist=False):
         position = PRESET_POSITIONS.get(position_id)
         if position is None:
             return False, f"Unknown position ID: {position_id}"
 
-        moves = copy.deepcopy(position.get("moves"))
+        # Lock wrist?
+        move_by_id = {move.get('id'): move.get('angle') for move in position.get('moves')}
+        if lock_wrist and WRIST in move_by_id and FOREARM in move_by_id:
+            moves = []
+            wrist_angle = move_by_id.get(WRIST) + move_by_id.get(FOREARM) - Arm.position.get(FOREARM)
+            # First adjust wrist
+            moves.append(dict(id=WRIST, angle=wrist_angle))
+            moves.append(dict(id=FOREARM, angle=move_by_id.get(FOREARM), lock_wrist=True))
+            if SHOULDER in move_by_id:
+                moves.append(dict(id=SHOULDER, angle=move_by_id.get(SHOULDER)))
+        else:
+            moves = copy.deepcopy(position.get("moves"))
+
+        # Try to re-arrange moves to avoid exclusion zones
         servo_position = copy.deepcopy(Arm.position)
         sorted_moves = []
         nb_of_moves = 0
@@ -196,7 +210,7 @@ class Arm(object):
             nb_of_moves = len(sorted_moves)
 
         for move in sorted_moves:
-            success, message = Arm.move(move.get("id"), move.get("angle"))
+            success, message = Arm.move(id=move.get("id"), angle=move.get("angle"), lock_wrist=move.get('lock_wrist', False))
             if not success:
                 return False, message
 
