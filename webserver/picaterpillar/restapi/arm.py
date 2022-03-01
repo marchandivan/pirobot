@@ -1,3 +1,4 @@
+import copy
 import math
 import time
 
@@ -118,7 +119,9 @@ class Arm(object):
         Arm.move(CLAW, SERVOS_CONFIG[CLAW]['max_angle'])
 
     @staticmethod
-    def _in_exclusion_zone(id, angle):
+    def _in_exclusion_zone(id, angle, position=None):
+        if position is None:
+            position = Arm.position
         for exclusion_zone in EXCLUSION_ZONES:
             if id in exclusion_zone:
                 if angle < exclusion_zone.get(id)[0] or angle > exclusion_zone.get(id)[1]:
@@ -126,7 +129,7 @@ class Arm(object):
                 else:
                     for other_id in [i for i in exclusion_zone.keys() if i != id]:
                         all_match = True
-                        if Arm.position[other_id] < exclusion_zone[other_id][0] or Arm.position[other_id] > exclusion_zone[other_id][1]:
+                        if position[other_id] < exclusion_zone[other_id][0] or position[other_id] > exclusion_zone[other_id][1]:
                             all_match = False
                     if all_match:
                         return True
@@ -175,18 +178,26 @@ class Arm(object):
         if position is None:
             return False, f"Unknown position ID: {position_id}"
 
-        moves = position.get("moves")
+        moves = copy.deepcopy(position.get("moves"))
+        servo_position = copy.deepcopy(Arm.position)
         sorted_moves = []
-        nb_of_moves = len(sorted_moves)
-        while nb_of_moves < len(moves):
-            for move in position.get("moves"):
-                if not Arm._in_exclusion_zone(move.get("id"), move.get("angle")):
+        nb_of_moves = 0
+        while len(moves) > 0:
+            print(moves, sorted_moves, position.get("moves"))
+            for i in range(len(moves)):
+                move = moves.pop(0)
+                if not Arm._in_exclusion_zone(move.get("id"), move.get("angle"), servo_position):
+                    servo_position[move.get('id')] = move.get('angle')
                     sorted_moves.append(move)
+                else:
+                    moves.append(move)
             # No new moves found?
             if len(sorted_moves) == nb_of_moves:
+                print("Moving to an exclusion zone")
                 return False, "Moving to an exclusion zone"
             nb_of_moves = len(sorted_moves)
 
+        print(moves, sorted_moves, position.get("moves"))
         for move in sorted_moves:
             success, message = Arm.move(move.get("id"), move.get("angle"))
             if not success:
