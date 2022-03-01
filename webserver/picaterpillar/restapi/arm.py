@@ -75,7 +75,7 @@ PRESET_POSITIONS = {
         "name": "Pickup From Floor",
         "moves": [
             {"id": SHOULDER, "angle": 42},
-            {"id": WRIST, "angle": 30},
+            {"id": WRIST, "angle": 25},
             {"id": FOREARM, "angle": 170},
         ]
     },
@@ -83,7 +83,7 @@ PRESET_POSITIONS = {
         "name": "Grab From Floor",
         "moves": [
             {"id": SHOULDER, "angle": 42},
-            {"id": WRIST, "angle": 165},
+            {"id": WRIST, "angle": 170},
             {"id": FOREARM, "angle": 110},
         ]
     },
@@ -183,7 +183,6 @@ class Arm(object):
         sorted_moves = []
         nb_of_moves = 0
         while len(moves) > 0:
-            print(moves, sorted_moves, position.get("moves"))
             for i in range(len(moves)):
                 move = moves.pop(0)
                 if not Arm._in_exclusion_zone(move.get("id"), move.get("angle"), servo_position):
@@ -193,11 +192,9 @@ class Arm(object):
                     moves.append(move)
             # No new moves found?
             if len(sorted_moves) == nb_of_moves:
-                print("Moving to an exclusion zone")
                 return False, "Moving to an exclusion zone"
             nb_of_moves = len(sorted_moves)
 
-        print(moves, sorted_moves, position.get("moves"))
         for move in sorted_moves:
             success, message = Arm.move(move.get("id"), move.get("angle"))
             if not success:
