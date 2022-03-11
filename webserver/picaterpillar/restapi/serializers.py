@@ -43,7 +43,7 @@ class SetLcdBrightnessSerializer(serializers.Serializer):
 
 
 class TextToSpeachSerializer(serializers.Serializer):
-    destination = serializers.ChoiceField(choices=['lcd'], default='lcd')
+    destination = serializers.ChoiceField(choices=['lcd', 'audio'], default='audio')
     text = serializers.CharField()
 
 
