@@ -11,6 +11,7 @@ from restapi.camera import Camera
 from restapi.light import Light
 from restapi.models import Config
 from restapi.motor import Motor
+from restapi.game import EightBallGame
 from terminal import Terminal
 
 if sys.platform != "darwin":  # Mac OS
@@ -104,11 +105,13 @@ class Controller(object):
 
     @staticmethod
     def say(destination, text):
+        if text == "8 ball":
+            text = EightBallGame.play()
         if destination == "lcd":
             terminal.text(text)
         elif destination == "audio":
             config = Config.get_config()
-            voice_engine.setProperty('voice', config.get("voice_id", "english_wmids"))
+            voice_engine.setProperty('voice', config.get("voice_id", "mb-us1"))
             voice_engine.setProperty('rate', int(config.get("voice_rate", 150)))
             voice_engine.setProperty('volume', int(config.get("voice_volume", 1)))
 
