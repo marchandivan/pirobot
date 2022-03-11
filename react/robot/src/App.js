@@ -68,7 +68,7 @@ class App extends React.Component {
             moods: ["relaxed"],
             arm_position_claw: 0,
             arm_position_wrist: 0,
-            lock_wrist: false,
+            lock_wrist: true,
             arm_position_forearm: 0,
             arm_position_shoulder: 0
         }

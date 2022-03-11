@@ -2,11 +2,14 @@ import os
 import sys
 from threading import Timer
 
+import pyttsx3
 from PIL import Image
+
 from eye_generator import EyeGenerator
 from restapi.arm import Arm
 from restapi.camera import Camera
 from restapi.light import Light
+from restapi.models import Config
 from restapi.motor import Motor
 from terminal import Terminal
 
@@ -14,6 +17,9 @@ if sys.platform != "darwin":  # Mac OS
     from lcd.LCD_2inch import LCD_2inch
 else:
     from lcd.LCD_Mock import LCD_2inch
+
+# Voice
+voice_engine = pyttsx3.init()
 
 # LCD & terminal Initialization
 RST = 24
@@ -100,6 +106,16 @@ class Controller(object):
     def say(destination, text):
         if destination == "lcd":
             terminal.text(text)
+        elif destination == "audio":
+            config = Config.get_config()
+            voice_engine.setProperty('voice', config.get("voice_id", "english_wmids"))
+            voice_engine.setProperty('rate', int(config.get("voice_rate", 150)))
+            voice_engine.setProperty('volume', int(config.get("voice_volume", 1)))
+
+            if voice_engine._inLoop:
+                voice_engine.endLoop()
+            voice_engine.say(text)
+            voice_engine.runAndWait()
 
     @staticmethod
     def set_mood(mood):

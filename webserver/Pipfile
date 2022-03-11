@@ -15,6 +15,7 @@ picamera = {version = "*",sys_platform = "!= 'darwin'"}
 spidev = {version = "*",sys_platform = "!= 'darwin'"}
 pillow = "*"
 matplotlib = {version = "*",sys_platform = "== 'darwin'"}
+pyttsx3 = "*"
 
 [dev-packages]
 
