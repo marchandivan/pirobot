@@ -4,13 +4,12 @@ NAME="picaterpillar"                              #Name of the application (*)
 BASEDIR=$(dirname "$0")
 BASEDIR=$(cd $BASEDIR; pwd)
 
-DJANGODIR=$BASEDIR/webserver            # Django project directory (*)
-SOCKFILE=$BASEDIR/run/gunicorn.sock     # we will communicate using this unix socket (*)
-USER=www-data                           # the user to run as (*)
-GROUP=webdata                           # the group to run as (*)
-NUM_WORKERS=1                           # how many worker processes should Gunicorn spawn (*)
-DJANGO_SETTINGS_MODULE=$NAME.settings   # which settings file should Django use (*)
-DJANGO_WSGI_MODULE=$NAME.wsgi           # WSGI module name (*)
+DJANGODIR=$BASEDIR/webserver/picaterpillar        # Django project directory (*)
+USER=www-data                                     # the user to run as (*)
+GROUP=webdata                                     # the group to run as (*)
+NUM_WORKERS=1                                     # how many worker processes should Gunicorn spawn (*)
+DJANGO_SETTINGS_MODULE=$NAME.settings             # which settings file should Django use (*)
+DJANGO_WSGI_MODULE=$NAME.wsgi                     # WSGI module name (*)
 
 echo "Starting $NAME as `whoami`"
 
