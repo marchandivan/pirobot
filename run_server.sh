@@ -22,4 +22,5 @@ exec /usr/local/bin/pipenv run gunicorn ${DJANGO_WSGI_MODULE}:application \
   --name $NAME \
   --workers $NUM_WORKERS \
   --user $USER \
+  --bind 0.0.0.0:8000 \
   -t 0
