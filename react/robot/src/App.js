@@ -4,6 +4,7 @@ import Stack from '@mui/material/Stack';
 import TextField from "@material-ui/core/TextField";
 import React from 'react';
 import './App.css';
+import Cookies from 'js-cookie';
 import ArmControl from "./ArmContorl"
 import DirectionCross from "./DirectionCross";
 import LightControl from "./LightControl"
@@ -221,6 +222,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 x: this.state.mouse_x,
@@ -246,6 +248,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 text: text
@@ -354,6 +357,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 left_orientation: left_orientation,
@@ -380,6 +384,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({})
         })
@@ -400,6 +405,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 left_on: left_on,
@@ -424,6 +430,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 selected_camera: selected_camera,
@@ -454,6 +461,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 mood: mood,
@@ -476,6 +484,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 name: name,
@@ -498,6 +507,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 destination: "lcd"
@@ -523,6 +533,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 brightness: value
@@ -545,6 +556,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             }
         })
             .then(response => response.json())
@@ -564,6 +576,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 id: id,
@@ -589,6 +602,7 @@ class App extends React.Component {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
                 position_id: position_id,
