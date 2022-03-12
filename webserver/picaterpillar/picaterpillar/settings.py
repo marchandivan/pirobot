@@ -35,11 +35,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
+# Are we running in prod?
+IS_PROD = BASE_DIR.is_relative_to("/var/www/")
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-k8vd6(l&*ioa!purlx5^81xaz(th+n6u_p8togfl7j5@l8ix4v'
+if IS_PROD:
+    # Read secret key from file
+    with open(BASE_DIR / '.secret.key') as secret_file:
+        SECRET_KEY = secret_file.read()
+else:
+    SECRET_KEY = 'django-insecure-k8vd6(l&*ioa!purlx5^81xaz(th+n6u_p8togfl7j5@l8ix4v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = not IS_PROD
 
 ALLOWED_HOSTS = ["*"]
 
@@ -78,7 +86,7 @@ ROOT_URLCONF = 'picaterpillar.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -140,8 +148,23 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = 'static/'
+REACT_BUILD_DIR = BASE_DIR.parent.parent / "react/robot/build/"
+STATICFILES_DIRS = [
+    REACT_BUILD_DIR,
+    REACT_BUILD_DIR / "static",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny' if DEBUG else 'rest_framework.permissions.IsAuthenticated',
+    ]
+}

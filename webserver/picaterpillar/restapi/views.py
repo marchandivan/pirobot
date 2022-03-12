@@ -5,6 +5,12 @@ from rest_framework.response import Response
 from restapi import serializers
 from restapi.camera import Camera
 from restapi.controller import Controller
+from django.contrib.staticfiles.views import serve
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def index(request):
+    return serve(request, 'index.html')
 
 
 class RestApiViewSet(viewsets.ViewSet):
