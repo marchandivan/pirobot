@@ -28,6 +28,7 @@ urlpatterns = [
     re_path('^$', views.index),
     path('admin/', admin.site.urls),
 ] + router.urls
+urlpatterns += static('static/', document_root=settings.STATIC_ROOT)
 
 urlpatterns += [
     path('accounts/', include('django.contrib.auth.urls')),

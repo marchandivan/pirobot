@@ -145,7 +145,6 @@ class Arm(object):
 
     @staticmethod
     def move(id, angle, wait=True, lock_wrist=False):
-        print(dict(id=id, angle=angle, wait=wait, lock_wrist=lock_wrist))
         servo_config = SERVOS_CONFIG.get(id)
         if servo_config is None:
             return False, f"Unknown servo ID: {id}"
