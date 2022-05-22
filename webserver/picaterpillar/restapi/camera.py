@@ -29,6 +29,20 @@ max_y_pos = 42
 target = None
 camera_semaphore = threading.Semaphore()
 
+def getCameraIndex():
+    # checks the first 10 indexes.
+    index = 0
+    i = 10
+    while i > 0:
+        cap = cv2.VideoCapture(index)
+        if cap.read()[0]:
+            cap.release()
+            return index
+        index += 1
+        i -= 1
+    return None
+
+available_device = getCameraIndex()
 
 class CaptureDevice(object):
     target = None
@@ -41,7 +55,7 @@ class CaptureDevice(object):
         self.res_x, self.res_y = resolution.split('x')
         self.res_x, self.res_y = int(self.res_x), int(self.res_y)
         if self.capturing_device == "usb":  # USB Camera?
-            self.device = cv2.VideoCapture(device_id)
+            self.device = cv2.VideoCapture(available_device)
             self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
             self.device.set(3, self.res_x)
             self.device.set(4, self.res_y)
@@ -144,7 +158,7 @@ class CaptureDevice(object):
                     camera_semaphore.acquire()
                     ret, frame = self.device.read()
                     camera_semaphore.release()
-                    return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+                    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
                 else:  # picamera
                     output = PiRGBArray(self.device)
                     self.device.capture(output, format="rgb")
@@ -202,7 +216,7 @@ class Camera(object):
         else:
             front_capturing_device = config.get('front_capturing_device', 'usb')
             front_resolution = config.get('front_capturing_resolution', '1280x720')
-            front_device_id = int(config.get('front_device_id', '0'))
+            front_device_id = int(config.get('front_device_id', '1'))
             arm_capturing_device = config.get('arm_capturing_device', 'picamera')
             arm_resolution = config.get('back_capturing_resolution', '640x480')
             arm_device_id = int(config.get('arm_device_id', '0'))
