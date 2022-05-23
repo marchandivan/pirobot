@@ -7,7 +7,7 @@ class EightBallGame(object):
         "Without a doubt.",
         "Yes definitely.",
         "You may rely on it.",
-        "As I see   it, yes.",
+        "As I see it, yes.",
         "Most likely.",
         "Outlook good.",
         "Yes.",

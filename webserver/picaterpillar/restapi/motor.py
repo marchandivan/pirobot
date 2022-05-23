@@ -27,6 +27,7 @@ class SpeedController(object):
         self.previous_error = 0
         self.previous_ts = 0
         self.nb_of_turns = 0
+        self.use_speed_control = False
         self.clear()
 
     def clear(self):
@@ -37,11 +38,13 @@ class SpeedController(object):
         self.previous_error = 0
         self.previous_ts = 0
         self.nb_of_turns = 0
+        self.use_speed_control = False
 
-    def start(self, ref_speed):
+    def start(self, ref_speed, use_speed_control):
         self.clear()
         self.previous_ts = time.time()
         self.ref_speed = ref_speed
+        self.use_speed_control = use_speed_control
 
     def update_dc(self, current_speed):
         self.speed_rpm = current_speed
@@ -52,8 +55,8 @@ class SpeedController(object):
         self.nb_of_turns = current_speed * duration / 60
         self.previous_ts = now
 
-        if self.ref_speed == 0:
-            self.duty = 0
+        if not self.use_speed_control or self.ref_speed == 0:
+            self.duty = self.ref_speed
         else:
             current_error = self.ref_speed - current_speed
             self.integration_sum += (current_error * self.interval)
@@ -146,12 +149,14 @@ class Motor(object):
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance):
-        right_ref_speed = (right_speed if right_orientation == "F" else -right_speed) * (MAX_RPM/100)
-        left_ref_speed = (left_speed if left_orientation == "F" else -left_speed) * (MAX_RPM/100)
+        right_ref_duty = (right_speed if right_orientation == "F" else -right_speed)
+        right_ref_speed = right_ref_duty * (MAX_RPM/100)
+        left_ref_duty = (left_speed if left_orientation == "F" else -left_speed)
+        left_ref_speed = left_ref_duty * (MAX_RPM/100)
         Motor._cancel_event()  # Cancel any previously running events
 
-        Motor.right_speed_controller.start(ref_speed=right_ref_speed)
-        Motor.left_speed_controller.start(ref_speed=left_ref_speed)
+        Motor.right_speed_controller.start(ref_speed=right_ref_duty, use_speed_control=False)
+        Motor.left_speed_controller.start(ref_speed=left_ref_duty, use_speed_control=False)
         Motor._speed_control()
 
         Motor.target_distance = Motor.abs_distance + distance * 1000 if distance is not None else None
