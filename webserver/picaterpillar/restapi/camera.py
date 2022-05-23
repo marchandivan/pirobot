@@ -167,7 +167,6 @@ class CaptureDevice(object):
                 print ("Failed to capture image, retrying")
                 traceback.print_exc()
                 time.sleep(0.1)
-                raise
 
     def capture_continuous(self, stream, format='jpeg'):
         if self.capturing_device == "usb":
