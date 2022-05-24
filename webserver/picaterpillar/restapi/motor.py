@@ -1,7 +1,9 @@
 import math
 import time
-from threading import Timer, Semaphore
+from threading import Semaphore, Timer
+
 from restapi.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC
+from restapi.models import Config
 
 SPEED_REFRESH_INTERVAL = 0.1  # in seconds
 MAX_RPM = 42
@@ -159,14 +161,20 @@ class Motor(object):
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance):
+        use_speed_control = Config.get("use_speed_control", "True").lower() == "true"
         right_ref_duty = (right_speed if right_orientation == "F" else -right_speed)
         right_ref_speed = right_ref_duty * (MAX_RPM/100)
         left_ref_duty = (left_speed if left_orientation == "F" else -left_speed)
         left_ref_speed = left_ref_duty * (MAX_RPM/100)
         Motor._cancel_event()  # Cancel any previously running events
 
-        Motor.right_speed_controller.start(ref_speed=right_ref_duty, use_speed_control=False)
-        Motor.left_speed_controller.start(ref_speed=left_ref_duty, use_speed_control=False)
+        Motor.right_speed_controller.start(
+            ref_speed=right_ref_speed if use_speed_control else right_ref_duty,
+            use_speed_control=use_speed_control
+        )
+        Motor.left_speed_controller.start(
+            ref_speed=left_ref_speed if use_speed_control else left_ref_duty,
+            use_speed_control=use_speed_control)
         Motor._speed_control()
 
         Motor.target_distance = Motor.abs_distance + distance * 1000 if distance is not None else None
