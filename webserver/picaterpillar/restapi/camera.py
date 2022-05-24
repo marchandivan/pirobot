@@ -286,13 +286,17 @@ class Camera(object):
 
     @staticmethod
     def get_target_position(x, y):
+        print(x, y)
         # Distance on y axis
         a = 0
         for n, p in enumerate(reversed(poly_coefficients)):
             a += p * math.pow(min(max_y_pos, (100 - y)), n)
         y_pos = H * math.tan(a)
 
-        return 0, y_pos
+        x_pos = (1.8 / (1.8 - min(y_pos, 1.7))) * ((x - 50) / 100)/0.90 * 0.56
+        print( (1.8 / (1.8 - min(y_pos, 1.7))))
+        print(x_pos, y_pos)
+        return x_pos, y_pos
 
     @staticmethod
     def capture_image(resolution="1280x720"):

@@ -68,6 +68,7 @@ class Light(object):
     @staticmethod
     def serialize():
         return {
+            'status': Light.status,
             'left_on': Light.left_on,
             'right_on': Light.right_on,
             'arm_on': Light.arm_on
