@@ -296,7 +296,8 @@ class Camera(object):
         y_pos = H * math.tan(a)
 
         x_pos = (MAX_DISTANCE / (MAX_DISTANCE - min(y_pos, MAX_DISTANCE - 0.1))) * ((x - 50) / 50) * ROBOT_WIDTH/2
-        return x_pos, y_pos
+        lense_coeff_x_pos = float(Config.get('lense_coeff_x_pos', '0.8'))
+        return x_pos * lense_coeff_x_pos, y_pos
 
     @staticmethod
     def capture_image(resolution="1280x720"):
