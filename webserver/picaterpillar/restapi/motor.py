@@ -191,7 +191,7 @@ class Motor(object):
                        duration=timeout,
                        distance=y)
         else:
-            R = (y*y + x*x) / (2 * x)
+            R = (y*y + x*x) / (2 * abs(x))
             alpha = math.asin(y / R)
             target_distance = abs(R * alpha)
             if x > 0:

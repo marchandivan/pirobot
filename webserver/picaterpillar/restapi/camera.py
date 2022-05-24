@@ -17,6 +17,9 @@ if sys.platform != "darwin":  # Mac OS
 # Calculate model to covert the position of a pixel to the physical position on the floor,
 # using measurements (distances & y_pos) & polynomial regression
 H = 70
+MAX_DISTANCE = 1.8
+ROBOT_WIDTH = 0.56  # in m
+
 reference = dict(
     distances=[d / 100 for d in [15, 20, 30, 40, 50, 60, 68, 80, 90, 120, 150, 180]],
     y_pos=[100 - n for n in [100, 91.3, 79.2, 73.4, 69.9, 67.15, 65.6, 64.23, 62.86, 61.1, 59.9, 58.96]]
@@ -286,16 +289,13 @@ class Camera(object):
 
     @staticmethod
     def get_target_position(x, y):
-        print(x, y)
         # Distance on y axis
         a = 0
         for n, p in enumerate(reversed(poly_coefficients)):
             a += p * math.pow(min(max_y_pos, (100 - y)), n)
         y_pos = H * math.tan(a)
 
-        x_pos = (1.8 / (1.8 - min(y_pos, 1.7))) * ((x - 50) / 100)/0.90 * 0.56
-        print( (1.8 / (1.8 - min(y_pos, 1.7))))
-        print(x_pos, y_pos)
+        x_pos = (MAX_DISTANCE / (MAX_DISTANCE - min(y_pos, MAX_DISTANCE - 0.1))) * ((x - 50) / 50) * ROBOT_WIDTH/2
         return x_pos, y_pos
 
     @staticmethod
