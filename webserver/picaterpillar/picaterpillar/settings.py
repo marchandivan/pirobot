@@ -52,7 +52,7 @@ else:
 DEBUG = not IS_PROD
 
 ALLOWED_HOSTS = ["*"]
-
+CSRF_TRUSTED_ORIGINS = ["https://raspberrypi.local", "https://picaterpillar.ddns.net"]
 
 # Application definition
 
