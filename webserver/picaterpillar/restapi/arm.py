@@ -221,6 +221,7 @@ class Arm(object):
     @staticmethod
     def serialize():
         return {
+            "status": Arm.status,
             "position": Arm.position,
             "ids": Arm.get_ids(),
             "position_ids": Arm.get_position_ids(),
