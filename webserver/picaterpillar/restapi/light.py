@@ -17,6 +17,7 @@ NB_OF_BLINKS = 10
 
 
 class Light(object):
+    status = "UK"
     left_on = False
     right_on = False
     arm_on = False
@@ -48,6 +49,7 @@ class Light(object):
         Light.left_on = False
         Light.right_on = False
         Light.arm_on = False
+        Light.status = "OK"
 
     @staticmethod
     def set(left_on, right_on, arm_on):

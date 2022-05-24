@@ -19,8 +19,10 @@ if sys.platform == "darwin":  # Mac OS
     # Mock smbus (i2c) on Mac OS
     mock_smbus_smbus = mock.Mock()
     mock_smbus_smbus.write_i2c_block_data = lambda *args: print("SMBus.write_i2c_block_data{}".format(args))
-    def __mock_read_i2c_block_data(*args):
-        print("SMBus.read_i2c_block_data{}".format(args))
+    def __mock_read_i2c_block_data(address, register, length):
+        print("SMBus.read_i2c_block_data{}".format((address, register, length)))
+        if register == 1:
+            return [0xdf]
         return bytes([0, 40])
     mock_smbus_smbus.read_i2c_block_data = __mock_read_i2c_block_data
     mock_smbus = mock.Mock()

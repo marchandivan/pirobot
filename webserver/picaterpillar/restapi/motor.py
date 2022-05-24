@@ -73,6 +73,8 @@ class SpeedController(object):
 
 
 class Motor(object):
+    status = "UK"
+
     Timers = []
     _iic_motor = None
     _iic_semaphore = Semaphore()
@@ -88,7 +90,15 @@ class Motor(object):
     @staticmethod
     def setup():
         # Motor Initialization
+        Motor.status = "OK"
         Motor._iic_motor = DFRobot_DC_Motor_IIC(1, 0x11)
+        max_retry = 10
+        while max_retry > 0 and Motor._iic_motor.begin() != DFRobot_DC_Motor_IIC.STA_OK:  # Board begin and check board status
+            print(f"Board begin failed: {Motor._iic_motor.last_operate_status}")
+            time.sleep(1)
+            max_retry -= 1
+        if max_retry == 0:
+            Motor.status = "KO"
         Motor._iic_motor.set_encoder_enable(DFRobot_DC_Motor_IIC.ALL)
         Motor._iic_motor.set_encoder_reduction_ratio(DFRobot_DC_Motor_IIC.ALL, 190)
         Motor._iic_motor.set_moter_pwm_frequency(1000)
@@ -192,6 +202,7 @@ class Motor(object):
     @staticmethod
     def serialize():
         return dict(
+            status=Motor.status,
             left=Motor.left_speed_controller.serialize(),
             right=Motor.right_speed_controller.serialize(),
             distance=Motor.distance,
