@@ -34,16 +34,16 @@ terminal.header("Buddy Bot v1.0")
 terminal.text("Starting...")
 
 # Motor Initialization
-terminal.text("Motor setup...")
 Motor.setup()
+terminal.text(f"Motor setup... {Motor.status}")
 
 # Light
-terminal.text("Light setup...")
 Light.setup()
+terminal.text(f"Light setup... {Light.status}")
 
 # Arm
-terminal.text("Arm setup...")
 Arm.setup()
+terminal.text(f"Arm setup...   {Arm.status}")
 
 terminal.text("Ready!")
 

@@ -98,6 +98,7 @@ PRESET_POSITIONS = {
 }
 
 class Arm(object):
+    status = "UK"
     io_board = None
     servo_controller = None
     position = {
@@ -113,8 +114,10 @@ class Arm(object):
         Arm.servo_controller = Servo(Arm.io_board)
         if Arm.io_board.begin() != Arm.io_board.STA_OK:    # Board begin and check board status
             print("Unable to connect to IO board")
+            Arm.status = "KO"
         else:
             Arm.servo_controller.begin()  # servo control begin
+            Arm.status = "OK"
         Arm.move_to_position("backup_camera")
         Arm.move(CLAW, SERVOS_CONFIG[CLAW]['max_angle'])
 
