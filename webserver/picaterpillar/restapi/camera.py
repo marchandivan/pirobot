@@ -45,12 +45,11 @@ def getCameraIndex():
         i -= 1
     return None
 
-available_device = getCameraIndex()
-
 class CaptureDevice(object):
     target = None
     target_img = None
     catpures = []
+    available_device = None
 
     def __init__(self, resolution, capturing_device, device_id):
         self.capturing_device = capturing_device
@@ -202,11 +201,20 @@ class CaptureDevice(object):
 
 
 class Camera(object):
+    status = "UK"
     streaming = False
     overlay = True
     selected_camera = "front"
     front_capture_device = None
     arm_capture_device = None
+
+    @staticmethod
+    def setup():
+        Camera.available_device = getCameraIndex()
+        if Camera.available_device is None:
+            Camera.status = "KO"
+        else:
+            Camera.status = "OK"
 
     @staticmethod
     def stream():
@@ -314,6 +322,7 @@ class Camera(object):
     @staticmethod
     def serialize():
         return {
+            'status': Camera.status,
             'streaming': Camera.streaming,
             'overlay': Camera.overlay,
             'selected_camera': Camera.selected_camera
