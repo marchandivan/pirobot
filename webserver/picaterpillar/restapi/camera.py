@@ -57,7 +57,7 @@ class CaptureDevice(object):
         self.res_x, self.res_y = resolution.split('x')
         self.res_x, self.res_y = int(self.res_x), int(self.res_y)
         if self.capturing_device == "usb":  # USB Camera?
-            self.device = cv2.VideoCapture(available_device)
+            self.device = cv2.VideoCapture(Camera.available_device)
             self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
             self.device.set(3, self.res_x)
             self.device.set(4, self.res_y)
