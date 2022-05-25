@@ -43,7 +43,11 @@ terminal.text(f"Light setup... {Light.status}")
 
 # Arm
 Arm.setup()
-terminal.text(f"Arm setup...   {Arm.status}")
+terminal.text(f"Arm setup..... {Arm.status}")
+
+# Motor Initialization
+Camera.setup()
+terminal.text(f"Camera setup.. {Camera.status}")
 
 terminal.text("Ready!")
 
