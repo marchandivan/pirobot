@@ -9,7 +9,7 @@ class MoveCommandSerializer(serializers.Serializer):
     right_speed = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)
     duration = serializers.FloatField(min_value=0.0, default=1.0)
     distance = serializers.FloatField(min_value=0.0, default=None)
-
+    rotation = serializers.FloatField(min_value=0, max_value=180.0, default=None)
 
 class MoveToTargetCommandSerializer(serializers.Serializer):
     x = serializers.FloatField()

@@ -86,8 +86,10 @@ class Motor(object):
 
     distance = 0
     abs_distance = 0
+    rotation = 0
 
     target_distance = None
+    target_rotation = None
 
     @staticmethod
     def setup():
@@ -121,6 +123,8 @@ class Motor(object):
     def stop():
         Motor._cancel_event()
         try:
+            Motor.target_distance = None
+            Motor.target_rotation = None
             Motor._iic_semaphore.acquire()
             Motor._iic_motor.motor_stop(DFRobot_DC_Motor_IIC.ALL)
             Motor.left_speed_controller.clear()
@@ -140,8 +144,10 @@ class Motor(object):
             Motor.left_speed_controller.update_dc(left_speed_rpm)
             # Update ODO
             avg_nb_of_turns = (Motor.right_speed_controller.nb_of_turns + Motor.left_speed_controller.nb_of_turns) / 2
+            diff_nb_of_turns = abs(Motor.right_speed_controller.nb_of_turns - Motor.left_speed_controller.nb_of_turns)
             Motor.distance += avg_nb_of_turns * math.pi * WHEEL_D
             Motor.abs_distance += abs(avg_nb_of_turns) * math.pi * WHEEL_D
+            Motor.rotation += math.pi / 180.0 * (diff_nb_of_turns * math.pi * WHEEL_D) / (ROBOT_WIDTH * math.pi)
 
             # Reached target distance, if any?
             if Motor.target_distance is not None and Motor.abs_distance > Motor.target_distance:
@@ -149,6 +155,11 @@ class Motor(object):
                 Motor.left_speed_controller.clear()
                 Motor.right_speed_controller.clear()
                 Motor.target_distance = None
+            elif Motor.target_rotation is not None and Motor.rotation > Motor.target_rotation:
+                Motor._iic_motor.motor_stop(DFRobot_DC_Motor_IIC.ALL)
+                Motor.left_speed_controller.clear()
+                Motor.right_speed_controller.clear()
+                Motor.target_rotation = None
             else:
                 right_direction = DFRobot_DC_Motor_IIC.CW if Motor.right_speed_controller.duty >= 0 else DFRobot_DC_Motor_IIC.CCW
                 left_direction = DFRobot_DC_Motor_IIC.CW if Motor.left_speed_controller.duty >= 0 else DFRobot_DC_Motor_IIC.CCW
@@ -160,7 +171,7 @@ class Motor(object):
             Motor._iic_semaphore.release()
 
     @staticmethod
-    def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance):
+    def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation):
         use_speed_control = Config.get("use_speed_control", "True").lower() == "true"
         right_ref_duty = (right_speed if right_orientation == "F" else -right_speed)
         right_ref_speed = right_ref_duty * (MAX_RPM/100)
@@ -178,6 +189,7 @@ class Motor(object):
         Motor._speed_control()
 
         Motor.target_distance = Motor.abs_distance + distance * 1000 if distance is not None else None
+        Motor.target_rotation = Motor.rotation + rotation if rotation is not None else None
         Motor._schedule_event(duration, Motor.stop)
 
     @staticmethod
@@ -205,7 +217,8 @@ class Motor(object):
                        right_orientation=orientation,
                        right_speed=right_speed,
                        duration=timeout,
-                       distance=target_distance)
+                       distance=target_distance,
+                       rotation=None)
 
     @staticmethod
     def serialize():

@@ -31,7 +31,8 @@ class RestApiViewSet(viewsets.ViewSet):
                             serializer.data['right_orientation'],
                             serializer.data['right_speed'],
                             serializer.data['duration'],
-                            serializer.data['distance'])
+                            serializer.data['distance'],
+                            serializer.data['rotation'])
             return Response({
                 'status': 'OK',
                 'robot': Controller.serialize()
