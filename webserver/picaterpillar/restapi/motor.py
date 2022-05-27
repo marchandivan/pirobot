@@ -7,7 +7,7 @@ from restapi.models import Config
 
 SPEED_REFRESH_INTERVAL = 0.1  # in seconds
 MAX_RPM = 42
-WHEEL_D = 75  # in mm
+WHEEL_D = 84  # in mm
 ROBOT_WIDTH = 560  # in mm
 TIMEOUT = 30  # in seconds
 
@@ -147,15 +147,14 @@ class Motor(object):
             diff_nb_of_turns = abs(Motor.right_speed_controller.nb_of_turns - Motor.left_speed_controller.nb_of_turns)
             Motor.distance += avg_nb_of_turns * math.pi * WHEEL_D
             Motor.abs_distance += abs(avg_nb_of_turns) * math.pi * WHEEL_D
-            Motor.rotation += math.pi / 180.0 * (diff_nb_of_turns * math.pi * WHEEL_D) / (ROBOT_WIDTH * math.pi)
-
+            Motor.rotation += 2 * 180.0 / math.pi * (diff_nb_of_turns * math.pi * WHEEL_D) / (ROBOT_WIDTH)
             # Reached target distance, if any?
-            if Motor.target_distance is not None and Motor.abs_distance > Motor.target_distance:
+            if Motor.target_distance is not None and Motor.abs_distance >= Motor.target_distance:
                 Motor._iic_motor.motor_stop(DFRobot_DC_Motor_IIC.ALL)
                 Motor.left_speed_controller.clear()
                 Motor.right_speed_controller.clear()
                 Motor.target_distance = None
-            elif Motor.target_rotation is not None and Motor.rotation > Motor.target_rotation:
+            elif Motor.target_rotation is not None and Motor.rotation >= Motor.target_rotation:
                 Motor._iic_motor.motor_stop(DFRobot_DC_Motor_IIC.ALL)
                 Motor.left_speed_controller.clear()
                 Motor.right_speed_controller.clear()
@@ -201,7 +200,8 @@ class Motor(object):
                        right_orientation=orientation,
                        right_speed=speed,
                        duration=timeout,
-                       distance=y)
+                       distance=y,
+                       rotation=None)
         else:
             R = (y*y + x*x) / (2 * abs(x))
             alpha = math.asin(y / R)
