@@ -9,6 +9,8 @@ import FastRewindIcon from '@material-ui/icons/FastRewind'
 import UTurnLeftIcon from '@mui/icons-material/UTurnLeft'
 import UTurnRightIcon from '@mui/icons-material/UTurnRight'
 import DangerousIcon from '@mui/icons-material/Dangerous';
+import TurnSlightRightIcon from '@mui/icons-material/TurnSlightRight';
+import TurnSlightLeftIcon from '@mui/icons-material/TurnSlightLeft';
 import React from 'react';
 
 class DirectionCross extends React.Component {
@@ -34,17 +36,23 @@ class DirectionCross extends React.Component {
             </Grid>
             <Grid item xs={1}/>
 
-            <Grid item xs={3}/>
+            <Grid item xs={1}/>
             <Grid item xs={2}>
               <IconButton onClick={this.props.uturn_left_callback}><UTurnLeftIcon/></IconButton>
             </Grid>
             <Grid item xs={2}>
+              <IconButton onClick={this.props.slight_uturn_left_callback}><TurnSlightLeftIcon/></IconButton>
+            </Grid>
+            <Grid item xs={2}>
               <IconButton onClick={this.props.stop_callback}><DangerousIcon/></IconButton>
             </Grid>
-                <Grid item xs={2}>
+            <Grid item xs={2}>
+              <IconButton onClick={this.props.slight_uturn_right_callback}><TurnSlightRightIcon/></IconButton>
+            </Grid>
+            <Grid item xs={2}>
               <IconButton onClick={this.props.uturn_right_callback}><UTurnRightIcon/></IconButton>
             </Grid>
-            <Grid item xs={3}/>
+            <Grid item xs={1}/>
 
 
             <Grid item xs={1}/>

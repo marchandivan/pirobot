@@ -97,15 +97,21 @@ class Motor(object):
         Motor.status = "OK"
         Motor._iic_motor = DFRobot_DC_Motor_IIC(1, 0x11)
         max_retry = 10
-        while max_retry > 0 and Motor._iic_motor.begin() != DFRobot_DC_Motor_IIC.STA_OK:  # Board begin and check board status
-            print(f"Board begin failed: {Motor._iic_motor.last_operate_status}")
+        while max_retry > 0:  # Board begin and check board status
+            Motor._iic_motor.begin()
+            time.sleep(0.1)
+            Motor._iic_motor.set_encoder_enable(DFRobot_DC_Motor_IIC.ALL)
+            time.sleep(0.1)
+            Motor._iic_motor.set_encoder_reduction_ratio(DFRobot_DC_Motor_IIC.ALL, 190)
+            time.sleep(0.1)
+            Motor._iic_motor.set_moter_pwm_frequency(1000)
+            if Motor._iic_motor.last_operate_status == DFRobot_DC_Motor_IIC.STA_OK:
+                break
             time.sleep(1)
             max_retry -= 1
         if max_retry == 0:
+            print(f"Board begin failed: {Motor._iic_motor.last_operate_status}")
             Motor.status = "KO"
-        Motor._iic_motor.set_encoder_enable(DFRobot_DC_Motor_IIC.ALL)
-        Motor._iic_motor.set_encoder_reduction_ratio(DFRobot_DC_Motor_IIC.ALL, 190)
-        Motor._iic_motor.set_moter_pwm_frequency(1000)
 
     @staticmethod
     def _cancel_event():
