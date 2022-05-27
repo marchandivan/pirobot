@@ -21,7 +21,7 @@ class ArmControl extends React.Component {
         return (
             <Grid container justifyContent="center" alignItems="center">
                 <Grid item xl={12} md={12} sm={12} xs={12}>
-                    <p>
+                    <p style={{fontSize: 16, margin: 10}}>
                         Arm Controls
                     </p>
                 </Grid>

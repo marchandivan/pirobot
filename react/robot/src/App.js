@@ -1,6 +1,5 @@
 import Grid from '@material-ui/core/Grid';
 import Slider from '@material-ui/core/Slider';
-import Stack from '@mui/material/Stack';
 import TextField from "@material-ui/core/TextField";
 import React from 'react';
 import './App.css';
@@ -28,8 +27,6 @@ const KEY_ESC = 27
 const KEY_SPACE = 32
 const KEY_0 = 48
 const KEY_9 = 57
-const KEY_PLUS = 187
-const KEY_MINUS = 189
 
 const MOVE_KEYS = [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]
 
@@ -43,9 +40,11 @@ const MOVE_INTENT_BACKWARD_RIGHT = 6
 const MOVE_INTENT_BACKWARD_LEFT = 7
 const MOVE_INTENT_BACKWARD_SLIGHT_RIGHT = 8
 const MOVE_INTENT_BACKWARD_SLIGHT_LEFT = 9
-const MOVE_INTENT_RIGHT = 10
-const MOVE_INTENT_LEFT = 11
+const MOVE_INTENT_U_TURN_RIGHT = 10
+const MOVE_INTENT_U_TURN_LEFT = 11
 const MOVE_INTENT_STOP = 11
+const MOVE_INTENT_SLIGHT_LEFT = 12
+const MOVE_INTENT_SLIGHT_RIGHT = 13
 
 class App extends React.Component {
 
@@ -56,10 +55,8 @@ class App extends React.Component {
             right_on: false,
             arm_on: false,
             speed: 100,
-            duration: 10.0,
             min_duration: 0.2,
-            max_duration: 30.0,
-            duration_step: 0.2,
+            max_duration: 20.0,
             mouse_x: 0,
             mouse_y: 0,
             selected_camera: "front",
@@ -71,7 +68,9 @@ class App extends React.Component {
             arm_position_wrist: 0,
             lock_wrist: true,
             arm_position_forearm: 0,
-            arm_position_shoulder: 0
+            arm_position_shoulder: 0,
+            distance: 0.3,
+            rotation: 30,
         }
         this.key_down = {};
     }
@@ -103,14 +102,6 @@ class App extends React.Component {
             this.stopRobot()
         } else if (MOVE_KEYS.includes(event.keyCode)) {
             this.moveKeyDown();
-        } else if (event.keyCode === KEY_PLUS) {
-            this.setState({
-                duration: Math.round(Math.min(this.state.max_duration, this.state.duration + this.state.duration_step) * 10) / 10
-            })
-        } else if (event.keyCode === KEY_MINUS) {
-            this.setState({
-                duration: Math.round(Math.max(this.state.min_duration, this.state.duration - this.state.duration_step) * 10) / 10
-            })
         } else if ( KEY_0 <= event.keyCode && event.keyCode <= KEY_9) {
             if (event.keyCode === KEY_0) {
                 this.setState({
@@ -148,9 +139,9 @@ class App extends React.Component {
                 move_intent = MOVE_INTENT_BACKWARD
             }
         } else if (this.key_down[KEY_LEFT]) {
-            move_intent = MOVE_INTENT_LEFT;
+            move_intent = MOVE_INTENT_U_TURN_LEFT;
         } else if (this.key_down[KEY_RIGHT]) {
-            move_intent = MOVE_INTENT_RIGHT;
+            move_intent = MOVE_INTENT_U_TURN_RIGHT;
         }
 
         this.moveRobot(move_intent);
@@ -186,10 +177,27 @@ class App extends React.Component {
         })
     }
 
-    updateDuration = (event, value) => {
+    updateDistance = (event, value) => {
         this.setState({
-            duration: value
+            distance: value
         })
+    }
+
+    getDistanceTimeout = () => {
+        return Math.max(Math.min(this.state.distance * (this.state.max_duration / 1.8) * (100 / this.state.speed), this.state.max_duration), this.state.min_duration);
+    }
+
+    updateRotation = (event, value) => {
+        this.setState({
+            rotation: value
+        })
+    }
+
+    getRotationTimeout = (rotation=null) => {
+        if (rotation == null) {
+            rotation = this.state.rotation;
+        }
+        return Math.max(Math.min(rotation * (10 / 180.0) * (100 / this.state.speed), this.state.max_duration), this.state.min_duration);
     }
 
     keyPress = (e) => {
@@ -228,7 +236,7 @@ class App extends React.Component {
                 x: this.state.mouse_x,
                 y: this.state.mouse_y,
                 speed: this.state.speed,
-                timeout: this.state.duration
+                timeout: this.state.max_duration
             })
         })
             .then(response => response.json())
@@ -266,78 +274,108 @@ class App extends React.Component {
         let left_speed = 0.0;
         let right_orientation = 'F';
         let right_speed = 0.0;
+        let distance = null;
+        let rotation = null;
+        let duration = this.state.max_duration;
         switch (move_intent) {
             case MOVE_INTENT_FORWARD:
                 left_orientation = 'F';
                 left_speed = 1.0;
                 right_orientation ='F'
                 right_speed = 1.0;
+                distance = this.state.distance;
                 break;
             case MOVE_INTENT_FORWARD_SLIGHT_LEFT:
                 left_orientation = 'F';
                 left_speed = 0.5;
                 right_orientation ='F'
                 right_speed = 1.0;
+                rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_FORWARD_LEFT:
                 left_orientation = 'F';
                 left_speed = 0.0;
                 right_orientation ='F'
                 right_speed = 1.0;
+                rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_FORWARD_SLIGHT_RIGHT:
                 left_orientation = 'F';
                 left_speed = 1.0;
                 right_orientation ='F'
                 right_speed = 0.5;
+                distance = 0.3;
+                rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_FORWARD_RIGHT:
                 left_orientation = 'F';
                 left_speed = 1.0;
                 right_orientation ='F'
                 right_speed = 0.0;
+                rotation = this.state.rotation;
                 break;
-            case MOVE_INTENT_LEFT:
+            case MOVE_INTENT_U_TURN_LEFT:
                 left_orientation = 'B';
                 left_speed = 1.0;
                 right_orientation ='F'
                 right_speed = 1.0;
+                rotation = 180;
                 break;
-            case MOVE_INTENT_RIGHT:
+            case MOVE_INTENT_U_TURN_RIGHT:
                 left_orientation = 'F';
                 left_speed = 1.0;
                 right_orientation ='B'
                 right_speed = 1.0;
+                rotation = 180;
+                break;
+            case MOVE_INTENT_SLIGHT_LEFT:
+                left_orientation = 'B';
+                left_speed = 1.0;
+                right_orientation ='F'
+                right_speed = 1.0;
+                rotation = this.state.rotation;
+                break;
+            case MOVE_INTENT_SLIGHT_RIGHT:
+                left_orientation = 'F';
+                left_speed = 1.0;
+                right_orientation ='B'
+                right_speed = 1.0;
+                rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_BACKWARD:
                 left_orientation = 'B';
                 left_speed = 1.0;
                 right_orientation ='B'
                 right_speed = 1.0;
+                distance = this.state.distance;
                 break;
             case MOVE_INTENT_BACKWARD_SLIGHT_LEFT:
                 left_orientation = 'B';
                 left_speed = 0.5;
                 right_orientation ='B'
                 right_speed = 1.0;
+                rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_BACKWARD_LEFT:
                 left_orientation = 'B';
                 left_speed = 0.0;
                 right_orientation ='B'
                 right_speed = 1.0;
+                rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_BACKWARD_SLIGHT_RIGHT:
                 left_orientation = 'B';
                 left_speed = 1.0;
                 right_orientation ='B'
                 right_speed = 0.5;
+                rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_BACKWARD_RIGHT:
                 left_orientation = 'B';
                 left_speed = 1.0;
                 right_orientation ='B'
                 right_speed = 0.0;
+                rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_STOP:
             default:
@@ -346,6 +384,12 @@ class App extends React.Component {
                 right_orientation ='F'
                 right_speed = 0.0;
                 break;
+        }
+
+        if (distance != null) {
+            duration = this.getDistanceTimeout();
+        } else if (rotation != null) {
+            duration = this.getRotationTimeout(rotation);
         }
 
         let url = '/api/move/';
@@ -364,7 +408,9 @@ class App extends React.Component {
                 left_speed: left_speed * this.state.speed,
                 right_orientation: right_orientation,
                 right_speed: right_speed * this.state.speed,
-                duration: this.state.duration
+                duration: duration,
+                distance: distance,
+                rotation: rotation
             })
         })
             .then(response => response.json())
@@ -713,35 +759,102 @@ class App extends React.Component {
                         </Grid>
                         <Grid item xl={2} md={2} sm={2} xs={12}>
                             <Grid item xl={10} md={10} sm={10} xs={12}>
-                                <p>Speed - Timeout</p>
-                                <Stack spacing={1} direction="row" alignItems="center">
-                                    <Slider
-                                        value={this.state.speed}
-                                        min={0}
-                                        max={100}
-                                        onChange={this.updateSpeed}
-                                        aria-label="Speed Slider" />
-                                    <p style={{fontSize: 16, width: 70}}>{this.state.speed}%</p>
-                                </Stack>
-                                <Stack spacing={1} direction="row" alignItems="center">
-                                    <Slider
-                                        value={this.state.duration}
-                                        min={this.state.min_duration}
-                                        max={this.state.max_duration}
-                                        step={this.state.duration_step}
-                                        onChange={this.updateDuration}
-                                        aria-label="Duration Slider" />
-                                    <p style={{fontSize: 16, width: 70}}>{this.state.duration}s</p>
-                                </Stack>
+                                <p style={{fontSize: 16, margin: 0}}>Speed</p>
+                                <Slider
+                                    value={this.state.speed}
+                                    min={10}
+                                    max={100}
+                                    step={10}
+                                    valueLabelDisplay="auto"
+                                    marks={[
+                                        {
+                                            value: 10,
+                                            label: '10%',
+                                        },
+                                        {
+                                            value: 30,
+                                            label: '30%',
+                                        },
+                                        {
+                                            value: 50,
+                                            label: '50%',
+                                        },
+                                        {
+                                            value: 80,
+                                            label: '80%',
+                                        },
+                                        {
+                                            value: 100,
+                                            label: '100%',
+                                        }
+                                        ]}
+                                    onChange={this.updateSpeed}
+                                    aria-label="Speed Slider" />
+                                <p style={{fontSize: 16, margin: 0}}>Distance (T/O {this.getDistanceTimeout().toFixed(1)}s)</p>
+                                <Slider
+                                    value={this.state.distance}
+                                    min={0}
+                                    max={1.8}
+                                    step={0.1}
+                                    valueLabelDisplay="auto"
+                                    marks={[
+                                        {
+                                            value: 0,
+                                            label: '0m',
+                                        },
+                                        {
+                                            value: 0.5,
+                                            label: '0.5m',
+                                        },
+                                        {
+                                            value: 1,
+                                            label: '1m',
+                                        },
+                                        {
+                                            value: 1.8,
+                                            label: '1.8m',
+                                        }
+                                        ]}
+                                    onChange={this.updateDistance}
+                                    aria-label="Distance Slider" />
+                                <p style={{fontSize: 16, margin: 0}}>Rotation  (T/O {this.getRotationTimeout().toFixed(1)}s)</p>
+                                <Slider
+                                    value={this.state.rotation}
+                                    min={1}
+                                    max={90}
+                                    step={1}
+                                    valueLabelDisplay="auto"
+                                    marks={[
+                                        {
+                                            value: 0,
+                                            label: '0º',
+                                        },
+                                        {
+                                            value: 30,
+                                            label: '30º',
+                                        },
+                                        {
+                                            value: 45,
+                                            label: '45º',
+                                        },
+                                        {
+                                            value: 90,
+                                            label: '90º',
+                                        }
+                                        ]}
+                                    onChange={this.updateRotation}
+                                    aria-label="Rotation Slider" />
                                 <DirectionCross
                                     forward_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD)}
                                     forward_slight_left_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD_SLIGHT_LEFT)}
                                     forward_left_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD_LEFT)}
                                     forward_slight_right_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD_SLIGHT_RIGHT)}
                                     forward_right_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD_RIGHT)}
-                                    uturn_left_callback={this.moveRobot.bind(this, MOVE_INTENT_LEFT)}
+                                    uturn_left_callback={this.moveRobot.bind(this, MOVE_INTENT_U_TURN_LEFT)}
+                                    slight_uturn_left_callback={this.moveRobot.bind(this, MOVE_INTENT_SLIGHT_LEFT)}
                                     stop_callback={this.stopRobot}
-                                    uturn_right_callback={this.moveRobot.bind(this, MOVE_INTENT_RIGHT)}
+                                    slight_uturn_right_callback={this.moveRobot.bind(this, MOVE_INTENT_SLIGHT_RIGHT)}
+                                    uturn_right_callback={this.moveRobot.bind(this, MOVE_INTENT_U_TURN_RIGHT)}
                                     backward_callback={this.moveRobot.bind(this, MOVE_INTENT_BACKWARD)}
                                     backward_slight_left_callback={this.moveRobot.bind(this, MOVE_INTENT_BACKWARD_SLIGHT_LEFT)}
                                     backward_left_callback={this.moveRobot.bind(this, MOVE_INTENT_BACKWARD_LEFT)}
