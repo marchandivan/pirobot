@@ -240,11 +240,11 @@ class Camera(object):
                                                        capturing_device=arm_capturing_device,
                                                        device_id=arm_device_id)
 
-        framerate = int(config.get('capturing_framerate', 5))
+        framerate = float(config.get('capturing_framerate', 5))
         stream = io.BytesIO()
         try:
             Camera.streaming = True
-            frame_delay = 1.0 // framerate
+            frame_delay = 1.0 / framerate
             last_frame_ts = 0
             while Camera.streaming:
                 Camera.front_capture_device.grab()

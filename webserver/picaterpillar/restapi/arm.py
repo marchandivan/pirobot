@@ -95,6 +95,30 @@ PRESET_POSITIONS = {
             {"id": SHOULDER, "angle": 215},
         ]
     },
+    "docking": {
+        "name": "Docking postion",
+        "moves": [
+            {"id": FOREARM, "angle": 45},
+            {"id": WRIST, "angle": 165},
+            {"id": SHOULDER, "angle": 215},
+        ]
+    },
+    "right_camera": {
+        "name": "Right View",
+        "moves": [
+            {"id": FOREARM, "angle": 45},
+            {"id": WRIST, "angle": 165},
+            {"id": SHOULDER, "angle": 130},
+        ]
+    },
+    "left_camera": {
+        "name": "Right View",
+        "moves": [
+            {"id": FOREARM, "angle": 45},
+            {"id": WRIST, "angle": 165},
+            {"id": SHOULDER, "angle": 270},
+        ]
+    },
 }
 
 class Arm(object):
