@@ -233,8 +233,7 @@ class Camera(object):
             Camera.arm_capture_device = Camera.front_capture_device
         else:
             Camera.arm_capture_device = CaptureDevice(resolution=arm_resolution,
-                                                       capturing_device=arm_capturing_device,
-                                                       device_id=arm_device_id)
+                                                       capturing_device=arm_capturing_device)
 
         framerate = float(config.get('capturing_framerate', 5))
         stream = io.BytesIO()
