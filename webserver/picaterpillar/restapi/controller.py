@@ -1,17 +1,17 @@
+import io
 import os
 import sys
 from threading import Timer
 
 import pyttsx3
-from PIL import Image
-
 from eye_generator import EyeGenerator
+from PIL import Image
 from restapi.arm import Arm
 from restapi.camera import Camera
+from restapi.game import Games
 from restapi.light import Light
 from restapi.models import Config
 from restapi.motor import Motor
-from restapi.game import EightBallGame
 from terminal import Terminal
 
 if sys.platform != "darwin":  # Mac OS
@@ -93,11 +93,18 @@ class Controller(object):
         Camera.select_target(x, y)
 
     @staticmethod
-    def capture_image(destination):
+    def capture_image(destination, camera):
         if destination == "lcd":
-            img = Image.fromarray(Camera.capture_image())
-            img = img.resize((lcd.height, lcd.width))
-            lcd.ShowImage(img)
+            image = Image.fromarray(Camera.capture_image(camera))
+            image = image.resize((lcd.height, lcd.width))
+            lcd.ShowImage(image)
+        elif destination == "download":
+            image = Image.fromarray(Camera.capture_image(camera))
+            with io.BytesIO() as output:
+                image.save(output, format="png")
+                contents = output.getvalue()
+                return contents
+        return None
 
     @staticmethod
     def set_lcd_brightness(brightness):
@@ -109,9 +116,16 @@ class Controller(object):
 
     @staticmethod
     def say(destination, text):
-        if text.startswith("img "):
-            Controller.set_lcd_picture(text.replace('img ', ''))
-        else:
+        if text.startswith("!"):
+            cmd = text[1:].split(' ')
+            command = cmd[0]
+            args = cmd[1:]
+            if command == "img":
+                Controller.set_lcd_picture(args[0])
+                text = None
+            elif command == "play":
+                text = Games.play(args[0], args[1:])
+        if text is not None:
             if text == "8 ball":
                 text = EightBallGame.play()
             if destination == "lcd":

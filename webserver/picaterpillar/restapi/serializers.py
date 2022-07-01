@@ -30,7 +30,8 @@ class SelectTargetSerializer(serializers.Serializer):
 
 
 class CapturePictureSerializer(serializers.Serializer):
-    destination = serializers.ChoiceField(choices=['lcd'], default='lcd')
+    destination = serializers.ChoiceField(choices=['lcd', 'download'], default='lcd')
+    camera = serializers.ChoiceField(choices=['front', 'arm'], default='front')
 
 
 class VideoStreamSetupSerializer(serializers.Serializer):

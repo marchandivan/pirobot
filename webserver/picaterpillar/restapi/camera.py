@@ -303,15 +303,11 @@ class Camera(object):
         return x_pos * lense_coeff_x_pos, y_pos
 
     @staticmethod
-    def capture_image(resolution="1280x720"):
-        if Camera.front_capture_device is not None:
+    def capture_image(camera):
+        if camera == "front" and Camera.front_capture_device is not None:
             return Camera.front_capture_device.capture()
-        else:
-            capture_device = CaptureDevice(resolution=resolution,
-                                           capturing_device="usb")
-            image = capture_device.capture()
-            capture_device.close()
-            return image
+        elif camera == "arm" and Camera.arm_capture_device is not None:
+            return Camera.arm_capture_device.capture()
 
 
     @staticmethod
