@@ -108,7 +108,7 @@ PRESET_POSITIONS = {
         "moves": [
             {"id": FOREARM, "angle": 45},
             {"id": WRIST, "angle": 165},
-            {"id": SHOULDER, "angle": 130},
+            {"id": SHOULDER, "angle": 160},
         ]
     },
     "left_camera": {
@@ -117,6 +117,22 @@ PRESET_POSITIONS = {
             {"id": FOREARM, "angle": 45},
             {"id": WRIST, "angle": 165},
             {"id": SHOULDER, "angle": 270},
+        ]
+    },
+    "right_back_camera": {
+        "name": "Right View",
+        "moves": [
+            {"id": FOREARM, "angle": 45},
+            {"id": WRIST, "angle": 165},
+            {"id": SHOULDER, "angle": 90},
+        ]
+    },
+    "left_back_camera": {
+        "name": "Right View",
+        "moves": [
+            {"id": FOREARM, "angle": 45},
+            {"id": WRIST, "angle": 165},
+            {"id": SHOULDER, "angle": 0},
         ]
     },
 }
