@@ -109,20 +109,23 @@ class Controller(object):
 
     @staticmethod
     def say(destination, text):
-        if text == "8 ball":
-            text = EightBallGame.play()
-        if destination == "lcd":
-            terminal.text(text)
-        elif destination == "audio":
-            config = Config.get_config()
-            voice_engine.setProperty('voice', config.get("voice_id", "mb-us1"))
-            voice_engine.setProperty('rate', int(config.get("voice_rate", 150)))
-            voice_engine.setProperty('volume', int(config.get("voice_volume", 1)))
+        if text.startswith("img "):
+            Controller.set_lcd_picture(text.replace('img ', ''))
+        else:
+            if text == "8 ball":
+                text = EightBallGame.play()
+            if destination == "lcd":
+                terminal.text(text)
+            elif destination == "audio":
+                config = Config.get_config()
+                voice_engine.setProperty('voice', config.get("voice_id", "mb-us1"))
+                voice_engine.setProperty('rate', int(config.get("voice_rate", 150)))
+                voice_engine.setProperty('volume', int(config.get("voice_volume", 1)))
 
-            if voice_engine._inLoop:
-                voice_engine.endLoop()
-            voice_engine.say(text)
-            voice_engine.runAndWait()
+                if voice_engine._inLoop:
+                    voice_engine.endLoop()
+                voice_engine.say(text)
+                voice_engine.runAndWait()
 
     @staticmethod
     def set_mood(mood):

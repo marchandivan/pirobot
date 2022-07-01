@@ -51,13 +51,13 @@ class CaptureDevice(object):
     catpures = []
     available_device = None
 
-    def __init__(self, resolution, capturing_device, device_id):
+    def __init__(self, resolution, capturing_device):
         self.capturing_device = capturing_device
         self.frame_counter = 0
         self.res_x, self.res_y = resolution.split('x')
         self.res_x, self.res_y = int(self.res_x), int(self.res_y)
         if self.capturing_device == "usb":  # USB Camera?
-            self.device = cv2.VideoCapture(Camera.available_device)
+            self.device = cv2.VideoCapture(int(Config.get('front_device_id', Camera.available_device)))
             self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
             self.device.set(3, self.res_x)
             self.device.set(4, self.res_y)
@@ -222,17 +222,13 @@ class Camera(object):
         if sys.platform == "darwin":
             front_capturing_device = "usb"
             front_resolution = '1280x720'
-            front_device_id = 0
         else:
             front_capturing_device = config.get('front_capturing_device', 'usb')
             front_resolution = config.get('front_capturing_resolution', '1280x720')
-            front_device_id = int(config.get('front_device_id', '1'))
             arm_capturing_device = config.get('arm_capturing_device', 'picamera')
             arm_resolution = config.get('back_capturing_resolution', '640x480')
-            arm_device_id = int(config.get('arm_device_id', '0'))
         Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
-                                                    capturing_device=front_capturing_device,
-                                                    device_id=front_device_id)
+                                                    capturing_device=front_capturing_device)
         if sys.platform == "darwin":
             Camera.arm_capture_device = Camera.front_capture_device
         else:

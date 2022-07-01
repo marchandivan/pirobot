@@ -1,6 +1,7 @@
 import Grid from '@material-ui/core/Grid';
 import React from 'react';
 import Button from '@material-ui/core/Button';
+import ButtonGroup from '@material-ui/core/ButtonGroup';
 import Stack from '@mui/material/Stack';
 import ThreeSixtyIcon from '@mui/icons-material/ThreeSixty';
 import ReplayIcon from '@mui/icons-material/Replay';
@@ -68,24 +69,28 @@ class ArmControl extends React.Component {
                 </Grid>
                 <Grid item xl={12} md={12} sm={12} xs={12}>
                     <p style={{fontSize: 16}}>Preset</p>
-                </Grid>
-                <Grid item xl={4} md={4} sm={4} xs={4}>
-                    <Button style={{fontSize: 10}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "left_camera")}>Left</Button>
-                </Grid>
-                <Grid item xl={4} md={4} sm={4} xs={4}>
-                    <Button style={{fontSize: 10}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "backup_camera")}>Back</Button>
-                </Grid>
-                <Grid item xl={4} md={4} sm={4} xs={4}>
-                    <Button style={{fontSize: 10}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "right_camera")}>Right</Button>
-                </Grid>
-                <Grid item xl={4} md={4} sm={4} xs={4}>
-                    <Button style={{fontSize: 10}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "pickup")}>Pick</Button>
-                </Grid>
-                <Grid item xl={4} md={4} sm={4} xs={4}>
-                    <Button style={{fontSize: 10}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "grab")}>Grab</Button>
-                </Grid>
-                <Grid item xl={4} md={4} sm={4} xs={4}>
-                    <Button style={{fontSize: 10}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "drop")}>Drop</Button>
+                    <Grid item xl={12} md={12} sm={12} xs={12}>
+                        <ButtonGroup>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "left_camera")}>Left</Button>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "docking")}>Dock</Button>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "right_camera")}>Right</Button>
+                        </ButtonGroup>
+                    </Grid>
+                    <Grid item xl={12} md={12} sm={12} xs={12}>
+                        <ButtonGroup>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "left_back_camera")}>Left</Button>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "backup_camera")}>Back</Button>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "right_back_camera")}>Right</Button>
+                        </ButtonGroup>
+                    </Grid>
+                    <Grid item xl={12} md={12} sm={12} xs={12}>
+                        <ButtonGroup>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "pickup")}>Pick</Button>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "grab")}>Grab</Button>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "back")}>Back</Button>
+                            <Button style={{fontSize: 10, paddingBlock: 1}} variant="contained" onClick={this.props.move_to_position_callback.bind(this, "drop")}>Drop</Button>
+                        </ButtonGroup>
+                    </Grid>
                 </Grid>
             </Grid>
         )

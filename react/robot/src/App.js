@@ -69,7 +69,7 @@ class App extends React.Component {
             lock_wrist: true,
             arm_position_forearm: 0,
             arm_position_shoulder: 0,
-            distance: 0.3,
+            distance: 10,
             rotation: 30,
         }
         this.key_down = {};
@@ -184,7 +184,7 @@ class App extends React.Component {
     }
 
     getDistanceTimeout = () => {
-        return Math.max(Math.min(this.state.distance * (this.state.max_duration / 1.8) * (100 / this.state.speed), this.state.max_duration), this.state.min_duration);
+        return Math.max(Math.min(this.getDistanceValue() * (this.state.max_duration / 1.8) * (100 / this.state.speed), this.state.max_duration), this.state.min_duration);
     }
 
     updateRotation = (event, value) => {
@@ -283,7 +283,7 @@ class App extends React.Component {
                 left_speed = 1.0;
                 right_orientation ='F'
                 right_speed = 1.0;
-                distance = this.state.distance;
+                distance = this.getDistanceValue();
                 break;
             case MOVE_INTENT_FORWARD_SLIGHT_LEFT:
                 left_orientation = 'F';
@@ -304,7 +304,6 @@ class App extends React.Component {
                 left_speed = 1.0;
                 right_orientation ='F'
                 right_speed = 0.5;
-                distance = 0.3;
                 rotation = this.state.rotation;
                 break;
             case MOVE_INTENT_FORWARD_RIGHT:
@@ -347,7 +346,7 @@ class App extends React.Component {
                 left_speed = 1.0;
                 right_orientation ='B'
                 right_speed = 1.0;
-                distance = this.state.distance;
+                distance = this.getDistanceValue();
                 break;
             case MOVE_INTENT_BACKWARD_SLIGHT_LEFT:
                 left_orientation = 'B';
@@ -668,6 +667,32 @@ class App extends React.Component {
         })
     }
 
+    calculateDistanceValue = (value) => {
+        if (value < 10) {
+            return value / 1000;
+        }
+        else if (value < 20) {
+            return (1 + value - 10) / 100;
+        } else {
+            return (1 + value - 20) / 10;
+        }
+    }
+
+    getDistanceValue = () => {
+        return this.calculateDistanceValue(this.state.distance);
+    }
+
+    distanceLabelFormat = (value) => {
+        let distance = this.getDistanceValue();
+        if (distance < 0.01) {
+            return `${parseInt(distance * 1000)}mm`;
+        } else if (distance < 1) {
+            return `${parseInt(distance * 100)}cm`;
+        } else {
+            return `${parseInt(distance)}m`;
+        }
+    }
+
     render() {
         return (
             <div className="App" >
@@ -794,25 +819,27 @@ class App extends React.Component {
                                 <Slider
                                     value={this.state.distance}
                                     min={0}
-                                    max={1.8}
-                                    step={0.1}
+                                    max={29}
+                                    step={1}
                                     valueLabelDisplay="auto"
+                                    valueLabelFormat={this.distanceLabelFormat}
+                                    scale={this.calculateDistanceValue}
                                     marks={[
                                         {
                                             value: 0,
-                                            label: '0m',
+                                            label: '0mm',
                                         },
                                         {
-                                            value: 0.5,
-                                            label: '0.5m',
+                                            value: 10,
+                                            label: '1cm',
                                         },
                                         {
-                                            value: 1,
+                                            value: 20,
+                                            label: '10cm',
+                                        },
+                                        {
+                                            value: 29,
                                             label: '1m',
-                                        },
-                                        {
-                                            value: 1.8,
-                                            label: '1.8m',
                                         }
                                         ]}
                                     onChange={this.updateDistance}
@@ -865,7 +892,7 @@ class App extends React.Component {
                             <Grid item xl={1} md={1} sm={1} xs={12}/>
                             <Grid item xl={1} md={1} sm={1} xs={12}/>
                             <Divider/>
-                            <Grid item xl={10} md={10} sm={10} xs={12}>
+                            <Grid item xl={12} md={12} sm={12} xs={12}>
                                 <ArmControl
                                     position_claw={this.state.arm_position_claw}
                                     max_angle_claw={this.state.arm_max_angle_claw}
