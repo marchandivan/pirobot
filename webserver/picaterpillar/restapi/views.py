@@ -1,4 +1,6 @@
-from django.http import StreamingHttpResponse
+import time
+
+from django.http import StreamingHttpResponse, HttpResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -112,11 +114,20 @@ class RestApiViewSet(viewsets.ViewSet):
     def capture_image(self, request):
         serializer = serializers.CapturePictureSerializer(data=request.data)
         if serializer.is_valid():
-            Controller.capture_image(serializer.data['destination'])
-            return Response({
-                'status': 'OK',
-                'robot': Controller.serialize()
+            content = Controller.capture_image(serializer.data['destination'], serializer.data['camera'])
+            if content is not None:
+                filename = f"pic_{serializer.data['camera']}_{time.strftime('%Y%m%d-%H%M%S')}.png"
+                return HttpResponse(content, headers={
+                    'Content-Type': 'image/png',
+                    'Access-Control-Expose-Headers': 'filename',
+                    'filename': filename,
+                    'Content-Disposition': f'attachment; filename={filename}',
                 })
+            else:
+                return Response({
+                    'status': 'OK',
+                    'robot': Controller.serialize()
+                    })
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)

@@ -25,5 +25,25 @@ class EightBallGame(object):
     ]
 
     @staticmethod
-    def play():
+    def play(args):
         return random.choice(EightBallGame.answers)
+
+class Dice(object):
+
+    @staticmethod
+    def play(args):
+        if args:
+            return random.choice(args)
+        else:
+            return random.choice([str(d) for d in range(1, 6)])
+
+class Games(object):
+    games = {
+        "8ball": EightBallGame,
+        "dice": Dice
+    }
+
+    @staticmethod
+    def play(game, args):
+        if game in Games.games:
+            return Games.games[game].play(args)

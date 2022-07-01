@@ -542,12 +542,12 @@ class App extends React.Component {
             });
     }
 
-    captureImage = () => {
+     captureImage = async (destination, camera) => {
         let url = '/api/capture_image/';
         if(process.env.REACT_APP_API_URL) {
             url = process.env.REACT_APP_API_URL + url;
         }
-        fetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -555,14 +555,30 @@ class App extends React.Component {
                 'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
-                destination: "lcd"
+                destination: destination,
+                camera: camera
             })
         })
-            .then(response => response.json())
-            .then(data => this.updateState(data))
-            .catch((error) => {
-                console.error('Error:', error);
-            });
+        .catch((error) => {
+            console.error('Error:', error);
+            return;
+        });
+        if (response.headers.get("content-type") === "image/png") {
+            const filename = response.headers.get('filename');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.style.display = "none";
+            a.href = url;
+            // the filename you want
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            alert("your file has downloaded!"); // or you know, something with better UX...
+        } else {
+            this.updateState(response.json());
+        }
     }
 
     updateLcdBrightness = (value) => {
