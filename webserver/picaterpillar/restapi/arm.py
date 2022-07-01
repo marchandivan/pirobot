@@ -66,7 +66,7 @@ PRESET_POSITIONS = {
     "backup_camera": {
         "name": "Back up Camera",
         "moves": [
-            {"id": FOREARM, "angle": 30},
+            {"id": FOREARM, "angle": 45},
             {"id": WRIST, "angle": 165},
             {"id": SHOULDER, "angle": 42},
         ]
@@ -93,6 +93,14 @@ PRESET_POSITIONS = {
             {"id": FOREARM, "angle": 30},
             {"id": WRIST, "angle": 165},
             {"id": SHOULDER, "angle": 215},
+        ]
+    },
+    "back": {
+        "name": "Back up Camera",
+        "moves": [
+            {"id": FOREARM, "angle": 30},
+            {"id": WRIST, "angle": 165},
+            {"id": SHOULDER, "angle": 42},
         ]
     },
     "docking": {
