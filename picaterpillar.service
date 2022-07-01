@@ -2,6 +2,7 @@
 Description=PiCaterpillar gunicorn daemon
 
 [Service]
+Restart=always
 Type=simple
 User=www-data
 ExecStart=/var/www/PiCaterpillar/run_server.sh
