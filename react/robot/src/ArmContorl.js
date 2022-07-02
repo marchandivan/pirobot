@@ -2,7 +2,6 @@ import Grid from '@material-ui/core/Grid';
 import React from 'react';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
-import Stack from '@mui/material/Stack';
 import ThreeSixtyIcon from '@mui/icons-material/ThreeSixty';
 import ReplayIcon from '@mui/icons-material/Replay';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
@@ -66,8 +65,6 @@ class ArmControl extends React.Component {
                     <Grid item xs={2}>
                         <p style={{fontSize: 16, margin: 0}}>{this.props.position_wrist}°</p>
                     </Grid>
-                    <Grid item xs={12}>
-                    </Grid>
                 </Grid>
                 <Grid container alignItems="center">
                     <Grid item xs={2}>
@@ -109,7 +106,6 @@ class ArmControl extends React.Component {
                         <p style={{fontSize: 16, margin: 0}}>{this.props.position_shoulder}°</p>
                     </Grid>
                 </Grid>
-                <p/>
                 <Grid container alignContent="center">
                     <Grid item xl={12} md={12} sm={12} xs={12}>
                         <ButtonGroup fullWidth={true}>
