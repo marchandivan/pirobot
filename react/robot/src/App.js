@@ -723,7 +723,9 @@ class App extends React.Component {
                                     arm_on={this.state.arm_on}
                                 />
                              </Grid>
-                            <Divider/>
+                            <Grid item xl={12} md={12} sm={12} xs={12}>
+                                <Divider/>
+                            </Grid>
                             <Grid container>
                                 <Grid item xl={12} md={12} sm={12} xs={12}>
                                     <p>
@@ -774,8 +776,10 @@ class App extends React.Component {
                                   </Select>
                                 </Grid>
                             </Grid>
-                            <p/>
-                            <Divider/>
+                            <Grid item xl={12} md={12} sm={12} xs={12}>
+                                <p/>
+                                <Divider/>
+                            </Grid>
                             <Grid container>
                                 <Grid item xl={12} md={12} sm={12} xs={12}>
                                     <p>
@@ -783,11 +787,13 @@ class App extends React.Component {
                                     </p>
                                 </Grid>
                                 <Grid item xl={1} md={1} sm={1} xs={1}/>
-                                <Grid item xl={11} md={11} sm={11} xs={11}>
+                                <Grid item xl={10} md={10} sm={10} xs={10}>
                                     <TextField onKeyDown={this.keyPress} fullWidth={true}/>
                                 </Grid>
+                                <Grid item xl={1} md={1} sm={1} xs={1}/>
+                                <p/>
                             </Grid>
-                        </Grid>
+                            </Grid>
                         <Grid item xl={8} md={8} sm={8} xs={12}>
                             <VideoStreamControl
                                 onMouseMove={this.onMouseMove}
@@ -798,68 +804,78 @@ class App extends React.Component {
                                 overlay={this.state.stream_overlay}
                             />
                         </Grid>
-                        <Grid item xl={2} md={2} sm={2} xs={12}>
-                            <Grid item xl={10} md={10} sm={10} xs={12}>
-                                <p style={{fontSize: 16, margin: 0}}>Speed</p>
-                                <Slider
-                                    value={this.state.speed}
-                                    min={10}
-                                    max={100}
-                                    step={10}
-                                    valueLabelDisplay="auto"
-                                    marks={[
-                                        {
-                                            value: 10,
-                                            label: '10%',
-                                        },
-                                        {
-                                            value: 30,
-                                            label: '30%',
-                                        },
-                                        {
-                                            value: 50,
-                                            label: '50%',
-                                        },
-                                        {
-                                            value: 80,
-                                            label: '80%',
-                                        },
-                                        {
-                                            value: 100,
-                                            label: '100%',
-                                        }
-                                        ]}
-                                    onChange={this.updateSpeed}
-                                    aria-label="Speed Slider" />
-                                <p style={{fontSize: 16, margin: 0}}>Distance (T/O {this.getDistanceTimeout().toFixed(1)}s)</p>
-                                <Slider
-                                    value={this.state.distance}
-                                    min={0}
-                                    max={29}
-                                    step={1}
-                                    valueLabelDisplay="auto"
-                                    valueLabelFormat={this.distanceLabelFormat}
-                                    scale={this.calculateDistanceValue}
-                                    marks={[
-                                        {
-                                            value: 0,
-                                            label: '0mm',
-                                        },
-                                        {
-                                            value: 10,
-                                            label: '1cm',
-                                        },
-                                        {
-                                            value: 20,
-                                            label: '10cm',
-                                        },
-                                        {
-                                            value: 29,
-                                            label: '1m',
-                                        }
-                                        ]}
-                                    onChange={this.updateDistance}
-                                    aria-label="Distance Slider" />
+                        <Grid container xl={2} md={2} sm={2} xs={12}>
+                            <Grid container xl={10} md={10} sm={10} xs={12}>
+                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xl={12} md={12} sm={12} xs={10}>
+                                    <p style={{fontSize: 16, margin: 0}}>Speed</p>
+                                    <Slider
+                                        value={this.state.speed}
+                                        min={10}
+                                        max={100}
+                                        step={10}
+                                        valueLabelDisplay="auto"
+                                        marks={[
+                                            {
+                                                value: 10,
+                                                label: '10%',
+                                            },
+                                            {
+                                                value: 30,
+                                                label: '30%',
+                                            },
+                                            {
+                                                value: 50,
+                                                label: '50%',
+                                            },
+                                            {
+                                                value: 80,
+                                                label: '80%',
+                                            },
+                                            {
+                                                value: 100,
+                                                label: '100%',
+                                            }
+                                            ]}
+                                        onChange={this.updateSpeed}
+                                        aria-label="Speed Slider" />
+                                </Grid>
+                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xl={12} md={12} sm={12} xs={10}>
+                                    <p style={{fontSize: 16, margin: 0}}>Distance (T/O {this.getDistanceTimeout().toFixed(1)}s)</p>
+                                    <Slider
+                                        value={this.state.distance}
+                                        min={0}
+                                        max={29}
+                                        step={1}
+                                        valueLabelDisplay="auto"
+                                        valueLabelFormat={this.distanceLabelFormat}
+                                        scale={this.calculateDistanceValue}
+                                        marks={[
+                                            {
+                                                value: 0,
+                                                label: '0mm',
+                                            },
+                                            {
+                                                value: 10,
+                                                label: '1cm',
+                                            },
+                                            {
+                                                value: 20,
+                                                label: '10cm',
+                                            },
+                                            {
+                                                value: 29,
+                                                label: '1m',
+                                            }
+                                            ]}
+                                        onChange={this.updateDistance}
+                                        aria-label="Distance Slider" />
+                                </Grid>
+                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xl={12} md={12} sm={12} xs={10}>
                                 <p style={{fontSize: 16, margin: 0}}>Rotation  (T/O {this.getRotationTimeout().toFixed(1)}s)</p>
                                 <Slider
                                     value={this.state.rotation}
@@ -887,6 +903,8 @@ class App extends React.Component {
                                         ]}
                                     onChange={this.updateRotation}
                                     aria-label="Rotation Slider" />
+                                </Grid>
+                                <Grid item xl={0} md={0} sm={0} xs={1}/>
                                 <DirectionCross
                                     forward_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD)}
                                     forward_slight_left_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD_SLIGHT_LEFT)}
