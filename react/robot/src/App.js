@@ -1,6 +1,9 @@
 import Grid from '@material-ui/core/Grid';
 import Slider from '@material-ui/core/Slider';
 import TextField from "@material-ui/core/TextField";
+import FormGroup from "@material-ui/core/FormGroup";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import Checkbox from "@material-ui/core/Checkbox";
 import React from 'react';
 import './App.css';
 import Cookies from 'js-cookie';
@@ -71,6 +74,7 @@ class App extends React.Component {
             arm_position_shoulder: 0,
             distance: 10,
             rotation: 30,
+            speech_destination: "audio",
         }
         this.key_down = {};
     }
@@ -259,6 +263,7 @@ class App extends React.Component {
                 'X-CSRFToken': Cookies.get('csrftoken'),
             },
             body: JSON.stringify({
+                destination: this.state.speech_destination,
                 text: text
             })
         })
@@ -709,6 +714,12 @@ class App extends React.Component {
         }
     }
 
+    toggleSpeechDestination = (event) => {
+        if (event.target.checked) {
+            this.setState({speech_destination: this.state.speech_destination === "lcd" ? "audio" : "lcd"})
+        }
+    }
+
     render() {
         return (
             <div className="App" >
@@ -792,6 +803,14 @@ class App extends React.Component {
                                 </Grid>
                                 <Grid item xl={1} md={1} sm={1} xs={1}/>
                                 <p/>
+                                <Grid item xl={1} md={1} sm={1} xs={1}/>
+                                <Grid item xl={10} md={10} sm={10} xs={10}>
+                                <FormGroup row={true}>
+                                  <FormControlLabel control={<Checkbox onChange={this.toggleSpeechDestination} checked={this.state.speech_destination === "lcd"}/>} label="Display" />
+                                  <FormControlLabel control={<Checkbox onChange={this.toggleSpeechDestination} checked={this.state.speech_destination === "audio"}/>} label="Speak" />
+                                </FormGroup>
+                                </Grid>
+                                <Grid item xl={1} md={1} sm={1} xs={1}/>
                             </Grid>
                             </Grid>
                         <Grid item xl={8} md={8} sm={8} xs={12}>
@@ -806,7 +825,7 @@ class App extends React.Component {
                         </Grid>
                         <Grid container xl={2} md={2} sm={2} xs={12}>
                             <Grid container xl={10} md={10} sm={10} xs={12}>
-                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xs={1}/>
                                 <Grid item xl={12} md={12} sm={12} xs={10}>
                                     <p style={{fontSize: 16, margin: 0}}>Speed</p>
                                     <Slider
@@ -840,8 +859,8 @@ class App extends React.Component {
                                         onChange={this.updateSpeed}
                                         aria-label="Speed Slider" />
                                 </Grid>
-                                <Grid item xl={0} md={0} sm={0} xs={1}/>
-                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xs={1}/>
+                                <Grid item xs={1}/>
                                 <Grid item xl={12} md={12} sm={12} xs={10}>
                                     <p style={{fontSize: 16, margin: 0}}>Distance (T/O {this.getDistanceTimeout().toFixed(1)}s)</p>
                                     <Slider
@@ -873,8 +892,8 @@ class App extends React.Component {
                                         onChange={this.updateDistance}
                                         aria-label="Distance Slider" />
                                 </Grid>
-                                <Grid item xl={0} md={0} sm={0} xs={1}/>
-                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xs={1}/>
+                                <Grid item xs={1}/>
                                 <Grid item xl={12} md={12} sm={12} xs={10}>
                                 <p style={{fontSize: 16, margin: 0}}>Rotation  (T/O {this.getRotationTimeout().toFixed(1)}s)</p>
                                 <Slider
@@ -904,7 +923,7 @@ class App extends React.Component {
                                     onChange={this.updateRotation}
                                     aria-label="Rotation Slider" />
                                 </Grid>
-                                <Grid item xl={0} md={0} sm={0} xs={1}/>
+                                <Grid item xs={1}/>
                                 <DirectionCross
                                     forward_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD)}
                                     forward_slight_left_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD_SLIGHT_LEFT)}

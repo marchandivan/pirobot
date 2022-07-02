@@ -10,13 +10,12 @@ import React from "react";
 class LightControl extends React.Component {
 
     render() {
-        console.log(window.outerWidth, window.outerHeight);
         return (
             <Grid container justifyContent="center" alignItems="center">
                 <Grid item xl={12} md={12} sm={12} xs={12}>
                     <img
                         src={(process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : "") + "/api/stream/"}
-                        style={{'max-height': window.outerHeight * 0.7}}
+                        style={{maxHeight: window.outerHeight * 0.7}}
                         width={window.outerWidth > window.outerHeight ? window.outerWidth * 0.63 : window.outerWidth * 0.9}
                         alt="Camera Feed"
                         onMouseMove={this.props.onMouseMove}
