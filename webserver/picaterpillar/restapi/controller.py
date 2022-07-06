@@ -154,7 +154,7 @@ class Controller(object):
         file_path = os.path.join('assets/Pics/', f"{name}.png")
         if os.path.isfile(file_path):
             image = Image.open(file_path)
-            image = image.resize((lcd.height, lcd.width))
+            image = image.resize((lcd.height, lcd.width)).convert('RGB')
             lcd.ShowImage(image)
 
     # Arm

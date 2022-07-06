@@ -57,7 +57,7 @@ class App extends React.Component {
             left_on: false,
             right_on: false,
             arm_on: false,
-            speed: 100,
+            speed: 50,
             min_duration: 0.2,
             max_duration: 20.0,
             mouse_x: 0,
@@ -73,7 +73,7 @@ class App extends React.Component {
             arm_position_forearm: 0,
             arm_position_shoulder: 0,
             distance: 10,
-            rotation: 30,
+            rotation: 10,
             speech_destination: "audio",
         }
         this.key_down = {};
@@ -906,6 +906,10 @@ class App extends React.Component {
                                         {
                                             value: 0,
                                             label: '0º',
+                                        },
+                                        {
+                                            value: 10,
+                                            label: '10º',
                                         },
                                         {
                                             value: 30,
