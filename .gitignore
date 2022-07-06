@@ -133,3 +133,4 @@ dmypy.json
 .idea
 
 .secret.key
+.DS_Store
