@@ -34,25 +34,7 @@ SERVOS_CONFIG = {
     },
 }
 
-DEFAULT_EXCLUSION_ZONES = [
-    {
-        FOREARM: [100, 180],
-        SHOULDER: [127, 270]
-    },
-    {
-        FOREARM: [145, 180],
-        SHOULDER: [0, 41]
-    },
-    {
-        FOREARM: [145, 180],
-        SHOULDER: [43, 180]
-    },
-    {
-        FOREARM: [171, 180],
-        SHOULDER: [42, 42]
-    },
-]
-EXCLUSION_ZONES = Config.get("exclusion_zones", DEFAULT_EXCLUSION_ZONES)
+EXCLUSION_ZONES = Config.get("exclusion_zones")
 
 PRESET_POSITIONS = {
     "zero": {

@@ -1,3 +1,4 @@
+from restapi.models import Config
 
 class LCD_2inch(object):
     width = 240
@@ -13,8 +14,8 @@ class LCD_2inch(object):
         pass
 
     def ShowImage(self, image, Xstart=0, Ystart=0):
-        image.show()
-        pass
+        if Config.get('show_mock_screen'):
+            image.show()
 
     def bl_DutyCycle(self, dc):
         print(f"Set back light duty cycle to {dc}")

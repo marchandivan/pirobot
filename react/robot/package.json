@@ -8,6 +8,7 @@
     "@material-ui/core": "^4.8.1",
     "@material-ui/icons": "^4.5.1",
     "@mui/icons-material": "^5.3.0",
+    "@mui/material": "^5.10.4",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.4.0",
     "@testing-library/user-event": "^7.2.1",
@@ -17,7 +18,7 @@
     "react-scripts": "3.4.1"
   },
   "scripts": {
-    "start": "cross-env REACT_APP_API_URL='http://picaterpillar.local:8000' react-scripts start",
+    "start": "cross-env REACT_APP_API_URL='http://raspberrypi.local:8000' react-scripts start",
     "start_local": "cross-env REACT_APP_API_URL='http://localhost:8080' react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

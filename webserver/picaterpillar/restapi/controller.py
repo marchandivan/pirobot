@@ -1,6 +1,6 @@
 import io
 import os
-import sys
+import platform
 from threading import Timer
 
 import pyttsx3
@@ -11,10 +11,10 @@ from restapi.camera import Camera
 from restapi.game import Games
 from restapi.light import Light
 from restapi.models import Config
-from restapi.motor import Motor
+from motor.motor import Motor
 from terminal import Terminal
 
-if sys.platform != "darwin":  # Mac OS
+if platform.machine() == "aarch64":  # Mac OS
     from lcd.LCD_2inch import LCD_2inch
 else:
     from lcd.LCD_Mock import LCD_2inch
