@@ -1,5 +1,6 @@
 import io
 import math
+import platform
 import sys
 import threading
 import time
@@ -7,10 +8,10 @@ import traceback
 
 import cv2
 import numpy as np
-from restapi.motor import Motor
+from motor.motor import Motor
 
 from restapi.models import Config
-if sys.platform != "darwin":  # Mac OS
+if platform.machine() == "aarch64":  # Mac OS
     import picamera
     from picamera.array import PiRGBArray
 

@@ -1,0 +1,79 @@
+{
+  "uart_port": {
+    "type": "str",
+    "default": "/dev/ttyAMA0"
+  },
+  "uart_baudrate": {
+    "type": "int",
+    "default": 9600
+  },
+  "motor_controller": {
+    "type": "str",
+    "default": "pico"
+  },
+  "use_speed_control": {
+    "type": "bool",
+    "default": true
+  },
+  "robot_width": {
+    "type": "int",
+    "default": 560
+  },
+  "wheel_d": {
+    "type": "int",
+    "default": 42
+  },
+  "max_rpm": {
+    "type": "int",
+    "default": 42
+  },
+  "show_mock_screen" : {
+    "type": "bool",
+    "default": false
+  },
+  "exclusion_zones": {
+    "type": "json",
+    "default": [
+      {
+        "FOREARM": [
+          100,
+          180
+        ],
+        "SHOULDER": [
+          127,
+          270
+        ]
+      },
+      {
+        "FOREARM": [
+          145,
+          180
+        ],
+        "SHOULDER": [
+          0,
+          41
+        ]
+      },
+      {
+        "FOREARM": [
+          145,
+          180
+        ],
+        "SHOULDER": [
+          43,
+          180
+        ]
+      },
+      {
+        "FOREARM": [
+          171,
+          180
+        ],
+        "SHOULDER": [
+          42,
+          42
+        ]
+      }
+    ]
+  }
+}

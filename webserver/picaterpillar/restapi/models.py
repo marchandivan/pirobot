@@ -1,6 +1,11 @@
+import json
+import os
+
 from django.contrib import admin
 from django.db import models
 
+with open('config.json') as config_file:
+    CONFIG_KEYS = json.load(config_file)
 
 # Create your models here.
 class Config(models.Model):
@@ -8,12 +13,30 @@ class Config(models.Model):
     value = models.CharField(max_length=2048)
 
     @staticmethod
-    def get(key, default=None):
+    def _convert_to_type(value, type):
+        if type == "int":
+            return int(value)
+        elif type == "str":
+            return str(value)
+        elif type == "float":
+            return float(value)
+        elif type == "bool":
+            return bool(value)
+        elif type == json:
+            return json.loads(value)
+        else:
+            return value
+
+    @staticmethod
+    def get(key):
+        config = CONFIG_KEYS.get(key)
+        if config is None:
+            raise KeyError(key)
         try:
             o = Config.objects.get(key=key)
-            return o.value
+            return Config._convert_to_type(o.value, config.get("type"))
         except:
-            return default
+            return config.get("default")
 
     @staticmethod
     def get_config():

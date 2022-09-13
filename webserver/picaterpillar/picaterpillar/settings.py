@@ -11,9 +11,10 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import platform
 import sys
 
-if sys.platform == "darwin":  # Mac OS
+if platform.machine() != "aarch64":  # Mac OS
     import unittest.mock as mock
 
     # Mock smbus (i2c) on Mac OS
