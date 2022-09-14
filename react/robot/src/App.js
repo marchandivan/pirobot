@@ -146,9 +146,9 @@ class App extends React.Component {
                 move_intent = MOVE_INTENT_BACKWARD
             }
         } else if (this.key_down[KEY_LEFT]) {
-            move_intent = MOVE_INTENT_U_TURN_LEFT;
+            move_intent = MOVE_INTENT_SLIGHT_LEFT;
         } else if (this.key_down[KEY_RIGHT]) {
-            move_intent = MOVE_INTENT_U_TURN_RIGHT;
+            move_intent = MOVE_INTENT_SLIGHT_RIGHT;
         }
 
         this.moveRobot(move_intent);
