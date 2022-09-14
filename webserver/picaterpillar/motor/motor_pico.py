@@ -40,7 +40,7 @@ class PicoMotor(object):
             nb_of_revolutions = 1000 * distance / (math.pi * PicoMotor.wheel_d)
         differential_nb_of_revolutions = 0
         if rotation is not None:
-            differential_nb_of_revolutions = rotation * PicoMotor.robot_width / (360.0 * PicoMotor.wheel_d)
+            differential_nb_of_revolutions = rotation * PicoMotor.robot_width / (180.0 * PicoMotor.wheel_d)
         UART.write(
             f"M:{left_orientation}:{int(left_speed)}:{right_orientation}:{int(right_speed)}:{nb_of_revolutions:.2f}:{differential_nb_of_revolutions:.2f}:{duration}"
         )

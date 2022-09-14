@@ -17,11 +17,11 @@
   },
   "robot_width": {
     "type": "int",
-    "default": 560
+    "default": 175
   },
   "wheel_d": {
     "type": "int",
-    "default": 42
+    "default": 84
   },
   "max_rpm": {
     "type": "int",
