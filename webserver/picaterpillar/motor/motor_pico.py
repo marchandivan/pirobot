@@ -35,12 +35,15 @@ class PicoMotor(object):
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation):
-        nb_of_turns = 0
+        nb_of_revolutions = 0
         if distance is not None:
-            nb_of_turns = 1000 * distance / (math.pi * PicoMotor.wheel_d)
-        elif rotation is not None:
-            nb_of_turns = rotation
-        UART.write(f"M:{left_orientation}:{int(left_speed)}:{right_orientation}:{int(right_speed)}:{nb_of_turns:.2f}")
+            nb_of_revolutions = 1000 * distance / (math.pi * PicoMotor.wheel_d)
+        differential_nb_of_revolutions = 0
+        if rotation is not None:
+            differential_nb_of_revolutions = rotation * PicoMotor.robot_width / (360.0 * PicoMotor.wheel_d)
+        UART.write(
+            f"M:{left_orientation}:{int(left_speed)}:{right_orientation}:{int(right_speed)}:{nb_of_revolutions:.2f}:{differential_nb_of_revolutions:.2f}:{duration}"
+        )
 
     @staticmethod
     def get_motor_status():
