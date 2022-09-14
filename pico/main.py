@@ -47,6 +47,7 @@ class MotorHandler(object):
     def stop(self):
         self.move('F', 0, 'F', 0)
         self.target_nb_of_revolutions = None
+        self.target_differential_nb_of_revolutions = None
         self.timeout_ts = None
 
     def update_counters(self):
@@ -59,6 +60,8 @@ class MotorHandler(object):
         self.total_nb_of_revolutions += avg_nb_of_revolutions
         self.total_abs_nb_of_revolutions += abs(avg_nb_of_revolutions)
         if self.target_nb_of_revolutions is not None and self.total_abs_nb_of_revolutions > self.target_nb_of_revolutions:
+            self.stop()
+        if self.target_differential_nb_of_revolutions is not None and self.total_differential_nb_of_revolutions > self.target_differential_nb_of_revolutions:
             self.stop()
         if self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts:
             self.stop()
@@ -80,7 +83,7 @@ class MotorHandler(object):
                 if nb_of_revolutions > 0:
                     self.target_nb_of_revolutions = self.total_abs_nb_of_revolutions + nb_of_revolutions
                 if differential_nb_of_revolutions > 0:
-                    self.target_differential_nb_of_revolutions = self.total_differential_nb_of_revolutionstarget_nb_of_revolutions + differential_nb_of_revolutions
+                    self.target_differential_nb_of_revolutions = self.total_differential_nb_of_revolutions + differential_nb_of_revolutions
                 self.timeout_ts = utime.ticks_ms() + timeout * 1000
                 self.move(left_direction, left_speed, right_direction, right_speed)
                 return True, "OK"

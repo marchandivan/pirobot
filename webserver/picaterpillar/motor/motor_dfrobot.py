@@ -157,7 +157,7 @@ class DFRobotMotor(object):
             diff_nb_of_turns = abs(DFRobotMotor.right_speed_controller.nb_of_turns - DFRobotMotor.left_speed_controller.nb_of_turns)
             DFRobotMotor.distance += avg_nb_of_turns * math.pi * DFRobotMotor.wheel_d
             DFRobotMotor.abs_distance += abs(avg_nb_of_turns) * math.pi * DFRobotMotor.wheel_d
-            DFRobotMotor.rotation += 2 * 180.0 / math.pi * (diff_nb_of_turns * math.pi * DFRobotMotor.wheel_d) / (DFRobotMotor.robot_width)
+            DFRobotMotor.rotation += 180.0 / math.pi * (diff_nb_of_turns * math.pi * DFRobotMotor.wheel_d) / (DFRobotMotor.robot_width)
             # Reached target distance, if any?
             if DFRobotMotor.target_distance is not None and DFRobotMotor.abs_distance >= DFRobotMotor.target_distance:
                 DFRobotMotor._iic_motor.motor_stop(DFRobot_DC_Motor_IIC.ALL)
