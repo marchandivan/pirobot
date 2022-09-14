@@ -11,7 +11,7 @@ import numpy as np
 from motor.motor import Motor
 
 from restapi.models import Config
-if platform.machine() == "aarch64":  # Mac OS
+if platform.machine() == "aarch":  # Mac OS
     import picamera
     from picamera.array import PiRGBArray
 
@@ -54,7 +54,7 @@ class CaptureDevice(object):
         self.res_x, self.res_y = resolution.split('x')
         self.res_x, self.res_y = int(self.res_x), int(self.res_y)
         if self.capturing_device == "usb":  # USB Camera?
-            self.device = cv2.VideoCapture(int(Config.get('front_device_id', Camera.available_device)))
+            self.device = cv2.VideoCapture(Camera.available_device)
             self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
             self.device.set(3, self.res_x)
             self.device.set(4, self.res_y)
@@ -216,7 +216,7 @@ class Camera(object):
     @staticmethod
     def stream():
         config = Config.get_config()
-        if sys.platform == "darwin":
+        if platform.machine() != "aarch":
             front_capturing_device = "usb"
             front_resolution = '1280x720'
         else:
@@ -226,7 +226,7 @@ class Camera(object):
             arm_resolution = config.get('back_capturing_resolution', '640x480')
         Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
                                                     capturing_device=front_capturing_device)
-        if sys.platform == "darwin":
+        if platform.machine() != "aarch":
             Camera.arm_capture_device = Camera.front_capture_device
         else:
             Camera.arm_capture_device = CaptureDevice(resolution=arm_resolution,
