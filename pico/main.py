@@ -65,7 +65,7 @@ class UltraSonicHandler(object):
     def stop(self):
         if "loop" in self.timers:
             self.timers["loop"].deinit()
-        del self.timers["loop"]
+            del self.timers["loop"]
 
         for timer in self.timers.values():
             timer.deinit()
@@ -231,7 +231,7 @@ ultrasonic_handler = UltraSonicHandler(
         "back": UltraSonicSensor(pin_trigger=3, pin_echo=4),
         }
     )
-#ultrasonic_handler.start()
+ultrasonic_handler.start()
 distance = ultrasonic_handler.distances()
 
 def process_command(cmd):
@@ -252,11 +252,13 @@ try:
                 success, data = process_command(cmd)
                 print(success, data)
 
+        motor_handler.update_counters()
+
         # Have we reached the target distance?
         if distance != ultrasonic_handler.distances():
             distance = ultrasonic_handler.distances()
             if distance["front"] < 0.05 and motor_handler.left_direction == "F" and motor_handler.right_direction == "F":
-                #motor_handler.stop()
+                motor_handler.stop()
                 pass
 finally:
     motor_handler.stop()
