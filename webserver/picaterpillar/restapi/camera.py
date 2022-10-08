@@ -14,6 +14,8 @@ from restapi.models import Config
 if platform.machine() == "aarch":  # Mac OS
     import picamera
     from picamera.array import PiRGBArray
+elif platform.machine() == "aarch64":
+    import picamera2
 
 # Calculate model to covert the position of a pixel to the physical position on the floor,
 # using measurements (distances & y_pos) & polynomial regression
@@ -59,7 +61,14 @@ class CaptureDevice(object):
             self.device.set(3, self.res_x)
             self.device.set(4, self.res_y)
         else:
-            self.device = picamera.PiCamera(resolution=resolution)
+            if platform.machine() == "aarch64":
+                self.device = picamera2.Picamera2()
+                config = self.device.create_preview_configuration({"size": (self.res_x, self.res_y), "format": "RGB888"})
+                print(config)
+                self.device.configure(config)
+                self.device.start()
+            else:
+                self.device = picamera.PiCamera(resolution=resolution)
 
     def _add_target(self, frame):
         rect_size = 70
@@ -144,9 +153,13 @@ class CaptureDevice(object):
             ret, frame = self.device.retrieve()
             return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
         else:  # picamera
-            output = PiRGBArray(self.device)
-            self.device.capture(output, format="bgr", use_video_port=True)
-            return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
+            if platform.machine() == "aarch64":
+                frame = self.device.capture_array()
+                return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+            else:
+                output = PiRGBArray(self.device)
+                self.device.capture(output, format="bgr", use_video_port=True)
+                return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
  
     def capture(self):
         max_retries = 3
@@ -178,7 +191,7 @@ class CaptureDevice(object):
                 #if CaptureDevice.target is not None:
                 #    self._add_target(frame)
 
-                self.add_navigation_lines(frame)
+                # self.add_navigation_lines(frame)
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
 
@@ -216,7 +229,7 @@ class Camera(object):
     @staticmethod
     def stream():
         config = Config.get_config()
-        if platform.machine() != "aarch":
+        if platform.machine() not in ["aarch", "aarch64"]:
             front_capturing_device = "usb"
             front_resolution = '1280x720'
         else:
