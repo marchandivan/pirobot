@@ -31,6 +31,10 @@
     "type": "bool",
     "default": false
   },
+  "lense_coeff_x_pos": {
+    "type": "float",
+    "default": 0.8
+  },
   "exclusion_zones": {
     "type": "json",
     "default": [
