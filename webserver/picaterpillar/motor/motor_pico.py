@@ -47,7 +47,7 @@ class PicoMotor(object):
 
     @staticmethod
     def get_motor_status():
-        return {}, {}
+        return {"speed_rpm": 0, "duty": 0}, {"speed_rpm": 0, "duty": 0}
 
     @staticmethod
     def get_distance():

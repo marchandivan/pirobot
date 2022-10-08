@@ -17,6 +17,7 @@ pillow = "*"
 matplotlib = {version = "*",sys_platform = "== 'darwin'"}
 pyttsx3 = "*"
 pyserial = "*"
+picamera2 = "*"
 
 [dev-packages]
 
