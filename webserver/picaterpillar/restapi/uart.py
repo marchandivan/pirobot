@@ -1,12 +1,10 @@
 import serial
-import sys
 import threading
 
 from picaterpillar import settings
 from restapi.models import Config
 
 if settings.DEBUG:
-    from restapi.consumers import UartConsumer
     import rel
     import websocket
 
@@ -15,14 +13,19 @@ class UART:
     serial_port = None
     use_websocket = Config.get('use_uart_websocket')
     websocket_client = None
+    consumers = {}
 
+    @staticmethod
+    def register_consumer(name, consumer):
+        UART.consumers[name] = consumer
 
     @staticmethod
     def read_forever(port):
         while True:
             line = port.readline()
             if settings.DEBUG and UartConsumer.socket is not None:
-                UartConsumer.socket.send(line.decode()[:-1])
+                if "websocket" in UART.consumers:
+                    UART.consumers["websocket"].socket.send(line.decode()[:-1])
 
     @staticmethod
     def open():
