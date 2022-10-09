@@ -6,20 +6,23 @@ from picaterpillar import settings
 from restapi.models import Config
 
 if settings.DEBUG:
+    from restapi.consumers import UartConsumer
     import rel
     import websocket
-
-
-def read_forever(port):
-    while True:
-        sys.stdout.write(port.read())
 
 
 class UART:
     serial_port = None
     use_websocket = Config.get('use_uart_websocket')
     websocket_client = None
-    read_tasks = set()
+
+
+    @staticmethod
+    def read_forever(port):
+        while True:
+            line = port.readline()
+            if settings.DEBUG and UartConsumer.socket is not None:
+                UartConsumer.socket.send(line.decode()[:-1])
 
     @staticmethod
     def open():
@@ -37,8 +40,8 @@ class UART:
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE
             )
-            t = threading.Thread(target=read_forever, args=(UART.serial_port,))
-            t.run()
+            t = threading.Thread(target=UART.read_forever, args=(UART.serial_port,))
+            t.start()
 
     @staticmethod
     def ws_on_message(ws, message):
