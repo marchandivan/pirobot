@@ -6,7 +6,6 @@ class UartConsumer(WebsocketConsumer):
     socket = None
 
     def connect(self):
-        print("Connected!")
         UartConsumer.socket = self
         self.accept()
 
