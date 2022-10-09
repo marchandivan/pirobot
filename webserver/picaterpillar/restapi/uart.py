@@ -10,36 +10,16 @@ if settings.DEBUG:
     import websocket
 
 
-class OutputProtocol(asyncio.Protocol):
-    def connection_made(self, transport):
-        self.transport = transport
-        print('port opened', transport)
-        transport.serial.rts = False  # You can manipulate Serial object via transport
-        transport.write(b'Hello, World!\n')  # Write serial data via transport
+async def read_forever(port):
+    while True:
+        print(port.read())
 
-    def data_received(self, data):
-        if settings.DEBUG:
-            from restapi.consumers import UartConsumer
-        print('data received', repr(data))
-        if UartConsumer.socket is not None:
-            UartConsumer.socket.send(data)
-
-    def connection_lost(self, exc):
-        print('port closed')
-        self.transport.loop.stop()
-
-    def pause_writing(self):
-        print('pause writing')
-        print(self.transport.get_write_buffer_size())
-
-    def resume_writing(self):
-        print(self.transport.get_write_buffer_size())
-        print('resume writing')
 
 class UART:
-    serial_writer = None
+    serial_port = None
     use_websocket = Config.get('use_uart_websocket')
     websocket_client = None
+    read_task = None
 
     @staticmethod
     def open():
@@ -49,12 +29,15 @@ class UART:
                                                            on_message=UART.ws_on_message)
             UART.websocket_client.run_forever(dispatcher=rel)
 
-        else:
-            loop = asyncio.new_event_loop()
-            coro = serial_asyncio.create_serial_connection(loop, OutputProtocol, Config.get("uart_port"), baudrate=Config.get("uart_baudrate"))
-            UART.serial_writer, _ = loop.run_until_complete(coro)
-            #loop.run_forever()
-            #loop.close()
+        elif UART.serial_port is None:
+            UART.serial_port = serial.Serial(
+                port=Config.get("uart_port"),
+                baudrate=Config.get("uart_baudrate"),
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE
+            )
+            UART.read_task = asyncio.create_task(read_forever())
 
     @staticmethod
     def ws_on_message(ws, message):
@@ -66,7 +49,7 @@ class UART:
         if settings.DEBUG and UART.use_websocket:
             UART.websocket_client.send(data.encode())
         else:
-            if UART.serial_writer is not None:
-                UART.serial_writer.write(data.encode())
+            if UART.serial_port is not None:
+                UART.serial_port.write(data.encode())
             else:
                 print("Unable to send serial message")
