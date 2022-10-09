@@ -1,6 +1,6 @@
-import asyncio
 import serial
-import serial_asyncio
+import sys
+import threading
 
 from picaterpillar import settings
 from restapi.models import Config
@@ -10,16 +10,16 @@ if settings.DEBUG:
     import websocket
 
 
-async def read_forever(port):
+def read_forever(port):
     while True:
-        print(port.read())
+        sys.stdout.write(port.read())
 
 
 class UART:
     serial_port = None
     use_websocket = Config.get('use_uart_websocket')
     websocket_client = None
-    read_task = None
+    read_tasks = set()
 
     @staticmethod
     def open():
@@ -37,7 +37,8 @@ class UART:
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE
             )
-            UART.read_task = asyncio.create_task(read_forever())
+            t = threading.Thread(target=read_forever, args=(UART.serial_port,))
+            t.run()
 
     @staticmethod
     def ws_on_message(ws, message):
@@ -53,3 +54,4 @@ class UART:
                 UART.serial_port.write(data.encode())
             else:
                 print("Unable to send serial message")
+

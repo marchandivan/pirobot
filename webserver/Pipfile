@@ -19,7 +19,6 @@ matplotlib = {version = "*",sys_platform = "== 'darwin'"}
 pyttsx3 = "*"
 channels = "*"
 websocket-client = "*"
-pyserial-asyncio = "*"
 pyserial = "*"
 rel = "*"
 
