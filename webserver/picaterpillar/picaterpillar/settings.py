@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'channels',
     'restapi'
 ]
 
@@ -103,6 +104,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'picaterpillar.wsgi.application'
+ASGI_APPLICATION = 'picaterpillar.asgi.application'
 
 
 # Database
