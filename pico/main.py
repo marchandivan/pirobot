@@ -300,8 +300,7 @@ class PatrollerHandler(object):
                 self.move_camera = False
             
             if self.speed == 0:
-                self.running = False
-                self.motor_controller.stop()
+                self.stop()
             else:
                 self.running = True
 
@@ -326,7 +325,10 @@ class PatrollerHandler(object):
                 self.motor_handler.move("F", self.speed, "B", self.speed, 10, 0, 0.1)
             else:
                 self.motor_handler.move("B", self.speed, "F", 30, self.speed, 0, 0.1)
-
+    
+    def stop(self):
+        self.running = False
+        self.motor_controller.stop()
 
 motor_handler = MotorHandler(
                  pin_e1a=15,
@@ -368,8 +370,6 @@ def process_command(cmd):
         return patroller_handler.process_command(args)
     else:
         return False, f"Unknown sensor {sensor}"
-
-patroller_handler.process_command(['30'])
 
 try:
     while True:

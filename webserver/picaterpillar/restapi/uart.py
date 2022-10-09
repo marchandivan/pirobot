@@ -45,13 +45,13 @@ class UART:
     def open():
         if settings.DEBUG and UART.use_websocket:
             websocket.enableTrace(True)
-            UART.websocket_client = websocket.WebSocketApp("ws://127.0.0.1:8000/ws/uart/",
+            UART.websocket_client = websocket.WebSocketApp("ws://raspberrypi.local:8000/ws/uart/",
                                                            on_message=UART.ws_on_message)
             UART.websocket_client.run_forever(dispatcher=rel)
 
         else:
             loop = asyncio.new_event_loop()
-            coro = serial_asyncio.create_serial_connection(loop, OutputProtocol, '/dev/ttyS0', baudrate=115200)
+            coro = serial_asyncio.create_serial_connection(loop, OutputProtocol, Config.get("uart_port"), baudrate=Config.get("uart_baudrate"))
             UART.serial_writer, _ = loop.run_until_complete(coro)
             #loop.run_forever()
             #loop.close()
