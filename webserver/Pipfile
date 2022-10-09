@@ -10,14 +10,18 @@ smbus = {version = "*",platform_machine = "== 'aarch64'"}
 fake-rpi = {version = "*",platform_machine = "!= 'aarch64'"}
 django-cors-headers = "*"
 opencv-python-headless = "*"
-picamera = {version = "*",platform_machine = "== 'aarch64'"}
+picamera = {version = "*",platform_machine = "== 'aarch'"}
+picamera2 = {version = "*",platform_machine = "== 'aarch64'"}
 "rpi.gpio" = {version = "*",platform_machine = "== 'aarch64'"}
 spidev = {version = "*",platform_machine = "== 'aarch64'"}
 pillow = "*"
 matplotlib = {version = "*",sys_platform = "== 'darwin'"}
 pyttsx3 = "*"
+channels = "*"
+websocket-client = "*"
+pyserial-asyncio = "*"
 pyserial = "*"
-picamera2 = "*"
+rel = "*"
 
 [dev-packages]
 

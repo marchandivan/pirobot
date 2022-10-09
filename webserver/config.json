@@ -35,6 +35,10 @@
     "type": "float",
     "default": 0.8
   },
+  "use_uart_websocket": {
+    "type": "bool",
+    "default": false
+  },
   "exclusion_zones": {
     "type": "json",
     "default": [
