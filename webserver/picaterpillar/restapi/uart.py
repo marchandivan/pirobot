@@ -23,9 +23,9 @@ class UART:
     def read_forever(port):
         while True:
             line = port.readline()
-            if settings.DEBUG and UartConsumer.socket is not None:
-                if "websocket" in UART.consumers:
-                    UART.consumers["websocket"].socket.send(line.decode()[:-1])
+            websocket_consumer = UART.consumers.get("websocket")
+            if settings.DEBUG and websocket_consumer is not None:
+                websocket_consumer.socket.send(line.decode()[:-1])
 
     @staticmethod
     def open():
