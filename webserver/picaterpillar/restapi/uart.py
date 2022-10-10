@@ -20,7 +20,7 @@ class UART:
         UART.consumers[name] = consumer
 
     @staticmethod
-    def read_forever(port):
+    def read_uart_forever(port):
         while True:
             line = port.readline()
             websocket_consumer = UART.consumers.get("websocket")
@@ -32,8 +32,10 @@ class UART:
         if settings.DEBUG and UART.use_websocket:
             websocket.enableTrace(True)
             UART.websocket_client = websocket.WebSocketApp("ws://raspberrypi.local:8000/ws/uart/",
+                                                           on_close=UART.ws_reconnect,
                                                            on_message=UART.ws_on_message)
-            UART.websocket_client.run_forever(dispatcher=rel)
+            threading.Thread(target=UART.websocket_client.run_forever, daemon=True).start()
+            rel.dispatch()
 
         elif UART.serial_port is None:
             UART.serial_port = serial.Serial(
@@ -43,12 +45,19 @@ class UART:
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE
             )
-            t = threading.Thread(target=UART.read_forever, args=(UART.serial_port,))
-            t.start()
+            threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
 
     @staticmethod
     def ws_on_message(ws, message):
         print(message)
+
+    @staticmethod
+    def ws_reconnect(ws):
+        print("Connection closed")
+        while not ws.connected:
+            ws.connect('ws://raspberrypi.local:8000/ws/uart/')
+            ws.recv()
+
 
     @staticmethod
     def write(data):
