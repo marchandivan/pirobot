@@ -163,7 +163,7 @@ class MotorHandler(object):
 
         self.left_duty = 0
         self.right_duty = 0
-        self.auto_stop = False
+        self.auto_stop = True
         self.previous_distances = None
 
         self.target_nb_of_revolutions = None

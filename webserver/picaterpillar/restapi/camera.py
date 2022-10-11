@@ -234,7 +234,7 @@ class Camera(object):
         if platform.machine() not in ["aarch", "aarch64"]:
             front_capturing_device = "usb"
             front_resolution = '1280x720'
-            arm_capturing_device = "usb"
+            arm_capturing_device = None
             arm_resolution = '1280x720'
         else:
             front_capturing_device = Config.get('front_capturing_device')
@@ -244,7 +244,10 @@ class Camera(object):
         Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
                                                     capturing_device=front_capturing_device)
         if arm_capturing_device is None:
-            Camera.arm_capture_device = None
+            if platform.machine() not in ["aarch", "aarch64"]:
+                Camera.arm_capture_device = Camera.front_capture_device
+            else:
+                Camera.arm_capture_device = None
         else:
             Camera.arm_capture_device = CaptureDevice(resolution=arm_resolution,
                                                       capturing_device=arm_capturing_device)
