@@ -1,6 +1,7 @@
 from enum import Enum
 import serial
 import threading
+import traceback
 
 from picaterpillar import settings
 from restapi.models import Config
@@ -44,6 +45,8 @@ class UART:
                 UART.dispatch_uart_message(message)
             except:
                 print("Unable to read UART message")
+                # printing stack trace
+                traceback.print_exc()
 
     @staticmethod
     def dispatch_uart_message(message):
