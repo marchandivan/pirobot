@@ -35,7 +35,8 @@ max_y_pos = 42
 target = None
 camera_semaphore = threading.Semaphore()
 
-def getCameraIndex():
+
+def get_camera_index():
     # checks the first 10 indexes.
     for index in [1, 0]:
         cap = cv2.VideoCapture(index)
@@ -43,6 +44,7 @@ def getCameraIndex():
             cap.release()
             return index
     return None
+
 
 class CaptureDevice(object):
     target = None
@@ -220,7 +222,7 @@ class Camera(object):
 
     @staticmethod
     def setup():
-        Camera.available_device = getCameraIndex()
+        Camera.available_device = get_camera_index()
         if Camera.available_device is None:
             Camera.status = "KO"
         else:
@@ -231,7 +233,7 @@ class Camera(object):
         config = Config.get_config()
         if platform.machine() not in ["aarch", "aarch64"]:
             front_capturing_device = "usb"
-            front_resolution = '1280x720'
+            front_resolution = '640x480'
         else:
             front_capturing_device = config.get('front_capturing_device', 'usb')
             front_resolution = config.get('front_capturing_resolution', '1280x720')
