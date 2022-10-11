@@ -8,7 +8,8 @@ class UartConsumer(WebsocketConsumer):
     socket = None
 
     def receive_uart_message(self, message, originator, message_type):
-        self.socket.send(message)
+        raw_message = ":".join([originator, message_type] + message)
+        self.socket.send(raw_message)
 
     def connect(self):
         UartConsumer.socket = self
