@@ -39,11 +39,10 @@ class Config(models.Model):
             return config.get("default")
 
     @staticmethod
-    @sync_to_async
     def get_config():
         config = {}
         try:
-            for o in Config.objects.all():
+            for o in sync_to_async(Config.objects.all)():
                 config[o.key] = o.value
         except:
             pass
