@@ -83,5 +83,25 @@
         ]
       }
     ]
+  },
+  "front_capturing_device": {
+    "type": "str",
+    "default": "picamera"
+  },
+  "front_capturing_resolution": {
+    "type": "str",
+    "default": "1280x720"
+  },
+  "back_capturing_device": {
+    "type": "str",
+    "default": null
+  },
+  "back_capturing_resolution": {
+    "type": "str",
+    "default": "640x480"
+  },
+  "capturing_framerate": {
+    "type": "float",
+    "default": 5.0
   }
 }
