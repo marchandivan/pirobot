@@ -20,7 +20,6 @@ pyttsx3 = "*"
 channels = "*"
 websocket-client = "*"
 pyserial = "*"
-rel = "*"
 
 [dev-packages]
 
