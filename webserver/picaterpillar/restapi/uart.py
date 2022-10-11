@@ -66,7 +66,7 @@ class UART:
         if settings.DEBUG and UART.use_websocket:
             UART.connect_websocket()
         elif UART.serial_port is None:
-            UART.open_websocket()
+            UART.open_uart()
 
     @staticmethod
     def connect_websocket():
