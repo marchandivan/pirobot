@@ -1,9 +1,10 @@
 import math
 
 from restapi.models import Config
-from restapi.uart import UART
+from restapi.uart import UART, MessageOriginator, MessageType
 
 SPEED_REFRESH_INTERVAL = 0.1  # in seconds
+
 
 class PicoMotor(object):
     status = "UK"
@@ -11,6 +12,11 @@ class PicoMotor(object):
     distance = 0
     abs_distance = 0
     rotation = 0
+
+    left_speed = 0
+    left_duty = 0
+    right_speed = 0
+    right_duty = 0
 
     target_distance = None
     target_rotation = None
@@ -28,6 +34,14 @@ class PicoMotor(object):
         PicoMotor.wheel_d = Config.get("wheel_d")
         PicoMotor.robot_width = Config.get("robot_width")
         PicoMotor.status = "OK"
+        UART.register_consumer("motor_controller", PicoMotor, MessageOriginator.motor, MessageType.status)
+
+    @staticmethod
+    def receive_uart_message(message, originator, message_type):
+        PicoMotor.left_duty = int(message[0])
+        PicoMotor.left_speed = float(message[1])
+        PicoMotor.right_duty = int(message[2])
+        PicoMotor.right_speed = float(message[3])
 
     @staticmethod
     def stop():
@@ -42,12 +56,12 @@ class PicoMotor(object):
         if rotation is not None:
             differential_nb_of_revolutions = rotation * PicoMotor.robot_width / (180.0 * PicoMotor.wheel_d)
         UART.write(
-            f"M:{left_orientation}:{int(left_speed)}:{right_orientation}:{int(right_speed)}:{nb_of_revolutions:.2f}:{differential_nb_of_revolutions:.2f}:{duration}"
+            f"M:M:{left_orientation}:{int(left_speed)}:{right_orientation}:{int(right_speed)}:{nb_of_revolutions:.2f}:{differential_nb_of_revolutions:.2f}:{duration}"
         )
 
     @staticmethod
     def get_motor_status():
-        return {"speed_rpm": 0, "duty": 0}, {"speed_rpm": 0, "duty": 0}
+        return {"speed_rpm": PicoMotor.left_speed, "duty": PicoMotor.left_duty}, {"speed_rpm": PicoMotor.right_speed, "duty": PicoMotor.right_duty}
 
     @staticmethod
     def get_distance():

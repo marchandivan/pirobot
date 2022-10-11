@@ -7,6 +7,7 @@ STEPS_PER_ROTATION = 230
 
 uart = UART(0)                         # init with given baudrate
 uart.init(baudrate=9600, bits=8, parity=None , stop=1, tx=Pin(0), rx=Pin(1)) # init with given parameters
+uart.flush()
 
 class ServoHandler(object):
     def __init__(self, s1_pin, s2_pin, s3_pin, s4_pin, s5_pin, enable_pin):
@@ -36,7 +37,7 @@ servo_handler.s1.duty_u16(3400)
 utime.sleep(1)
 servo_handler.stop()
 
-class BatteryTester(object):
+class BatteryHandler(object):
     MAX_BATTERY = 65536
     MIN_BATTERY = 40000
     def __init__(self, pin_adc):
@@ -44,7 +45,10 @@ class BatteryTester(object):
         
     def get_battery_level(self):
         value = self.converter.read_u16()
-        return int(value * 100 / BatteryTester.MAX_BATTERY)
+        return int(value * 100 / BatteryHandler.MAX_BATTERY)
+    
+    def get_status(self):
+        return f"B:S:{self.get_battery_level()}"
     
 class UltraSonicSensor(object):
     def __init__(self, name, pin_trigger, pin_echo):
@@ -159,7 +163,7 @@ class MotorHandler(object):
 
         self.left_duty = 0
         self.right_duty = 0
-        self.auto_stop = True
+        self.auto_stop = False
         self.previous_distances = None
 
         self.target_nb_of_revolutions = None
@@ -229,6 +233,9 @@ class MotorHandler(object):
         self.target_differential_nb_of_revolutions = None
         self.timeout_ts = None
 
+    def get_status(self):
+        return f"M:S:{self.left_duty}:{self.left_duty}:{self.right_duty}:{self.right_duty}"
+
     def iterate(self):
         # Avoid collision ?
         if self.auto_stop:
@@ -259,20 +266,23 @@ class MotorHandler(object):
 
     def process_command(self, args):
         try:
-            if args[0] == "S":
+            command = args[0]
+            if command == "S":
                 self.stop()
                 return True, "OK"
-            else:
-                left_direction = args[0]
-                left_speed = int(args[1])
-                right_direction = args[2]
-                right_speed = int(args[3])
-                nb_of_revolutions = float(args[4])
-                differential_nb_of_revolutions = float(args[5])
-                timeout = float(args[6])
+            elif command == "M":
+                left_direction = args[1]
+                left_speed = int(args[2])
+                right_direction = args[3]
+                right_speed = int(args[4])
+                nb_of_revolutions = float(args[5])
+                differential_nb_of_revolutions = float(args[6])
+                timeout = float(args[7])
 
                 self.move(left_direction, left_speed, right_direction, right_speed, timeout, nb_of_revolutions, differential_nb_of_revolutions)
                 return True, "OK"
+            else:
+                return False, f"Unknown command: {command}"
         except Exception as e:
             print(e)
             return False, f"[Motor] Unable to decode arguments {args}"
@@ -330,6 +340,29 @@ class PatrollerHandler(object):
         self.running = False
         self.motor_controller.stop()
 
+class StatusHandler(object):
+    class HandlerConfig(object):
+        def __init__(self, handler, refresh_interval, deadline):
+            self.handler = handler
+            self.refresh_interval = refresh_interval
+            self.deadline = deadline
+    
+    def __init__(self):
+        self.handlers = []
+        
+    def add_handler(self, handler, refresh_interval):
+        self.handlers.append(self.HandlerConfig(handler, refresh_interval, utime.ticks_ms()))
+    
+    def iterate(self):
+        for handler_config in self.handlers:
+            now = utime.ticks_ms()
+            if now > handler_config.deadline:
+                handler_config.deadline = utime.ticks_add(now, handler_config.refresh_interval)
+                status = handler_config.handler.get_status() + "\n"
+                uart.write(status)
+
+            
+
 motor_handler = MotorHandler(
                  pin_e1a=15,
                  pin_e1b=14,
@@ -355,10 +388,13 @@ ultrasonic_handler = UltraSonicHandler(
 ultrasonic_handler.start()
 previous_distances = ultrasonic_handler.distances()
 
-battery_tester = BatteryTester(28)
-print(battery_tester.get_battery_level())
+battery_handler = BatteryHandler(28)
 
 patroller_handler = PatrollerHandler(motor_handler, ultrasonic_handler, servo_handler)
+
+status_handler = StatusHandler()
+status_handler.add_handler(motor_handler, 100)
+status_handler.add_handler(battery_handler, 60000)
 
 def process_command(cmd):
     command = cmd.split(':')
@@ -382,6 +418,7 @@ try:
 
         motor_handler.iterate()
         patroller_handler.iterate()
+        status_handler.iterate()
 
 finally:
     motor_handler.stop()

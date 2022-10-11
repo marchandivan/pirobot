@@ -7,6 +7,7 @@ from restapi.models import Config
 
 SPEED_REFRESH_INTERVAL = 0.1  # in seconds
 
+
 class SpeedController(object):
     """
     Inspired by
