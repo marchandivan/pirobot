@@ -1,5 +1,6 @@
 import json
 from asgiref.sync import sync_to_async
+import traceback
 
 from django.contrib import admin
 from django.db import models
@@ -45,7 +46,7 @@ class Config(models.Model):
             for o in sync_to_async(Config.objects.all)():
                 config[o.key] = o.value
         except:
-            pass
+            traceback.print_exc()
         return config
 
     def __str__(self):
