@@ -233,7 +233,7 @@ class Camera(object):
         config = Config.get_config()
         if platform.machine() not in ["aarch", "aarch64"]:
             front_capturing_device = "usb"
-            front_resolution = '640x480'
+            front_resolution = '1280x720'
         else:
             front_capturing_device = config.get('front_capturing_device', 'usb')
             front_resolution = config.get('front_capturing_resolution', '1280x720')
