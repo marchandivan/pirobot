@@ -1,5 +1,5 @@
 import json
-import os
+from asgiref.sync import sync_to_async
 
 from django.contrib import admin
 from django.db import models
@@ -39,6 +39,7 @@ class Config(models.Model):
             return config.get("default")
 
     @staticmethod
+    @sync_to_async
     def get_config():
         config = {}
         try:

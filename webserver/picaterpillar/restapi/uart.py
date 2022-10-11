@@ -41,7 +41,7 @@ class UART:
         while True:
             try:
                 line = port.readline()
-                message = line[:-1].encode()
+                message = line[:-1].decode()
                 UART.dispatch_uart_message(message)
             except:
                 print("Unable to read UART message")
