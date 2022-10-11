@@ -1,5 +1,4 @@
 import json
-from asgiref.sync import sync_to_async
 import traceback
 
 from django.contrib import admin
@@ -43,7 +42,7 @@ class Config(models.Model):
     def get_config():
         config = {}
         try:
-            for o in sync_to_async(Config.objects.all)():
+            for o in Config.objects.all():
                 config[o.key] = o.value
         except:
             traceback.print_exc()
