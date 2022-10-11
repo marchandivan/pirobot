@@ -26,8 +26,8 @@ class LightControl extends React.Component {
                   <Stack spacing={0} direction="row" alignItems="center" justifyContent="center">
                     <IconButton onClick={this.props.capture_image_callback.bind(this, "lcd", this.props.selected_camera)}><CameraAltIcon/></IconButton>
                     <IconButton onClick={this.props.capture_image_callback.bind(this, "download", this.props.selected_camera)}><DownloadIcon/></IconButton>
-                    <IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera === "front" ? "arm" : "front", this.props.overlay)}><SwitchCameraIcon/></IconButton>
-                    <IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera, !this.props.overlay)}><PictureInPictureIcon/></IconButton>
+                    {this.props.robot_has_back_camera && (<IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera === "front" ? "arm" : "front", this.props.overlay)}><SwitchCameraIcon/></IconButton>)}
+                    {this.props.robot_has_back_camera && (<IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera, !this.props.overlay)}><PictureInPictureIcon/></IconButton>)}
                   </Stack>
                 </Grid>
             </Grid>

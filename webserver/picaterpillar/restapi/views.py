@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from restapi import serializers
 from restapi.camera import Camera
 from restapi.controller import Controller
+from restapi.models import Config
 from django.contrib.staticfiles.views import serve
 from django.contrib.auth.decorators import login_required
 
@@ -21,7 +22,8 @@ class RestApiViewSet(viewsets.ViewSet):
     def status(self, request):
         return Response({
             'status': 'OK',
-            'robot': Controller.serialize()
+            'robot': Controller.serialize(),
+            'config': Config.get_config()
         })
 
     @action(detail=False, methods=['post'])

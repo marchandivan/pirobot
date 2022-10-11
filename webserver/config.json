@@ -103,5 +103,30 @@
   "capturing_framerate": {
     "type": "float",
     "default": 5.0
+  },
+  "robot_has_arm": {
+    "type": "bool",
+    "default": false,
+    "export": true
+  },
+  "robot_has_light": {
+    "type": "bool",
+    "default": false,
+    "export": true
+  },
+  "robot_has_screen": {
+    "type": "bool",
+    "default": false,
+    "export": true
+  },
+  "robot_has_speakder": {
+    "type": "bool",
+    "default": false,
+    "export": true
+  },
+  "robot_has_back_camera": {
+    "type": "bool",
+    "default": false,
+    "export": true
   }
 }

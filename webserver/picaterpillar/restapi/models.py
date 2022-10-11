@@ -41,11 +41,9 @@ class Config(models.Model):
     @staticmethod
     def get_config():
         config = {}
-        try:
-            for o in Config.objects.all():
-                config[o.key] = o.value
-        except:
-            traceback.print_exc()
+        for key, key_config in CONFIG_KEYS.items():
+            if key_config.get('export', False):
+                config[key] = Config.get(key)
         return config
 
     def __str__(self):
