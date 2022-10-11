@@ -228,26 +228,28 @@ class Camera(object):
         else:
             Camera.status = "OK"
 
+
     @staticmethod
     def stream():
-        config = Config.get_config()
         if platform.machine() not in ["aarch", "aarch64"]:
             front_capturing_device = "usb"
             front_resolution = '1280x720'
+            arm_capturing_device = "usb"
+            arm_resolution = '1280x720'
         else:
-            front_capturing_device = config.get('front_capturing_device', 'usb')
-            front_resolution = config.get('front_capturing_resolution', '1280x720')
-            arm_capturing_device = config.get('arm_capturing_device', 'picamera')
-            arm_resolution = config.get('back_capturing_resolution', '640x480')
+            front_capturing_device = Config.get('front_capturing_device')
+            front_resolution = Config.get('front_capturing_resolution')
+            arm_capturing_device = Config.get('back_capturing_device')
+            arm_resolution = Config.get('back_capturing_resolution')
         Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
                                                     capturing_device=front_capturing_device)
-        if platform.machine() != "aarch":
-            Camera.arm_capture_device = Camera.front_capture_device
+        if arm_capturing_device is None:
+            Camera.arm_capture_device = None
         else:
             Camera.arm_capture_device = CaptureDevice(resolution=arm_resolution,
-                                                       capturing_device=arm_capturing_device)
+                                                      capturing_device=arm_capturing_device)
 
-        framerate = float(config.get('capturing_framerate', 5))
+        framerate = Config.get('capturing_framerate')
         stream = io.BytesIO()
         try:
             Camera.streaming = True
@@ -255,18 +257,19 @@ class Camera(object):
             last_frame_ts = 0
             while Camera.streaming:
                 Camera.front_capture_device.grab()
-                Camera.arm_capture_device.grab()
+                if Camera.arm_capture_device is not None:
+                    Camera.arm_capture_device.grab()
 
                 if time.time() > last_frame_ts + frame_delay:
                     last_frame_ts = time.time()
-                    if Camera.selected_camera == "front":
+                    if Camera.arm_capture_device is None or Camera.selected_camera == "front":
                         frame = Camera.front_capture_device.retrieve()
                         # Navigation
                         Camera.front_capture_device.add_navigation_lines(frame)
                     else:
                         frame = Camera.arm_capture_device.retrieve()
 
-                    if Camera.overlay:
+                    if Camera.arm_capture_device is not None and Camera.overlay:
                         if Camera.selected_camera == "front":
                             overlay_frame = Camera.arm_capture_device.retrieve()
                             Camera.front_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
@@ -289,8 +292,9 @@ class Camera(object):
         finally:
             Camera.front_capture_device.close()
             Camera.front_capture_device = None
-            Camera.arm_capture_device.close()
-            Camera.arm_capture_device = None
+            if Camera.arm_capture_device is not None:
+                Camera.arm_capture_device.close()
+                Camera.arm_capture_device = None
             Camera.streaming = False
 
     @staticmethod
