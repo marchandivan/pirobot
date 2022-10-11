@@ -54,9 +54,9 @@ class UART:
         originator = message_parts[0]
         message_type = message_parts[1]
         for consumer_config in UART.consumers.values():
-            if consumer_config.originator is not None and consumer_config.originator != originator:
+            if consumer_config.originator is not None and consumer_config.originator.value != originator:
                 continue
-            if consumer_config.message_type is not None and consumer_config.message_type != message_type:
+            if consumer_config.message_type is not None and consumer_config.message_type.value != message_type:
                 continue
             consumer_config.consumer.receive_uart_message(message_parts[2:], originator, message_type)
 
