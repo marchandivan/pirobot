@@ -9,6 +9,7 @@ MOTOR_CONTROLLERS = dict(
     pico=PicoMotor
 )
 
+
 class Motor(object):
     status = "UK"
     _controller = None
@@ -22,6 +23,8 @@ class Motor(object):
             Motor._controller.setup()
         else:
             print(f"Unknonw motor controller: {motor_controller}")
+        Motor.wheel_d = Config.get("wheel_d")
+        Motor.robot_width = Config.get("robot_width")
 
     @staticmethod
     def stop():
@@ -48,10 +51,10 @@ class Motor(object):
             target_distance = abs(R * alpha)
             if x > 0:
                 left_speed = speed
-                right_speed = speed * (R / (R + ROBOT_WIDTH / 1000))
+                right_speed = speed * (R / (R + Motor.robot_width / 1000))
             else:
                 right_speed = speed
-                left_speed = speed * (R / (R + ROBOT_WIDTH / 1000))
+                left_speed = speed * (R / (R + Motor.robot_width / 1000))
             Motor._controller.move(left_orientation=orientation,
                                    left_speed=left_speed,
                                    right_orientation=orientation,
