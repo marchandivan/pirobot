@@ -12,6 +12,7 @@ from restapi.game import Games
 from restapi.light import Light
 from restapi.models import Config
 from motor.motor import Motor
+from restapi.uart import UART
 from terminal import Terminal
 
 if platform.machine() == "aarch64":  # Mac OS
@@ -30,20 +31,22 @@ lcd = LCD_2inch(rst=RST, dc=DC, bl=BL)
 lcd.Init()
 lcd.clear()
 terminal = Terminal("Courier", lcd)
-terminal.header("Buddy Bot v1.0")
+terminal.header("PiRobot v1.0")
 terminal.text("Starting...")
 
 # Motor Initialization
 Motor.setup()
-terminal.text(f"Motor setup... {Motor.status}")
+terminal.text(f"Motor setup... {Motor.get_status()}")
 
 # Light
-Light.setup()
-terminal.text(f"Light setup... {Light.status}")
+if Config.get('robot_has_light'):
+    Light.setup()
+    terminal.text(f"Light setup... {Light.status}")
 
 # Arm
-Arm.setup()
-terminal.text(f"Arm setup..... {Arm.status}")
+if Config.get('robot_has_arm'):
+    Arm.setup()
+    terminal.text(f"Arm setup..... {Arm.status}")
 
 # Motor Initialization
 Camera.setup()
@@ -69,7 +72,9 @@ class Controller(object):
 
     @staticmethod
     def stop():
-        Motor.stop ()
+        Motor.stop()
+        # Stop patroller
+        UART.write("P:0")
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation):
@@ -166,6 +171,9 @@ class Controller(object):
     def move_arm_to_position(position_id, lock_wrist):
         return Arm.move_to_position(position_id, lock_wrist)
 
+    @staticmethod
+    def patrol(speed, timeout, move_camera):
+        UART.write(f"P:{speed}:{timeout}:{move_camera}")
 
     @staticmethod
     def serialize():

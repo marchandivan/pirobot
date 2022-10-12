@@ -2,6 +2,7 @@ from rest_framework import serializers
 from eye_generator import EyeGenerator
 from restapi.arm import Arm
 
+
 class MoveCommandSerializer(serializers.Serializer):
     left_orientation = serializers.ChoiceField(choices=['F', 'B'])
     left_speed = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)
@@ -11,11 +12,18 @@ class MoveCommandSerializer(serializers.Serializer):
     distance = serializers.FloatField(min_value=0.0, default=None, allow_null=True)
     rotation = serializers.FloatField(min_value=0, max_value=180.0, default=None, allow_null=True)
 
+
 class MoveToTargetCommandSerializer(serializers.Serializer):
     x = serializers.FloatField()
     y = serializers.FloatField()
     speed = serializers.FloatField(min_value=0.0, max_value=100.0, default=0.0)
     timeout = serializers.FloatField(min_value=0.0, default=10.0)
+
+
+class PatrolCommandSerializer(serializers.Serializer):
+    speed = serializers.IntegerField(min_value=0, max_value=100, default=0)
+    timeout = serializers.IntegerField(min_value=0, default=300)
+    move_camera = serializers.BooleanField(default=False)
 
 
 class LightCommandSerializer(serializers.Serializer):

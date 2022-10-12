@@ -262,3 +262,17 @@ class RestApiViewSet(viewsets.ViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'])
+    def patrol(self, request):
+        serializer = serializers.PatrolCommandSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.patrol(serializer.data['speed'],
+                             serializer.data['timeout'],
+                             serializer.data['move_camera'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)

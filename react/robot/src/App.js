@@ -681,6 +681,29 @@ class App extends React.Component {
             });
     }
 
+    patrol = (speed) => {
+        let url = '/api/patrol/';
+        if(process.env.REACT_APP_API_URL) {
+            url = process.env.REACT_APP_API_URL + url;
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
+            },
+            body: JSON.stringify({
+                speed: speed
+            })
+        })
+            .then(response => response.json())
+            .then(data => this.updateState(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
     setWristLock = (locked) => {
         this.setState({
             lock_wrist: !this.state.lock_wrist
@@ -884,8 +907,8 @@ class App extends React.Component {
                                 <Grid item xs={1}/>
                                 <Grid item xl={12} md={12} sm={12} xs={10}>
                                     <p style={{fontSize: 16, margin: 0}}>Patrol</p>
-                                      <IconButton onClick={this.updateRotation}><RadarIcon/></IconButton>
-                                      <IconButton onClick={this.updateRotation}><DangerousIcon/></IconButton>
+                                      <IconButton onClick={this.patrol.bind(this, this.state.speed)}><RadarIcon/></IconButton>
+                                      <IconButton onClick={this.stopRobot}><DangerousIcon/></IconButton>
                                 </Grid>
                                 <Grid item xs={1}/>
                                 <DirectionCross

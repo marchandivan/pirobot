@@ -27,6 +27,10 @@ class Motor(object):
         Motor.robot_width = Config.get("robot_width")
 
     @staticmethod
+    def get_status():
+        return Motor._controller.status
+
+    @staticmethod
     def stop():
         Motor._controller.stop()
 

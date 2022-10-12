@@ -7,22 +7,26 @@ from django.db import models
 with open('config.json') as config_file:
     CONFIG_KEYS = json.load(config_file)
 
+
 # Create your models here.
 class Config(models.Model):
     key = models.CharField(max_length=30, primary_key=True)
     value = models.CharField(max_length=2048)
 
     @staticmethod
-    def _convert_to_type(value, type):
-        if type == "int":
+    def _convert_to_type(value, config_type):
+        if config_type == "int":
             return int(value)
-        elif type == "str":
+        elif config_type == "str":
             return str(value)
-        elif type == "float":
+        elif config_type == "float":
             return float(value)
-        elif type == "bool":
-            return bool(value)
-        elif type == json:
+        elif config_type == "bool":
+            if type(value) == str:
+                return value.lower() in ('y', 'true')
+            else:
+                return bool(value)
+        elif config_type == json:
             return json.loads(value)
         else:
             return value

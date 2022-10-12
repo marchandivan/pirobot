@@ -37,6 +37,10 @@ class UART:
         UART.consumers[name] = UART.ConsumerConfig(name=name, consumer=consumer, originator=originator, message_type=message_type)
 
     @staticmethod
+    def unregister_consumer(name):
+        del UART.consumers[name]
+
+    @staticmethod
     def read_uart_forever(port):
         while True:
             try:
@@ -100,12 +104,12 @@ class UART:
 
     @staticmethod
     def write(data):
-        print(data)
+        message = data + "\n"
         if settings.DEBUG and UART.use_websocket:
-            UART.websocket_client.send(data.encode())
+            UART.websocket_client.send(message.encode())
         else:
             if UART.serial_port is not None:
-                UART.serial_port.write(data.encode())
+                UART.serial_port.write(message.encode())
             else:
                 print("Unable to send serial message")
 

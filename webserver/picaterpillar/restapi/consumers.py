@@ -19,6 +19,7 @@ class UartConsumer(WebsocketConsumer):
 
     def disconnect(self, close_code):
         UartConsumer.socket = None
+        UART.unregister_consumer("websocket")
 
     def receive(self, text_data):
         UART.write(text_data)
