@@ -45,6 +45,7 @@ class CapturePictureSerializer(serializers.Serializer):
 class VideoStreamSetupSerializer(serializers.Serializer):
     selected_camera = serializers.ChoiceField(choices=['front', 'arm'], default='front')
     overlay = serializers.BooleanField(default=False)
+    face_detection = serializers.BooleanField(default=False)
 
 
 class SetLcdBrightnessSerializer(serializers.Serializer):

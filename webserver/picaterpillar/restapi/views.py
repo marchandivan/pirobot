@@ -211,7 +211,8 @@ class RestApiViewSet(viewsets.ViewSet):
         serializer = serializers.VideoStreamSetupSerializer(data=request.data)
         if serializer.is_valid():
             Camera.stream_setup(serializer.data['selected_camera'],
-                                                   serializer.data['overlay'])
+                                serializer.data['overlay'],
+                                serializer.data['face_detection'])
             return Response({
                 'status': 'OK',
                 'robot': Controller.serialize()
