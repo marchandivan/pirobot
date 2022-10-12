@@ -35,7 +35,7 @@ camera_semaphore = threading.Semaphore()
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-
+lower_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_lowerbody.xml')
 
 def get_camera_index():
     # checks the first 10 indexes.
@@ -82,25 +82,28 @@ class CaptureDevice(object):
         frame[y_offset:y_offset + resized.shape[0], x_offset:x_offset + resized.shape[1]] = resized
 
     def detect_face(self, frame):
-        if self.frame_counter % 10 == 0:
+        if self.frame_counter % 2 == 0:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(gray, 1.5, 5)
+            faces = face_cascade.detectMultiScale(gray, 1.1, 4)
             if len(faces) > 0:
                 self.face = faces[0]
+                x, y, w, h = self.face
+                rotation = self.angle * (x + w//2) / self.res_x - self.angle // 2
+                center_y = self.angle * (y + h//2) / self.res_y - self.angle // 2
+                speed = 20
+                timeout = 3
+                if abs(rotation) > 10:
+                    left_orientation = "F" if rotation > 0 else "B"
+                    right_orientation = "B" if rotation > 0 else "F"
+                    Motor.move(left_orientation, speed, right_orientation, speed, timeout, None, abs(rotation))
+                else:
+                    Motor.move('F', speed, 'F', speed, timeout, None, None)
             else:
                 self.face = None
+
         if self.face is not None:
             x, y, w, h = self.face
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-            rotation = self.angle * (x + w//2) / self.res_x - self.angle // 2
-            center_y = self.angle * (y + h//2) / self.res_y - self.angle // 2
-
-            if abs(rotation) > 10:
-                left_orientation = "F" if rotation > 0 else "B"
-                right_orientation = "B" if rotation > 0 else "F"
-                speed = 30
-                timeout = 3
-                Motor.move(left_orientation, speed, right_orientation, speed, timeout, None, abs(rotation))
 
     def add_navigation_lines(self, frame):
         color = (0, 255, 0)
@@ -267,11 +270,11 @@ class Camera(object):
                     last_frame_ts = time.time()
                     if Camera.arm_capture_device is None or Camera.selected_camera == "front":
                         frame = Camera.front_capture_device.retrieve()
-                        # Navigation
-                        Camera.front_capture_device.add_navigation_lines(frame)
                         # Detect face
                         if Camera.face_detection:
                             Camera.front_capture_device.detect_face(frame)
+                        # Navigation
+                        Camera.front_capture_device.add_navigation_lines(frame)
                     else:
                         frame = Camera.arm_capture_device.retrieve()
 
