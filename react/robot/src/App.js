@@ -59,6 +59,7 @@ class App extends React.Component {
             mouse_y: 0,
             selected_camera: "front",
             stream_overlay: true,
+            face_detection: false,
             lcd_brightness: 100,
             mood: "relaxed",
             moods: ["relaxed"],
@@ -157,6 +158,7 @@ class App extends React.Component {
                 streaming: data.robot.camera.streaming,
                 selected_camera: data.robot.camera.selected_camera,
                 stream_overlay: data.robot.camera.overlay,
+                face_detection: data.robot.camera.face_detection,
                 arm_position_claw: data.robot.arm.position.claw,
                 arm_max_angle_claw: data.robot.arm.config.claw.max_angle,
                 arm_position_wrist: data.robot.arm.position.wrist,
@@ -469,7 +471,7 @@ class App extends React.Component {
             });
     }
 
-    setupStream = (selected_camera, overlay) => {
+    setupStream = (selected_camera, overlay, face_detection) => {
         let url = '/api/stream_setup/';
         if(process.env.REACT_APP_API_URL) {
             url = process.env.REACT_APP_API_URL + url;
@@ -483,7 +485,8 @@ class App extends React.Component {
             },
             body: JSON.stringify({
                 selected_camera: selected_camera,
-                overlay: overlay
+                overlay: overlay,
+                face_detection: face_detection
             })
         })
             .then(response => response.json())
@@ -796,7 +799,9 @@ class App extends React.Component {
                                 stream_setup_callback={this.setupStream}
                                 selected_camera={this.state.selected_camera}
                                 overlay={this.state.stream_overlay}
+                                face_detection={this.state.face_detection}
                                 robot_has_back_camera={this.config.robot_has_back_camera}
+                                robot_has_screen={this.config.robot_has_screen}
                             />
                         </Grid>
                         <Grid container xl={2} md={2} sm={2} xs={12}>

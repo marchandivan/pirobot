@@ -92,6 +92,10 @@
     "type": "str",
     "default": "1280x720"
   },
+  "front_capturing_angle": {
+    "type": "int",
+    "default": 160
+  },
   "back_capturing_device": {
     "type": "str",
     "default": null
@@ -99,6 +103,10 @@
   "back_capturing_resolution": {
     "type": "str",
     "default": "640x480"
+  },
+  "back_capturing_angle": {
+    "type": "int",
+    "default": 160
   },
   "capturing_framerate": {
     "type": "float",
