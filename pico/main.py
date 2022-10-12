@@ -295,7 +295,9 @@ class PatrollerHandler(object):
         self.servo_handler = servo_handler
         self.running = False
         self.speed = 0
+        self.timeout = 0
         self.move_camera = False
+        self.deadline = 0
     
     def process_command(self, args):
         try:
@@ -305,7 +307,12 @@ class PatrollerHandler(object):
                 self.speed = 30
             
             if len(args) > 1:
-                self.move_camera = bool(args[0])
+                self.timeout = int(args[1]) * 1000
+            else:
+                self.timeout = 0
+
+            if len(args) > 2:
+                self.move_camera = args[2].lower() in ("y", "true")
             else:
                 self.move_camera = False
             
@@ -313,13 +320,22 @@ class PatrollerHandler(object):
                 self.stop()
             else:
                 self.running = True
+                
+            if self.running and self.timeout > 0:
+                self.deadline = utime.ticks_add(utime.ticks_ms(), self.timeout)
+            else:
+                self.deadline = 0
 
         except Exception as e:
             print(e)
             return False, f"[Patroller] Unable to decode arguments {args}"
+        return True, "OK"
     
     def iterate(self):
-        if self.running and self.motor_handler.right_duty == 0 and self.motor_handler.left_duty == 0:
+        now = utime.ticks_ms()
+        if self.deadline > 0 and now > self.deadline:
+            self.stop()
+        elif self.running and self.motor_handler.right_duty == 0 and self.motor_handler.left_duty == 0:
             distances = self.ultrasonic_handler.distances()
             left_distance, front_distance, right_distance = distances
             min_distance = 0.5 * 0.3
@@ -338,7 +354,8 @@ class PatrollerHandler(object):
     
     def stop(self):
         self.running = False
-        self.motor_controller.stop()
+        self.deadline = 0
+        self.motor_handler.stop()
 
 class StatusHandler(object):
     class HandlerConfig(object):
@@ -412,15 +429,17 @@ try:
         if uart.txdone():
             data = uart.read()
             if data is not None and len(data) > 0:
-                cmd = data.decode()
-                success, data = process_command(cmd)
-                print(success, data)
+                commands = data.decode()
+                for cmd in [c for c in commands.split('\n') if c]:
+                    success, data = process_command(cmd)
+                    print(success, data)
 
         motor_handler.iterate()
         patroller_handler.iterate()
         status_handler.iterate()
 
 finally:
+    patroller_handler.stop()
     motor_handler.stop()
     motor_handler.e1a.irq(handler=None)
     motor_handler.e2a.irq(handler=None)
