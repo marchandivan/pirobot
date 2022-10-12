@@ -122,6 +122,7 @@ class UltraSonicHandler(object):
                 sensor.timer = None
         
 class MotorHandler(object):
+    REFRESH_INTERVAL = 10 # ms
     def __init__(self,
                  pin_e1a,
                  pin_e1b,
@@ -162,16 +163,18 @@ class MotorHandler(object):
         self.right_direction = "F"
 
         self.left_duty = 0
+        self.left_speed = 0 # In steps/sec
+        self.previous_left_step_counter = 0
         self.right_duty = 0
-        self.auto_stop = True
+        self.right_speed = 0 # In steps/sec
+        self.previous_right_step_counter = 0
+        self.previous_ts = utime.ticks_ms()
+        self.auto_stop = False
         self.previous_distances = None
 
         self.target_nb_of_revolutions = None
         self.target_differential_nb_of_revolutions = None
         self.timeout_ts = None
-
-        self.previous_left_step_counter = 0
-        self.previous_right_step_counter =  0
 
         self.total_nb_of_revolutions = 0
         self.total_abs_nb_of_revolutions = 0
@@ -234,7 +237,7 @@ class MotorHandler(object):
         self.timeout_ts = None
 
     def get_status(self):
-        return f"M:S:{self.left_duty}:{self.left_duty}:{self.right_duty}:{self.right_duty}"
+        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}"
 
     def iterate(self):
         # Avoid collision ?
@@ -247,22 +250,27 @@ class MotorHandler(object):
             self.previous_distances = distances
 
         # Update rotation counters
-        left_nb_of_steps = self.left_step_counter - self.previous_left_step_counter
-        self.previous_left_step_counter = self.left_step_counter
-        right_nb_of_steps = self.right_step_counter - self.previous_right_step_counter
-        self.previous_right_step_counter = self.right_step_counter
-        avg_nb_of_revolutions = (right_nb_of_steps + left_nb_of_steps) / (2 * STEPS_PER_ROTATION)
-        self.total_differential_nb_of_revolutions += abs((right_nb_of_steps - left_nb_of_steps) / STEPS_PER_ROTATION)
-        self.total_nb_of_revolutions += avg_nb_of_revolutions
-        self.total_abs_nb_of_revolutions += abs(avg_nb_of_revolutions)
-        
-        # Check any targets was reached
-        if self.target_nb_of_revolutions is not None and self.total_abs_nb_of_revolutions > self.target_nb_of_revolutions:
-            self.stop()
-        if self.target_differential_nb_of_revolutions is not None and self.total_differential_nb_of_revolutions > self.target_differential_nb_of_revolutions:
-            self.stop()
-        if self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts:
-            self.stop()
+        now = utime.ticks_ms()
+        if (now - self.previous_ts) > MotorHandler.REFRESH_INTERVAL:
+            left_nb_of_steps = self.left_step_counter - self.previous_left_step_counter
+            self.previous_left_step_counter = self.left_step_counter
+            self.left_speed = 1000000 * left_nb_of_steps / (now - self.previous_ts)
+            right_nb_of_steps = self.right_step_counter - self.previous_right_step_counter
+            self.previous_right_step_counter = self.right_step_counter
+            self.right_speed = -1000000 * right_nb_of_steps / (now - self.previous_ts)
+            avg_nb_of_revolutions = (right_nb_of_steps + left_nb_of_steps) / (2 * STEPS_PER_ROTATION)
+            self.total_differential_nb_of_revolutions += abs((right_nb_of_steps - left_nb_of_steps) / STEPS_PER_ROTATION)
+            self.total_nb_of_revolutions += avg_nb_of_revolutions
+            self.total_abs_nb_of_revolutions += abs(avg_nb_of_revolutions)
+            self.previous_ts = now
+
+            # Check any targets was reached
+            if self.target_nb_of_revolutions is not None and self.total_abs_nb_of_revolutions > self.target_nb_of_revolutions:
+                self.stop()
+            if self.target_differential_nb_of_revolutions is not None and self.total_differential_nb_of_revolutions > self.target_differential_nb_of_revolutions:
+                self.stop()
+            if self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts:
+                self.stop()
 
     def process_command(self, args):
         try:
