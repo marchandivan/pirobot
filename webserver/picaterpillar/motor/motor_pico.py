@@ -3,8 +3,6 @@ import math
 from restapi.models import Config
 from restapi.uart import UART, MessageOriginator, MessageType
 
-SPEED_REFRESH_INTERVAL = 0.1  # in seconds
-
 
 class PicoMotor(object):
     status = "UK"
@@ -39,9 +37,11 @@ class PicoMotor(object):
     @staticmethod
     def receive_uart_message(message, originator, message_type):
         PicoMotor.left_duty = int(message[0])
-        PicoMotor.left_speed = float(message[1])
+        PicoMotor.left_speed = int(message[1])
         PicoMotor.right_duty = int(message[2])
-        PicoMotor.right_speed = float(message[3])
+        PicoMotor.right_speed = int(message[3])
+        PicoMotor.distance = float(message[4]) * math.pi * PicoMotor.wheel_d
+        PicoMotor.abs_distance = float(message[5]) * math.pi * PicoMotor.wheel_d
 
     @staticmethod
     def stop():
