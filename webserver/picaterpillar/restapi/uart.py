@@ -104,12 +104,15 @@ class UART:
 
     @staticmethod
     def write(data):
-        message = data + "\n"
-        if settings.DEBUG and UART.use_websocket:
-            UART.websocket_client.send(message.encode())
-        else:
-            if UART.serial_port is not None:
-                UART.serial_port.write(message.encode())
+        try:
+            message = data + "\n"
+            if settings.DEBUG and UART.use_websocket:
+                UART.websocket_client.send(message.encode())
             else:
-                print("Unable to send serial message")
+                if UART.serial_port is not None:
+                    UART.serial_port.write(message.encode())
+                else:
+                    print("Unable to send serial message")
+        except:
+            print("Unable to send serial message")
 

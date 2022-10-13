@@ -1,4 +1,3 @@
-import io
 import math
 import platform
 import threading
@@ -31,7 +30,7 @@ alpha = np.arctan([d / H for d in reference['distances']])
 poly_coefficients = np.polyfit(reference['y_pos'], alpha, 3)
 max_y_pos = 42
 
-camera_semaphore = threading.Semaphore()
+camera_lock = threading.Lock()
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
@@ -87,15 +86,16 @@ class CaptureDevice(object):
             self.face = None
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+            if len(faces) > 0:
+                self.face = faces[0]
+            # Look for faces with 2 eyes or more
             for (x, y, w, h) in faces:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
                 roi_gray = gray[y:y + h, x:x + w]
                 roi_color = frame[y:y + h, x:x + w]
                 eyes = eye_cascade.detectMultiScale(roi_gray)
-                for (ex, ey, ew, eh) in eyes:
-                    cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
-                if len(eyes) >= 2: # At least 2 eyes :-) Third one could be the mouth
-                    self.face =(x, y, w, h)
+                if len(eyes) >= 2:  # At least 2 eyes :-) Third one could be the mouth
+                    self.face = (x, y, w, h)
                     break
 
             if self.face is not None:
@@ -104,7 +104,6 @@ class CaptureDevice(object):
                 timeout = 3
                 x_pos, y_pos = Camera.get_target_position((x + w//2) * 100 / self.res_x, (y + h//2) * 100 / self.res_y)
                 Motor.move_to_target(x_pos, y_pos, speed, timeout)
-
 
         if self.face is not None:
             x, y, w, h = self.face
@@ -175,9 +174,9 @@ class CaptureDevice(object):
             max_retries -= 1
             try:
                 if self.capturing_device == "usb":
-                    camera_semaphore.acquire()
+                    camera_lock.acquire()
                     ret, frame = self.device.read()
-                    camera_semaphore.release()
+                    camera_lock.release()
                     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
                 else:  # picamera
                     output = PiRGBArray(self.device)
@@ -191,9 +190,9 @@ class CaptureDevice(object):
     def capture_continuous(self, stream, format='jpeg'):
         if self.capturing_device == "usb":
             while True:
-                camera_semaphore.acquire()
+                camera_lock.acquire()
                 ret, frame = self.device.read()
-                camera_semaphore.release()
+                camera_lock.release()
                 self.frame_counter += 1
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
@@ -216,22 +215,50 @@ class CaptureDevice(object):
 class Camera(object):
     status = "UK"
     streaming = False
+    capturing = False
+    capturing_thread = None
     overlay = True
     selected_camera = "front"
     face_detection = False
     front_capture_device = None
     arm_capture_device = None
+    last_frame_lock = threading.Lock()
+    last_frame = None
 
     @staticmethod
     def setup():
         Camera.available_device = get_camera_index()
-        if Camera.available_device is None:
+        if Config.get('front_capturing_device') == "usb" and Camera.available_device is None:
             Camera.status = "KO"
         else:
             Camera.status = "OK"
 
     @staticmethod
     def stream():
+        Camera.streaming = True
+        Camera.start_continuous_capture()
+        while Camera.streaming:
+            try:
+                Camera.last_frame_lock.acquire()
+                last_frame = Camera.last_frame
+                Camera.last_frame_lock.release()
+                Camera.last_frame = None
+                if last_frame is not None:
+                    yield "--FRAME\r\n"
+                    yield "Content-Type: image/jpeg\r\n"
+                    yield "Content-Length: %i\r\n" % len(last_frame)
+                    yield "\r\n"
+                    yield last_frame
+                    yield "\r\n"
+            except:
+                traceback.print_exc()
+                if Camera.last_frame_lock.locked():
+                    Camera.last_frame_lock.release()
+                continue
+        Camera.streaming = False
+
+    @staticmethod
+    def capture_continuous():
         front_capturing_device = Config.get('front_capturing_device')
         front_resolution = Config.get('front_capturing_resolution')
         front_angle = Config.get('front_capturing_angle')
@@ -256,12 +283,11 @@ class Camera(object):
                                                       angle=arm_angle)
 
         framerate = Config.get('capturing_framerate')
-        stream = io.BytesIO()
-        try:
-            Camera.streaming = True
-            frame_delay = 1.0 / framerate
-            last_frame_ts = 0
-            while Camera.streaming:
+        Camera.capturing = True
+        frame_delay = 1.0 / framerate
+        last_frame_ts = 0
+        while Camera.capturing:
+            try:
                 Camera.front_capture_device.grab()
                 if Camera.arm_capture_device is not None:
                     Camera.arm_capture_device.grab()
@@ -286,31 +312,47 @@ class Camera(object):
                             overlay_frame = Camera.front_capture_device.retrieve()
                             Camera.arm_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
 
+                    if Camera.streaming:
+                        frame = cv2.imencode('.jpg', frame)[1].tostring()
+                        Camera.last_frame_lock.acquire()
+                        Camera.last_frame = frame
+                        Camera.last_frame_lock.release()
+            except Exception:
+                traceback.print_exc()
+                if Camera.last_frame_lock.locked():
+                    Camera.last_frame_lock.release()
+                continue
+        Camera.front_capture_device.close()
+        Camera.front_capture_device = None
+        if Camera.arm_capture_device is not None:
+            Camera.arm_capture_device.close()
+            Camera.arm_capture_device = None
+        Camera.capturing = False
+        print("Stop Capture")
 
-                    frame = cv2.imencode('.jpg', frame)[1].tostring()
-                    stream.truncate()
-                    stream.seek(0)
-                    yield "--FRAME\r\n"
-                    yield "Content-Type: image/jpeg\r\n"
-                    yield "Content-Length: %i\r\n" % len(frame)
-                    yield "\r\n"
-                    yield frame
-                    yield "\r\n"
-        except Exception as e:
-            traceback.print_exc()
-        finally:
-            Camera.front_capture_device.close()
-            Camera.front_capture_device = None
-            if Camera.arm_capture_device is not None:
-                Camera.arm_capture_device.close()
-                Camera.arm_capture_device = None
-            Camera.streaming = False
+    @staticmethod
+    def start_continuous_capture():
+        print(Camera.capturing, Camera.capturing_thread)
+        if not Camera.capturing or Camera.capturing_thread is None or not Camera.capturing_thread.is_alive():
+            Camera.capturing = True
+            print("Start capture")
+            Camera.capturing_thread = threading.Thread(target=Camera.capture_continuous, daemon=True)
+            Camera.capturing_thread.start()
+
+    @staticmethod
+    def stop_continuous_capture():
+        if not Camera.streaming:
+            Camera.capturing = False
 
     @staticmethod
     def stream_setup(selected_camera, overlay, face_detection):
         Camera.selected_camera = selected_camera
         Camera.overlay = overlay
         Camera.face_detection = face_detection
+        if face_detection:
+            Camera.start_continuous_capture()
+        elif not Camera.streaming:
+            Camera.stop_continuous_capture()
 
     @staticmethod
     def select_target(x, y):
