@@ -13,9 +13,6 @@ import LightControl from "./LightControl"
 import ScreenControl from "./ScreenControl"
 import VideoStreamControl from "./VideoStreamControl";
 import Divider from '@material-ui/core/Divider';
-import IconButton from '@material-ui/core/IconButton';
-import DangerousIcon from '@mui/icons-material/Dangerous';
-import RadarIcon from '@mui/icons-material/Radar';
 
 const KEY_UP = 38
 const KEY_DOWN = 40
@@ -800,6 +797,8 @@ class App extends React.Component {
                                 selected_camera={this.state.selected_camera}
                                 overlay={this.state.stream_overlay}
                                 face_detection={this.state.face_detection}
+                                patrol={this.patrol.bind(this, this.state.speed)}
+                                stopRobot={this.stopRobot}
                                 robot_has_back_camera={this.config.robot_has_back_camera}
                                 robot_has_screen={this.config.robot_has_screen}
                             />
@@ -910,11 +909,6 @@ class App extends React.Component {
                                 </Grid>
                                 <Grid item xs={1}/>
                                 <Grid item xs={1}/>
-                                <Grid item xl={12} md={12} sm={12} xs={10}>
-                                    <p style={{fontSize: 16, margin: 0}}>Patrol</p>
-                                      <IconButton onClick={this.patrol.bind(this, this.state.speed)}><RadarIcon/></IconButton>
-                                      <IconButton onClick={this.stopRobot}><DangerousIcon/></IconButton>
-                                </Grid>
                                 <Grid item xs={1}/>
                                 <DirectionCross
                                     forward_callback={this.moveRobot.bind(this, MOVE_INTENT_FORWARD)}

@@ -1,8 +1,6 @@
 from machine import ADC, Pin, PWM, UART, Timer
 import utime
 
-STEPS_PER_ROTATION = 230
-
 # Global variables
 
 uart = UART(0)                         # init with given baudrate
@@ -122,7 +120,12 @@ class UltraSonicHandler(object):
                 sensor.timer = None
         
 class MotorHandler(object):
-    REFRESH_INTERVAL = 10 # ms
+    REFRESH_INTERVAL = 50 # ms
+    STEPS_PER_ROTATION = 230
+    MAX_RPM = 200
+    KP = 0.5
+    KI = 1
+    KD = 0.1 * 30 / 1000
     def __init__(self,
                  pin_e1a,
                  pin_e1b,
@@ -163,13 +166,21 @@ class MotorHandler(object):
         self.right_direction = "F"
 
         self.left_duty = 0
-        self.left_speed = 0 # In steps/sec
+        self.left_speed = 0 # In rpm
+        self.left_ref_speed = 0 # In rpm
         self.previous_left_step_counter = 0
+        self.left_previous_error = 0
+        self.left_integration_sum = 0
+        
         self.right_duty = 0
-        self.right_speed = 0 # In steps/sec
+        self.right_speed = 0 # In rpm
+        self.right_ref_speed = 0 # In rpm
         self.previous_right_step_counter = 0
+        self.right_previous_error = 0
+        self.right_integration_sum = 0
+
         self.previous_ts = utime.ticks_ms()
-        self.auto_stop = False
+        self.auto_stop = True
         self.previous_distances = None
 
         self.target_nb_of_revolutions = None
@@ -199,35 +210,74 @@ class MotorHandler(object):
         self.e1a.irq(trigger=Pin.IRQ_RISING, handler=handle_left_encoder_interrupt, hard=True)
         self.e2a.irq(trigger=Pin.IRQ_RISING, handler=handle_right_encoder_interrupt, hard=True)
 
-    def move(self, left_direction, left_speed, right_direction, right_speed, timeout, nb_of_revolutions=0, differential_nb_of_revolutions=0):
+    def move(self, left_direction, left_speed, right_direction, right_speed, timeout, nb_of_revolutions=0, differential_nb_of_revolutions=0, auto_stop=True):
+        self.auto_stop = True
         if nb_of_revolutions > 0:
             self.target_nb_of_revolutions = self.total_abs_nb_of_revolutions + nb_of_revolutions
         if differential_nb_of_revolutions > 0:
             self.target_differential_nb_of_revolutions = self.total_differential_nb_of_revolutions + differential_nb_of_revolutions
         self.timeout_ts = utime.ticks_ms() + timeout * 1000
 
-        self.standby.high()
-        left_duty = int(min(100, abs(left_speed)) * 65535/100)
-        self.pwm1.duty_u16(left_duty)
         if left_direction == "F":
-            self.left_duty = left_speed
-            self.cw1.high()
-            self.ccw1.low()
+            self.left_ref_speed = MotorHandler.MAX_RPM * left_speed // 100
         else:
-            self.left_duty = -left_speed
-            self.cw1.low()
-            self.ccw1.high()
+            self.left_ref_speed = -MotorHandler.MAX_RPM * left_speed // 100
 
-        right_duty = int(min(100, abs(right_speed)) * 65535/100)
-        self.pwm2.duty_u16(right_duty)
         if right_direction == "F":
-            self.right_duty = right_speed
-            self.cw2.low()
-            self.ccw2.high()
+            self.right_ref_speed = MotorHandler.MAX_RPM * right_speed // 100
         else:
-            self.right_duty = -right_speed
-            self.cw2.high()
-            self.ccw2.low()
+            self.right_ref_speed = -MotorHandler.MAX_RPM * right_speed // 100
+
+        interval = max(utime.ticks_ms() - self.previous_ts, MotorHandler.REFRESH_INTERVAL)
+        self.update_speeds(interval=interval,force=True)
+
+    def update_speeds(self, interval, force=False):
+        interval_s = interval / 1000
+        
+        if self.left_ref_speed != 0:
+            left_current_error = self.left_ref_speed - self.left_speed
+            self.left_integration_sum += (left_current_error * interval_s)
+            left_duty = self.KP * left_current_error + self.KI * self.left_integration_sum + self.KD * (left_current_error - self.left_previous_error) / interval_s
+            left_duty = max(-100, min(100, int(left_duty)))
+            self.left_previous_error = left_current_error
+        else:
+            left_duty = 0
+            self.left_previous_error = 0
+            self.left_integration_sum = 0
+
+        if self.right_ref_speed != 0:
+            right_current_error = self.right_ref_speed - self.right_speed
+            self.right_integration_sum += (right_current_error * interval_s)
+            right_duty = self.KP * right_current_error + self.KI * self.right_integration_sum + self.KD * (right_current_error - self.right_previous_error) / interval_s
+            right_duty = max(-100, min(100, int(right_duty)))
+            self.right_previous_error = right_current_error
+        else:
+            right_duty = 0
+            self.right_previous_error = 0
+            self.right_integration_sum = 0
+        
+        if force or left_duty != self.left_duty or right_duty != self.right_duty:
+            self.left_duty = left_duty
+            self.right_duty = right_duty
+
+            self.standby.high()
+            left_duty = int(min(100, abs(self.left_duty)) * 65535/100)
+            self.pwm1.duty_u16(left_duty)
+            if self.left_duty > 0:
+                self.cw1.high()
+                self.ccw1.low()
+            else:
+                self.cw1.low()
+                self.ccw1.high()
+
+            right_duty = int(min(100, abs(self.right_duty)) * 65535/100)
+            self.pwm2.duty_u16(right_duty)
+            if self.right_duty > 0:
+                self.cw2.low()
+                self.ccw2.high()
+            else:
+                self.cw2.high()
+                self.ccw2.low()
 
     def stop(self):
         self.move('F', 0, 'F', 0, 0)
@@ -237,29 +287,31 @@ class MotorHandler(object):
         self.timeout_ts = None
 
     def get_status(self):
-        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}"
+        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}"
 
     def iterate(self):
         # Avoid collision ?
         if self.auto_stop:
             distances = ultrasonic_handler.distances()
             if self.previous_distances != distances:
-                speed = abs(motor_handler.left_duty + motor_handler.right_duty) / 200
-                if speed > 0 and min(distances) < 0.5 * speed and motor_handler.left_duty > 0 and motor_handler.right_duty > 0:
+                speed = abs(motor_handler.left_speed / MotorHandler.MAX_RPM + motor_handler.right_speed / MotorHandler.MAX_RPM) / 2
+                min_distance = max(0.5 * speed, 0.01)
+                if speed > 0 and min(distances) < min_distance and motor_handler.left_duty > 0 and motor_handler.right_duty > 0:
                     motor_handler.stop()
             self.previous_distances = distances
 
         # Update rotation counters
         now = utime.ticks_ms()
-        if (now - self.previous_ts) > MotorHandler.REFRESH_INTERVAL:
+        interval = (now - self.previous_ts)
+        if interval > MotorHandler.REFRESH_INTERVAL:
             left_nb_of_steps = self.left_step_counter - self.previous_left_step_counter
             self.previous_left_step_counter = self.left_step_counter
-            self.left_speed = 1000000 * left_nb_of_steps / (now - self.previous_ts)
-            right_nb_of_steps = self.right_step_counter - self.previous_right_step_counter
+            self.left_speed = int(60000 * left_nb_of_steps / (interval * MotorHandler.STEPS_PER_ROTATION))
+            right_nb_of_steps = (self.previous_right_step_counter - self.right_step_counter)
             self.previous_right_step_counter = self.right_step_counter
-            self.right_speed = -1000000 * right_nb_of_steps / (now - self.previous_ts)
-            avg_nb_of_revolutions = (right_nb_of_steps + left_nb_of_steps) / (2 * STEPS_PER_ROTATION)
-            self.total_differential_nb_of_revolutions += abs((right_nb_of_steps - left_nb_of_steps) / STEPS_PER_ROTATION)
+            self.right_speed = int(60000 * right_nb_of_steps / (interval * MotorHandler.STEPS_PER_ROTATION))
+            avg_nb_of_revolutions = (right_nb_of_steps + left_nb_of_steps) / (2 * MotorHandler.STEPS_PER_ROTATION)
+            self.total_differential_nb_of_revolutions += abs((right_nb_of_steps - left_nb_of_steps) / MotorHandler.STEPS_PER_ROTATION)
             self.total_nb_of_revolutions += avg_nb_of_revolutions
             self.total_abs_nb_of_revolutions += abs(avg_nb_of_revolutions)
             self.previous_ts = now
@@ -271,6 +323,9 @@ class MotorHandler(object):
                 self.stop()
             if self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts:
                 self.stop()
+                
+            # Run speed regulation
+            self.update_speeds(interval)
 
     def process_command(self, args):
         try:
@@ -312,7 +367,7 @@ class PatrollerHandler(object):
             if len(args) > 0:
                 self.speed = int(args[0])
             else:
-                self.speed = 30
+                self.speed = 50
             
             if len(args) > 1:
                 self.timeout = int(args[1]) * 1000
@@ -343,10 +398,10 @@ class PatrollerHandler(object):
         now = utime.ticks_ms()
         if self.deadline > 0 and now > self.deadline:
             self.stop()
-        elif self.running and self.motor_handler.right_duty == 0 and self.motor_handler.left_duty == 0:
+        elif self.running and self.motor_handler.left_duty == 0 and self.motor_handler.right_duty == 0:
             distances = self.ultrasonic_handler.distances()
             left_distance, front_distance, right_distance = distances
-            min_distance = 0.5 * 0.3
+            min_distance = max(0.5 * self.speed / 100, 0.01)
             if min(distances) > min_distance * 1.5:
                 if self.move_camera:
                     self.servo_handler.s1.duty_u16(4000)
@@ -358,7 +413,7 @@ class PatrollerHandler(object):
             elif right_distance > left_distance:
                 self.motor_handler.move("F", self.speed, "B", self.speed, 10, 0, 0.1)
             else:
-                self.motor_handler.move("B", self.speed, "F", 30, self.speed, 0, 0.1)
+                self.motor_handler.move("B", self.speed, "F", self.speed, 10, 0, 0.1)
     
     def stop(self):
         self.running = False
@@ -418,7 +473,7 @@ battery_handler = BatteryHandler(28)
 patroller_handler = PatrollerHandler(motor_handler, ultrasonic_handler, servo_handler)
 
 status_handler = StatusHandler()
-status_handler.add_handler(motor_handler, 100)
+status_handler.add_handler(motor_handler, 200)
 status_handler.add_handler(battery_handler, 60000)
 
 def process_command(cmd):

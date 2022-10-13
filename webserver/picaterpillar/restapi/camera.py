@@ -37,6 +37,7 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fronta
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 lower_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_lowerbody.xml')
 
+
 def get_camera_index():
     # checks the first 10 indexes.
     for index in [1, 0]:
@@ -83,23 +84,27 @@ class CaptureDevice(object):
 
     def detect_face(self, frame):
         if self.frame_counter % 2 == 0:
+            self.face = None
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-            if len(faces) > 0:
-                self.face = faces[0]
+            for (x, y, w, h) in faces:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                roi_gray = gray[y:y + h, x:x + w]
+                roi_color = frame[y:y + h, x:x + w]
+                eyes = eye_cascade.detectMultiScale(roi_gray)
+                for (ex, ey, ew, eh) in eyes:
+                    cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+                if len(eyes) >= 2: # At least 2 eyes :-) Third one could be the mouth
+                    self.face =(x, y, w, h)
+                    break
+
+            if self.face is not None:
                 x, y, w, h = self.face
-                rotation = self.angle * (x + w//2) / self.res_x - self.angle // 2
-                center_y = self.angle * (y + h//2) / self.res_y - self.angle // 2
                 speed = 20
                 timeout = 3
-                if abs(rotation) > 10:
-                    left_orientation = "F" if rotation > 0 else "B"
-                    right_orientation = "B" if rotation > 0 else "F"
-                    Motor.move(left_orientation, speed, right_orientation, speed, timeout, None, abs(rotation))
-                else:
-                    Motor.move('F', speed, 'F', speed, timeout, None, None)
-            else:
-                self.face = None
+                x_pos, y_pos = Camera.get_target_position((x + w//2) * 100 / self.res_x, (y + h//2) * 100 / self.res_y)
+                Motor.move_to_target(x_pos, y_pos, speed, timeout)
+
 
         if self.face is not None:
             x, y, w, h = self.face
@@ -125,9 +130,8 @@ class CaptureDevice(object):
 
         # Speed and distance
         font = cv2.FONT_HERSHEY_SIMPLEX
-        fontScale = 1
+        fontScale = 0.8
         color = (0, 255, 0)
-        thickness = 2
 
         motor_status = Motor.serialize()
 
@@ -228,20 +232,16 @@ class Camera(object):
 
     @staticmethod
     def stream():
+        front_capturing_device = Config.get('front_capturing_device')
+        front_resolution = Config.get('front_capturing_resolution')
+        front_angle = Config.get('front_capturing_angle')
         if platform.machine() not in ["aarch", "aarch64"]:
-            front_capturing_device = "usb"
-            front_resolution = '1280x720'
-            front_angle = Config.get('front_capturing_angle')
             arm_capturing_device = None
-            arm_resolution = '1280x720'
-            arm_angle = Config.get('back_capturing_angle')
         else:
-            front_capturing_device = Config.get('front_capturing_device')
-            front_resolution = Config.get('front_capturing_resolution')
-            front_angle = Config.get('front_capturing_angle')
             arm_capturing_device = Config.get('back_capturing_device')
-            arm_resolution = Config.get('back_capturing_resolution')
-            arm_angle = Config.get('back_capturing_angle')
+        arm_resolution = Config.get('back_capturing_resolution')
+        arm_angle = Config.get('back_capturing_angle')
+
         Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
                                                     capturing_device=front_capturing_device,
                                                     angle=front_angle)
@@ -334,7 +334,6 @@ class Camera(object):
             return Camera.front_capture_device.capture()
         elif camera == "arm" and Camera.arm_capture_device is not None:
             return Camera.arm_capture_device.capture()
-
 
     @staticmethod
     def serialize():
