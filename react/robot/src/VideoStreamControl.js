@@ -5,6 +5,7 @@ import DangerousIcon from '@mui/icons-material/Dangerous';
 import DownloadIcon from '@mui/icons-material/Download';
 import FaceIcon from '@mui/icons-material/Face';
 import IconButton from "@material-ui/core/IconButton";
+import FaceRetouchingOffIcon from '@mui/icons-material/FaceRetouchingOff';
 import Tooltip from "@material-ui/core/Tooltip";
 import PictureInPictureIcon from '@mui/icons-material/PictureInPicture';
 import SwitchCameraIcon from '@mui/icons-material/SwitchCamera';
@@ -32,7 +33,7 @@ class LightControl extends React.Component {
                     <Tooltip title="Snapshot"><IconButton onClick={this.props.capture_image_callback.bind(this, "download", this.props.selected_camera)}><DownloadIcon/></IconButton></Tooltip>
                     {this.props.robot_has_back_camera && (<IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera === "front" ? "arm" : "front", this.props.overlay, this.props.face_detection)}><SwitchCameraIcon/></IconButton>)}
                     {this.props.robot_has_back_camera && (<IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera, !this.props.overlay, this.props.face_detection)}><PictureInPictureIcon/></IconButton>)}
-                    <Tooltip title="Face Recognition"><IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera, this.props.overlay, !this.props.face_detection)}><FaceIcon/></IconButton></Tooltip>
+                    <Tooltip title="Face Recognition"><IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera, this.props.overlay, !this.props.face_detection)}>{this.props.face_detection ? (<FaceRetouchingOffIcon/>):(<FaceIcon/>)}</IconButton></Tooltip>
                     <Tooltip title="Start Patrolling"><IconButton onClick={this.props.patrol}><RadarIcon/></IconButton></Tooltip>
                     <Tooltip title="Stop Robot"><IconButton alt="Stop Robot" onClick={this.props.stopRobot}><DangerousIcon alt="Stop Robot"/></IconButton></Tooltip>
                   </Stack>
