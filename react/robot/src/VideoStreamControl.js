@@ -1,4 +1,5 @@
 import Grid from "@material-ui/core/Grid";
+import Slider from '@material-ui/core/Slider';
 import Stack from '@mui/material/Stack';
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import DangerousIcon from '@mui/icons-material/Dangerous';
@@ -9,6 +10,7 @@ import FaceRetouchingOffIcon from '@mui/icons-material/FaceRetouchingOff';
 import Tooltip from "@material-ui/core/Tooltip";
 import PictureInPictureIcon from '@mui/icons-material/PictureInPicture';
 import SwitchCameraIcon from '@mui/icons-material/SwitchCamera';
+import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
 import RadarIcon from '@mui/icons-material/Radar';
 import React from "react";
 
@@ -18,6 +20,11 @@ class LightControl extends React.Component {
         return (
             <Grid container justifyContent="center" alignItems="center">
                 <Grid item xl={12} md={12} sm={12} xs={12}>
+                    <Stack
+                        spacing={0}
+                        justifyContent="center"
+                        alignItems="center"
+                        direction="row">
                     <img
                         src={(process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL : "") + "/api/stream/"}
                         style={{maxHeight: window.outerHeight * 0.7}}
@@ -26,6 +33,25 @@ class LightControl extends React.Component {
                         onMouseMove={this.props.onMouseMove}
                         onClick={this.props.onClick}
                     />
+                    <Stack
+                        sx={{ height: 500 }}
+                        justifyContent="center"
+                        alignItems="center"
+                        direction="column">
+                        <Slider
+                            min={0}
+                            max={100}
+                            step={1}
+                            aria-label="Camera position"
+                            orientation="vertical"
+                            valueLabelDisplay="auto"
+                            value={this.props.camera_position}
+                            onChange={this.props.set_camera_position}
+                            marks={[{value: this.props.center_position}]}
+                        />
+                        <IconButton onClick={this.props.centerCameraPosition}><VerticalAlignCenterIcon/></IconButton>
+                    </Stack>
+                    </Stack>
                 </Grid>
                 <Grid item xl={12} md={12} sm={12} xs={12}>
                   <Stack spacing={0} direction="row" alignItems="center" justifyContent="center">

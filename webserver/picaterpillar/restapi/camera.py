@@ -7,6 +7,7 @@ import traceback
 import cv2
 import numpy as np
 from motor.motor import Motor
+from servo.servo_handler import ServoHandler
 
 from restapi.models import Config
 if platform.machine() == "aarch":  # Mac OS
@@ -92,7 +93,6 @@ class CaptureDevice(object):
             for (x, y, w, h) in faces:
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
                 roi_gray = gray[y:y + h, x:x + w]
-                roi_color = frame[y:y + h, x:x + w]
                 eyes = eye_cascade.detectMultiScale(roi_gray)
                 if len(eyes) >= 2:  # At least 2 eyes :-) Third one could be the mouth
                     self.face = (x, y, w, h)
@@ -102,7 +102,10 @@ class CaptureDevice(object):
                 x, y, w, h = self.face
                 speed = 20
                 timeout = 3
-                x_pos, y_pos = Camera.get_target_position((x + w//2) * 100 / self.res_x, (y + h//2) * 100 / self.res_y)
+                x_pos = (x + w//2) * 100 / self.res_x
+                y_pos = (y + h // 2) * 100 / self.res_y
+                #Camera.set_position(y_pos)
+                x_pos, y_pos = Camera.get_target_position(x_pos, y_pos)
                 Motor.move_to_target(x_pos, y_pos, speed, timeout)
 
         if self.face is not None:
@@ -224,14 +227,27 @@ class Camera(object):
     arm_capture_device = None
     last_frame_lock = threading.Lock()
     last_frame = None
+    servo_id = 1
+    servo_center_position = 55
+    servo_position = 0
 
     @staticmethod
     def setup():
         Camera.available_device = get_camera_index()
+        Camera.center_position()
         if Config.get('front_capturing_device') == "usb" and Camera.available_device is None:
             Camera.status = "KO"
         else:
             Camera.status = "OK"
+
+    @staticmethod
+    def set_position(position):
+        Camera.servo_position = int(position)
+        ServoHandler.move(Camera.servo_id, 100 - Camera.servo_position)
+
+    @staticmethod
+    def center_position():
+        Camera.set_position(Camera.servo_center_position)
 
     @staticmethod
     def stream():
@@ -351,8 +367,11 @@ class Camera(object):
         Camera.face_detection = face_detection
         if face_detection:
             Camera.start_continuous_capture()
-        elif not Camera.streaming:
-            Camera.stop_continuous_capture()
+            Camera.set_position(100)
+        else:
+            if Camera.streaming:
+               Camera.stop_continuous_capture()
+            Camera.center_position()
 
     @staticmethod
     def select_target(x, y):
@@ -384,5 +403,7 @@ class Camera(object):
             'streaming': Camera.streaming,
             'overlay': Camera.overlay,
             'face_detection': Camera.face_detection,
-            'selected_camera': Camera.selected_camera
+            'selected_camera': Camera.selected_camera,
+            'position': Camera.servo_position,
+            'center_position': Camera.servo_center_position
         }

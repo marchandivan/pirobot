@@ -74,3 +74,7 @@ class MoveArmCommandSerializer(serializers.Serializer):
 class MoveArmToPositionCommandSerializer(serializers.Serializer):
     position_id = serializers.ChoiceField(choices=Arm.get_position_ids())
     lock_wrist = serializers.BooleanField(default=False)
+
+
+class SetCameraPositionSerializer(serializers.Serializer):
+    position = serializers.IntegerField(min_value=0, max_value=100)
