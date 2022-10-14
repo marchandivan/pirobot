@@ -7,19 +7,25 @@ uart = UART(0)                         # init with given baudrate
 uart.init(baudrate=9600, bits=8, parity=None , stop=1, tx=Pin(0), rx=Pin(1)) # init with given parameters
 uart.flush()
 
-class ServoHandler(object):
-    def __init__(self, s1_pin, s2_pin, s3_pin, s4_pin, s5_pin, enable_pin):
-        self.s1 = PWM(Pin(s1_pin))
-        self.s1.freq(50)
-        self.s2 = PWM(Pin(s2_pin))
-        self.s2.freq(50)
-        self.s3 = PWM(Pin(s3_pin))
-        self.s3.freq(50)
-        self.s4 = PWM(Pin(s4_pin))
-        self.s4.freq(50)
-        self.s5 = PWM(Pin(s5_pin))
-        self.s5.freq(50)
+class Servo(object):
+    def __init__(self, pin, range):
+        self.pwm = PWM(Pin(pin))
+        self.pwm.freq(50)
+        self.range = range
+    
+    def move(self, position):
+        self.pwm.freq(50)
+        duty = self.range[0] + (self.range[1] - self.range[0]) * position / 100
+        self.pwm.duty_u16(int(duty))
         
+
+class ServoHandler(object):
+    range = [2700, 4100]
+    def __init__(self, pins, enable_pin):
+        self.servos = []
+        for pin in pins:
+            self.servos.append(Servo(pin, ServoHandler.range))
+
         self.enable = Pin(enable_pin, Pin.OUT)
         self.enable.low()
 
@@ -28,12 +34,29 @@ class ServoHandler(object):
 
     def start(self):
         self.enable.high()
+        
+    def move(self, servo, position):
+        if servo > 0 and servo <= len(self.servos):
+            self.start()
+            self.servos[servo - 1].move(position)
+            utime.sleep(0.2)
+            self.stop()
 
-servo_handler = ServoHandler(s1_pin=20, s2_pin=21, s3_pin=22, s4_pin=26, s5_pin=27, enable_pin=2)
-servo_handler.start()
-servo_handler.s1.duty_u16(3400)
-utime.sleep(1)
-servo_handler.stop()
+    def process_command(self, args):
+        try:
+            command = args[0]
+            if command == "S":
+                self.stop()
+            elif command == "M":
+                servo = int(args[1])
+                position = int(args[2])
+                self.move(servo, position)
+            else:
+                return False, f"[Servo] Unknonw command {command}"
+        except Exception as e:
+            print(e)
+            return False, f"[Servo] Unable to decode arguments {args}"
+        return True, "OK"
 
 class BatteryHandler(object):
     MAX_BATTERY = 65536
@@ -180,7 +203,7 @@ class MotorHandler(object):
         self.right_integration_sum = 0
 
         self.previous_ts = utime.ticks_ms()
-        self.auto_stop = True
+        self.auto_stop = False
         self.previous_distances = None
 
         self.target_nb_of_revolutions = None
@@ -262,6 +285,7 @@ class MotorHandler(object):
 
             self.standby.high()
             left_duty = int(min(100, abs(self.left_duty)) * 65535/100)
+            self.pwm1.freq(1000)
             self.pwm1.duty_u16(left_duty)
             if self.left_duty > 0:
                 self.cw1.high()
@@ -271,6 +295,7 @@ class MotorHandler(object):
                 self.ccw1.high()
 
             right_duty = int(min(100, abs(self.right_duty)) * 65535/100)
+            self.pwm2.freq(1000)
             self.pwm2.duty_u16(right_duty)
             if self.right_duty > 0:
                 self.cw2.low()
@@ -457,6 +482,7 @@ motor_handler = MotorHandler(
                  pin_ccw2=9
     )
 
+servo_handler = ServoHandler(pins=[20, 21, 22, 26, 27], enable_pin=2)
 
 ultrasonic_handler = UltraSonicHandler(
     sensors=[
@@ -484,6 +510,8 @@ def process_command(cmd):
         return motor_handler.process_command(args)
     elif sensor == "P":
         return patroller_handler.process_command(args)
+    elif sensor == "S":
+        return servo_handler.process_command(args)
     else:
         return False, f"Unknown sensor {sensor}"
 

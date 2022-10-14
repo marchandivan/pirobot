@@ -68,6 +68,8 @@ class App extends React.Component {
             distance: 10,
             rotation: 10,
             speech_destination: "audio",
+            camera_position: 0,
+            center_position: 50
         }
         this.key_down = {};
         this.config = {};
@@ -156,6 +158,8 @@ class App extends React.Component {
                 selected_camera: data.robot.camera.selected_camera,
                 stream_overlay: data.robot.camera.overlay,
                 face_detection: data.robot.camera.face_detection,
+                camera_position: data.robot.camera.position,
+                center_position: data.robot.camera.center_position,
                 arm_position_claw: data.robot.arm.position.claw,
                 arm_max_angle_claw: data.robot.arm.config.claw.max_angle,
                 arm_position_wrist: data.robot.arm.position.wrist,
@@ -163,7 +167,7 @@ class App extends React.Component {
                 arm_position_forearm: data.robot.arm.position.forearm,
                 arm_max_angle_forearm: data.robot.arm.config.forearm.max_angle,
                 arm_position_shoulder: data.robot.arm.position.shoulder,
-                arm_max_angle_shoulder: data.robot.arm.config.shoulder.max_angle,
+                arm_max_angle_shoulder: data.robot.arm.config.shoulder.max_angle
             });
             if ('config' in data) {
                 this.config = data.config;
@@ -220,6 +224,49 @@ class App extends React.Component {
         if (e.detail === 2) {
             this.moveToTarget();
         }
+    }
+
+    setCameraPosition = (event, value) => {
+        let url = '/api/set_camera_position/';
+        if(process.env.REACT_APP_API_URL) {
+            url = process.env.REACT_APP_API_URL + url;
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
+            },
+            body: JSON.stringify({
+                position: value
+            })
+        })
+            .then(response => response.json())
+            .then(data => this.updateState(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+    centerCameraPosition = () => {
+        let url = '/api/center_camera_position/';
+        if(process.env.REACT_APP_API_URL) {
+            url = process.env.REACT_APP_API_URL + url;
+        }
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': Cookies.get('csrftoken'),
+            },
+        })
+            .then(response => response.json())
+            .then(data => this.updateState(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
     }
 
     moveToTarget = (e) => {
@@ -801,6 +848,10 @@ class App extends React.Component {
                                 stopRobot={this.stopRobot}
                                 robot_has_back_camera={this.config.robot_has_back_camera}
                                 robot_has_screen={this.config.robot_has_screen}
+                                set_camera_position={this.setCameraPosition}
+                                centerCameraPosition={this.centerCameraPosition}
+                                camera_position={this.state.camera_position}
+                                center_position={this.state.center_position}
                             />
                         </Grid>
                         <Grid container xl={2} md={2} sm={2} xs={12}>
