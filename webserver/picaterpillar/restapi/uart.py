@@ -85,14 +85,17 @@ class UART:
 
     @staticmethod
     def open_uart():
-        UART.serial_port = serial.Serial(
-            port=Config.get("uart_port"),
-            baudrate=Config.get("uart_baudrate"),
-            bytesize=serial.EIGHTBITS,
-            parity=serial.PARITY_NONE,
-            stopbits=serial.STOPBITS_ONE
-        )
-        threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
+        try:
+            UART.serial_port = serial.Serial(
+                port=Config.get("uart_port"),
+                baudrate=Config.get("uart_baudrate"),
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE
+            )
+            threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
+        except:
+            traceback.print_exc()
 
     @staticmethod
     def ws_on_message(ws, message):

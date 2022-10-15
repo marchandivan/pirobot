@@ -87,11 +87,13 @@ class CaptureDevice(object):
             self.face = None
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-            if len(faces) > 0:
-                self.face = faces[0]
             # Look for faces with 2 eyes or more
             for (x, y, w, h) in faces:
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                size_percent = 100 * w / self.res_x
+                if size_percent < 5 or size_percent > 40:
+                    continue
+                if self.face is None:
+                    self.face = (x, y, w, h)
                 roi_gray = gray[y:y + h, x:x + w]
                 eyes = eye_cascade.detectMultiScale(roi_gray)
                 if len(eyes) >= 2:  # At least 2 eyes :-) Third one could be the mouth
@@ -110,7 +112,7 @@ class CaptureDevice(object):
 
         if self.face is not None:
             x, y, w, h = self.face
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
 
     def add_navigation_lines(self, frame):
         color = (0, 255, 0)
