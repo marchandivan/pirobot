@@ -270,7 +270,7 @@ class Camera(object):
     last_frame_lock = threading.Lock()
     last_frame = None
     servo_id = 1
-    servo_center_position = 55
+    servo_center_position = 60
     servo_position = 0
 
     @staticmethod
