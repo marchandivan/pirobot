@@ -7,9 +7,15 @@ from restapi.uart import UART, MessageOriginator, MessageType
 class PicoMotor(object):
     status = "UK"
 
-    distance = 0
-    abs_distance = 0
-    rotation = 0
+    distance = 0.0
+    abs_distance = 0.0
+    rotation = 0.0
+    original_rotation = None
+    left_us_distance = 0.0
+    front_us_distance = 0.0
+    right_us_distance = 0.0
+    pos_x = 0
+    pos_y = 0
 
     left_speed = 0
     left_duty = 0
@@ -22,6 +28,8 @@ class PicoMotor(object):
     max_rpm = None
     wheel_d = None
     robot_width = None
+
+    obstacles = []
 
     @staticmethod
     def setup():
@@ -40,8 +48,12 @@ class PicoMotor(object):
         PicoMotor.left_speed = int(message[1])
         PicoMotor.right_duty = int(message[2])
         PicoMotor.right_speed = int(message[3])
-        PicoMotor.distance = float(message[4]) * math.pi * PicoMotor.wheel_d
+        PicoMotor.distance = float(message[4]) * math.pi * PicoMotor.wheel_d / 1000
         PicoMotor.abs_distance = float(message[5]) * math.pi * PicoMotor.wheel_d
+        PicoMotor.rotation = float(message[6]) * 180 * PicoMotor.wheel_d / PicoMotor.robot_width
+        PicoMotor.left_us_distance = float(message[7])
+        PicoMotor.front_us_distance = float(message[8])
+        PicoMotor.right_us_distance = float(message[9])
 
     @staticmethod
     def stop():
@@ -66,3 +78,15 @@ class PicoMotor(object):
     @staticmethod
     def get_distance():
         return PicoMotor.distance, PicoMotor.abs_distance
+
+    @staticmethod
+    def get_us_distances():
+        return PicoMotor.left_us_distance, PicoMotor.front_us_distance, PicoMotor.right_us_distance
+
+    @staticmethod
+    def get_position():
+        return PicoMotor.pos_x, PicoMotor.pos_y, PicoMotor.rotation
+
+    @staticmethod
+    def get_obstacles():
+        return PicoMotor.obstacles

@@ -76,5 +76,6 @@ class Motor(object):
             left=left_status,
             right=right_status,
             distance=distance,
+            us_distances=Motor._controller.get_us_distances(),
             abs_distance=abs_distance,
         )

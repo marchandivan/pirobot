@@ -82,6 +82,46 @@ class CaptureDevice(object):
 
         frame[y_offset:y_offset + resized.shape[0], x_offset:x_offset + resized.shape[1]] = resized
 
+    def add_radar(self, frame, pos, size):
+        motor_status = Motor.serialize()
+        left_us_distance, front_us_distance, right_us_distance = motor_status.get('us_distances')
+        radius = 0.15 * self.res_x
+
+        color = (0, 255, 0)
+        thickness = 2
+
+        def add_circle(distance, angle):
+            normalized_distance = radius * distance / 0.5
+            if normalized_distance <= radius:
+                cx = normalized_distance * math.sin(angle * math.pi / 180)
+                cy = normalized_distance * math.cos(angle * math.pi / 180)
+                x = int(cx + self.res_x // 2)
+                y = int(self.res_y - cy)
+                cv2.circle(frame, (x, y), radius=4, color=(0, 0, 255), thickness=2)
+
+        cv2.circle(frame, (self.res_x // 2, self.res_y), radius=int(radius), color=(0, 255, 0), thickness=2)
+        cv2.line(frame,
+                 (self.res_x // 2, self.res_y),
+                 (int(self.res_x // 2 - radius * math.sin(math.pi / 4)), int(self.res_y - radius * math.sin(math.pi / 4))),
+                 color,
+                 thickness)
+        cv2.circle(frame, (self.res_x // 2, self.res_y), radius=int(2 * radius / 3), color=(0, 255, 0), thickness=2)
+        cv2.line(frame,
+                 (self.res_x // 2, self.res_y),
+                 (self.res_x // 2, int(self.res_y - radius)),
+                 color,
+                 thickness)
+        cv2.circle(frame, (self.res_x // 2, self.res_y), radius=int(radius / 3), color=(0, 255, 0), thickness=2)
+        cv2.line(frame,
+                 (self.res_x // 2, self.res_y),
+                 (int(self.res_x // 2 + radius * math.sin(math.pi / 4)), int(self.res_y - radius * math.sin(math.pi / 4))),
+                 color,
+                 thickness)
+
+        add_circle(left_us_distance, -45)
+        add_circle(front_us_distance, 0)
+        add_circle(right_us_distance, 45)
+
     def detect_face(self, frame):
         if self.frame_counter % 2 == 0:
             self.face = None
@@ -321,7 +361,7 @@ class Camera(object):
                         Camera.front_capture_device.add_navigation_lines(frame)
                     else:
                         frame = Camera.arm_capture_device.retrieve()
-
+                    Camera.front_capture_device.add_radar(frame, [50, 0], [25, 25])
                     if Camera.arm_capture_device is not None and Camera.overlay:
                         if Camera.selected_camera == "front":
                             overlay_frame = Camera.arm_capture_device.retrieve()
