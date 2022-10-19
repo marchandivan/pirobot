@@ -145,6 +145,7 @@ class UltraSonicHandler(object):
 class MotorHandler(object):
     REFRESH_INTERVAL = 50 # ms
     STEPS_PER_ROTATION = 230
+    MIN_DISTANCE = 0.01
     MAX_RPM = 200
     KP = 0.5
     KI = 1
@@ -213,6 +214,7 @@ class MotorHandler(object):
         self.total_nb_of_revolutions = 0
         self.total_abs_nb_of_revolutions = 0
         self.total_differential_nb_of_revolutions = 0
+        self.total_abs_differential_nb_of_revolutions = 0
 
         # Setup interupts
         def handle_left_encoder_interrupt(pin):
@@ -234,11 +236,11 @@ class MotorHandler(object):
         self.e2a.irq(trigger=Pin.IRQ_RISING, handler=handle_right_encoder_interrupt, hard=True)
 
     def move(self, left_direction, left_speed, right_direction, right_speed, timeout, nb_of_revolutions=0, differential_nb_of_revolutions=0, auto_stop=True):
-        self.auto_stop = True
+        self.auto_stop = auto_stop
         if nb_of_revolutions > 0:
             self.target_nb_of_revolutions = self.total_abs_nb_of_revolutions + nb_of_revolutions
         if differential_nb_of_revolutions > 0:
-            self.target_differential_nb_of_revolutions = self.total_differential_nb_of_revolutions + differential_nb_of_revolutions
+            self.target_differential_nb_of_revolutions = self.total_abs_differential_nb_of_revolutions + differential_nb_of_revolutions
         self.timeout_ts = utime.ticks_ms() + timeout * 1000
 
         if left_direction == "F":
@@ -261,7 +263,7 @@ class MotorHandler(object):
             left_current_error = self.left_ref_speed - self.left_speed
             self.left_integration_sum += (left_current_error * interval_s)
             left_duty = self.KP * left_current_error + self.KI * self.left_integration_sum + self.KD * (left_current_error - self.left_previous_error) / interval_s
-            left_duty = max(-100, min(100, int(left_duty)))
+            left_duty = int(max(-100, min(100, left_duty)))
             self.left_previous_error = left_current_error
         else:
             left_duty = 0
@@ -272,7 +274,7 @@ class MotorHandler(object):
             right_current_error = self.right_ref_speed - self.right_speed
             self.right_integration_sum += (right_current_error * interval_s)
             right_duty = self.KP * right_current_error + self.KI * self.right_integration_sum + self.KD * (right_current_error - self.right_previous_error) / interval_s
-            right_duty = max(-100, min(100, int(right_duty)))
+            right_duty = int(max(-100, min(100, right_duty)))
             self.right_previous_error = right_current_error
         else:
             right_duty = 0
@@ -312,23 +314,36 @@ class MotorHandler(object):
         self.timeout_ts = None
 
     def get_status(self):
-        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}"
+        left_distance, front_distance, right_distance = ultrasonic_handler.distances()
+        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}"
 
+    def adjust_speed(self, current_speed, new_speed):
+        if new_speed < 0.1: # Speed bellow 20 RPM, stop
+            motor_handler.stop()
+        else:
+            self.left_ref_speed = self.left_ref_speed * new_speed / current_speed
+            self.right_ref_speed = self.right_ref_speed * new_speed / current_speed
+        
     def iterate(self):
-        # Avoid collision ?
-        if self.auto_stop:
-            distances = ultrasonic_handler.distances()
-            if self.previous_distances != distances:
-                speed = abs(motor_handler.left_speed / MotorHandler.MAX_RPM + motor_handler.right_speed / MotorHandler.MAX_RPM) / 2
-                min_distance = max(0.5 * speed, 0.01)
-                if speed > 0 and min(distances) < min_distance and motor_handler.left_duty > 0 and motor_handler.right_duty > 0:
-                    motor_handler.stop()
-            self.previous_distances = distances
-
         # Update rotation counters
         now = utime.ticks_ms()
         interval = (now - self.previous_ts)
         if interval > MotorHandler.REFRESH_INTERVAL:
+            speed = abs(motor_handler.left_speed / MotorHandler.MAX_RPM + motor_handler.right_speed / MotorHandler.MAX_RPM) / 2
+            ref_speed = abs(motor_handler.left_ref_speed / MotorHandler.MAX_RPM + motor_handler.right_ref_speed / MotorHandler.MAX_RPM) / 2
+            ref_speed = speed
+            ref_differential_speed = abs(motor_handler.left_speed / MotorHandler.MAX_RPM - motor_handler.right_speed / MotorHandler.MAX_RPM) / 2
+            # Avoid collision ?
+            if self.auto_stop:
+                distances = ultrasonic_handler.distances()
+                if self.previous_distances != distances:
+                    min_distance = max(0.5 * speed, MotorHandler.MIN_DISTANCE)
+                    distance_to_closest_object = min(distances)
+                    if speed > 0 and distance_to_closest_object < min_distance and motor_handler.left_duty > 0 and motor_handler.right_duty > 0:
+                        self.adjust_speed(speed, distance_to_closest_object / 0.5)
+                             
+                self.previous_distances = distances
+
             left_nb_of_steps = self.left_step_counter - self.previous_left_step_counter
             self.previous_left_step_counter = self.left_step_counter
             self.left_speed = int(60000 * left_nb_of_steps / (interval * MotorHandler.STEPS_PER_ROTATION))
@@ -336,16 +351,25 @@ class MotorHandler(object):
             self.previous_right_step_counter = self.right_step_counter
             self.right_speed = int(60000 * right_nb_of_steps / (interval * MotorHandler.STEPS_PER_ROTATION))
             avg_nb_of_revolutions = (right_nb_of_steps + left_nb_of_steps) / (2 * MotorHandler.STEPS_PER_ROTATION)
-            self.total_differential_nb_of_revolutions += abs((right_nb_of_steps - left_nb_of_steps) / MotorHandler.STEPS_PER_ROTATION)
+            self.total_abs_differential_nb_of_revolutions += abs((left_nb_of_steps - right_nb_of_steps) / MotorHandler.STEPS_PER_ROTATION)
+            self.total_differential_nb_of_revolutions += (left_nb_of_steps - right_nb_of_steps) / MotorHandler.STEPS_PER_ROTATION
             self.total_nb_of_revolutions += avg_nb_of_revolutions
             self.total_abs_nb_of_revolutions += abs(avg_nb_of_revolutions)
             self.previous_ts = now
 
             # Check any targets was reached
-            if self.target_nb_of_revolutions is not None and self.total_abs_nb_of_revolutions > self.target_nb_of_revolutions:
-                self.stop()
-            if self.target_differential_nb_of_revolutions is not None and self.total_differential_nb_of_revolutions > self.target_differential_nb_of_revolutions:
-                self.stop()
+            braking_nb_of_revolutions_at_max_speed = 1.0
+            if self.target_nb_of_revolutions is not None:
+                if self.total_abs_nb_of_revolutions > self.target_nb_of_revolutions:
+                    self.stop()
+                elif (self.target_nb_of_revolutions - self.total_abs_nb_of_revolutions) < braking_nb_of_revolutions_at_max_speed * ref_speed:
+                    self.adjust_speed(ref_speed, (self.target_nb_of_revolutions - self.total_abs_nb_of_revolutions) / braking_nb_of_revolutions_at_max_speed)
+                
+            if self.target_differential_nb_of_revolutions is not None:
+                if self.total_abs_differential_nb_of_revolutions > self.target_differential_nb_of_revolutions:
+                    self.stop()
+                elif (self.target_differential_nb_of_revolutions - self.total_abs_differential_nb_of_revolutions) < braking_nb_of_revolutions_at_max_speed * ref_differential_speed:
+                    self.adjust_speed(ref_differential_speed, (self.target_differential_nb_of_revolutions - self.total_abs_differential_nb_of_revolutions) / braking_nb_of_revolutions_at_max_speed)
             if self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts:
                 self.stop()
                 
@@ -427,7 +451,7 @@ class PatrollerHandler(object):
             distances = self.ultrasonic_handler.distances()
             left_distance, front_distance, right_distance = distances
             min_distance = max(0.5 * self.speed / 100, 0.01)
-            if min(distances) > min_distance * 1.5:
+            if min(distances) > min_distance:
                 if self.move_camera:
                     self.servo_handler.s1.duty_u16(4000)
                     utime.sleep(1.0)
