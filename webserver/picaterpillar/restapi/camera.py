@@ -68,7 +68,6 @@ class CaptureDevice(object):
             if platform.machine() == "aarch64":
                 self.device = picamera2.Picamera2()
                 config = self.device.create_preview_configuration({"size": (self.res_x, self.res_y), "format": "RGB888"})
-                print(config)
                 self.device.configure(config)
                 self.device.start()
             else:
@@ -224,9 +223,13 @@ class CaptureDevice(object):
                     camera_lock.release()
                     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
                 else:  # picamera
-                    output = PiRGBArray(self.device)
-                    self.device.capture(output, format="rgb")
-                    return cv2.cvtColor(output.array, cv2.COLOR_BGRA2BGR)
+                    if platform.machine() == "aarch64":
+                        frame = self.device.capture_array()
+                        return cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+                    else:
+                        output = PiRGBArray(self.device)
+                        self.device.capture(output, format="rgb")
+                        return cv2.cvtColor(output.array, cv2.COLOR_BGRA2BGR)
             except:
                 print ("Failed to capture image, retrying")
                 traceback.print_exc()
