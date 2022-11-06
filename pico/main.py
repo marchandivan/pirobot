@@ -4,7 +4,7 @@ import utime
 # Global variables
 
 uart = UART(0)                         # init with given baudrate
-uart.init(baudrate=9600, bits=8, parity=None , stop=1, tx=Pin(0), rx=Pin(1)) # init with given parameters
+uart.init(baudrate=115200, bits=8, parity=None , stop=1, tx=Pin(0), rx=Pin(1)) # init with given parameters
 uart.flush()
 
 class Servo(object):
@@ -489,6 +489,7 @@ class StatusHandler(object):
                 handler_config.deadline = utime.ticks_add(now, handler_config.refresh_interval)
                 status = handler_config.handler.get_status() + "\n"
                 uart.write(status)
+                uart.flush()
 
             
 

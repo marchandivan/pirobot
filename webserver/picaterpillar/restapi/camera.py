@@ -145,7 +145,7 @@ class CaptureDevice(object):
                 timeout = 3
                 x_pos = (x + w//2) * 100 / self.res_x
                 y_pos = (y + h // 2) * 100 / self.res_y
-                #Camera.set_position(y_pos)
+                Camera.set_position(y)
                 x_pos, y_pos = Camera.get_target_position(x_pos, y_pos)
                 Motor.move_to_target(x_pos, y_pos, speed, timeout)
 
