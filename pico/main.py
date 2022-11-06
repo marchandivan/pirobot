@@ -37,10 +37,7 @@ class ServoHandler(object):
         
     def move(self, servo, position):
         if servo > 0 and servo <= len(self.servos):
-            self.start()
             self.servos[servo - 1].move(position)
-            utime.sleep(0.2)
-            self.stop()
 
     def process_command(self, args):
         try:
@@ -287,7 +284,6 @@ class MotorHandler(object):
 
             self.standby.high()
             left_duty = int(min(100, abs(self.left_duty)) * 65535/100)
-            self.pwm1.freq(1000)
             self.pwm1.duty_u16(left_duty)
             if self.left_duty > 0:
                 self.cw1.high()
@@ -297,7 +293,6 @@ class MotorHandler(object):
                 self.ccw1.high()
 
             right_duty = int(min(100, abs(self.right_duty)) * 65535/100)
-            self.pwm2.freq(1000)
             self.pwm2.duty_u16(right_duty)
             if self.right_duty > 0:
                 self.cw2.low()
@@ -498,17 +493,17 @@ motor_handler = MotorHandler(
                  pin_e1b=14,
                  pin_e2a=13,
                  pin_e2b=12,
-                 pin_standby=8,
-                 pin_pwm1=5,
+                 pin_standby=5,
+                 pin_pwm1=8,
                  pin_cw1=6,
                  pin_ccw1=7,
-                 pin_pwm2=11,
+                 pin_pwm2=9,
                  pin_cw2=10,
-                 pin_ccw2=9
+                 pin_ccw2=11
     )
 
 servo_handler = ServoHandler(pins=[20, 21, 22, 26, 27], enable_pin=2)
-
+servo_handler.start()
 ultrasonic_handler = UltraSonicHandler(
     sensors=[
         UltraSonicSensor("right", pin_trigger=17, pin_echo=16),
