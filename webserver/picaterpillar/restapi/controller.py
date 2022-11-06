@@ -173,6 +173,7 @@ class Controller(object):
 
     @staticmethod
     def patrol(speed, timeout, move_camera):
+        Controller.set_lcd_picture('patrol')
         UART.write(f"P:{speed}:{timeout}:{move_camera}")
 
     @staticmethod

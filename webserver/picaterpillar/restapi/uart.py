@@ -99,6 +99,7 @@ class UART:
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE
             )
+            UART.serial_port.reset_input_buffer()
             threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
         except:
             traceback.print_exc()
