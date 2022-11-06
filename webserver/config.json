@@ -5,7 +5,7 @@
   },
   "uart_baudrate": {
     "type": "int",
-    "default": 9600
+    "default": 115200
   },
   "motor_controller": {
     "type": "str",
