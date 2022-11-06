@@ -42,11 +42,17 @@ class UART:
 
     @staticmethod
     def read_uart_forever(port):
+        buffer = bytearray()
         while True:
             try:
-                line = port.readline()
-                message = line[:-1].decode()
-                UART.dispatch_uart_message(message)
+                if port.in_waiting > 0:
+                    buffer += port.read(port.in_waiting)
+                i = buffer.find(b"\n")
+                if i >= 0:
+                    line = buffer[:i + 1]
+                    buffer = buffer[i + 1:]
+                    message = line[:-1].decode()
+                    UART.dispatch_uart_message(message)
             except:
                 print("Unable to read UART message")
                 # printing stack trace
