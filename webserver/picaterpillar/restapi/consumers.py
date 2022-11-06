@@ -23,3 +23,18 @@ class UartConsumer(WebsocketConsumer):
 
     def receive(self, text_data):
         UART.write(text_data)
+
+
+class RobotConsumer(WebsocketConsumer):
+    socket = None
+
+    def connect(self):
+        RobotConsumer.socket = self
+        self.accept()
+
+    def disconnect(self, close_code):
+        RobotConsumer.socket = None
+
+    def receive(self, text_data):
+        print(text_data)
+
