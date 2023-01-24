@@ -136,5 +136,20 @@
     "type": "bool",
     "default": false,
     "export": true
+  },
+  "voice_id": {
+    "type": "str",
+    "default": "mb-en1",
+    "export": true
+  },
+  "voice_rate": {
+    "type": "int",
+    "default": 150,
+    "export": true
+  },
+  "voice_volume": {
+    "type": "float",
+    "default": 1.0,
+    "export": true
   }
 }
