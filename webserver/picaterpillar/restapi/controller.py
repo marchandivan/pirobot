@@ -136,14 +136,13 @@ class Controller(object):
             if destination == "lcd":
                 terminal.text(text)
             elif destination == "audio":
-                config = Config.get_config()
 
                 if voice_engine._inLoop:
                     voice_engine.endLoop()
 
-                voice_engine.setProperty('voice', config.get("voice_id", "mb-en1"))
-                voice_engine.setProperty('rate', int(config.get("voice_rate", 150)))
-                voice_engine.setProperty('volume', int(config.get("voice_volume", 1)))
+                voice_engine.setProperty('voice', Config.get("voice_id"))
+                voice_engine.setProperty('rate', Config.get("voice_rate"))
+                voice_engine.setProperty('volume', Config.get("voice_volume"))
                 voice_engine.say(text)
                 voice_engine.runAndWait()
 
