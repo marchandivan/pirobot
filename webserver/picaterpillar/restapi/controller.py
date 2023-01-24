@@ -137,12 +137,13 @@ class Controller(object):
                 terminal.text(text)
             elif destination == "audio":
                 config = Config.get_config()
-                voice_engine.setProperty('voice', config.get("voice_id", "mb-us1"))
-                voice_engine.setProperty('rate', int(config.get("voice_rate", 150)))
-                voice_engine.setProperty('volume', int(config.get("voice_volume", 1)))
 
                 if voice_engine._inLoop:
                     voice_engine.endLoop()
+
+                voice_engine.setProperty('voice', config.get("voice_id", "mb-en1"))
+                voice_engine.setProperty('rate', int(config.get("voice_rate", 150)))
+                voice_engine.setProperty('volume', int(config.get("voice_volume", 1)))
                 voice_engine.say(text)
                 voice_engine.runAndWait()
 
