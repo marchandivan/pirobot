@@ -141,7 +141,7 @@ class CaptureDevice(object):
 
             if self.face is not None:
                 x, y, w, h = self.face
-                speed = 20
+                speed = Config.get("follow_face_speed")
                 timeout = 3
                 x_pos = (x + w//2) * 100 / self.res_x
                 y_pos = (y + h // 2) * 100 / self.res_y

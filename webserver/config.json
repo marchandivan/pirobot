@@ -151,5 +151,10 @@
     "type": "float",
     "default": 1.0,
     "export": true
+  },
+  "follow_face_speed": {
+    "type": "int",
+    "default": 20,
+    "export": true
   }
 }
