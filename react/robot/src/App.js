@@ -190,7 +190,7 @@ class App extends React.Component {
     }
 
     getDistanceTimeout = () => {
-        return Math.max(Math.min(this.getDistanceValue() * (this.state.max_duration / 1.8) * (100 / this.state.speed), this.state.max_duration), this.state.min_duration);
+        return Math.max(Math.min(this.getDistanceValue() * 4 * (this.state.max_duration / 1.8) * (100 / this.state.speed), this.state.max_duration), this.state.min_duration);
     }
 
     updateRotation = (event, value) => {

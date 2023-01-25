@@ -20,7 +20,7 @@ class Servo(object):
         
 
 class ServoHandler(object):
-    range = [2700, 4100]
+    range = [2500, 6200]
     def __init__(self, pins, enable_pin):
         self.servos = []
         for pin in pins:
@@ -141,12 +141,12 @@ class UltraSonicHandler(object):
         
 class MotorHandler(object):
     REFRESH_INTERVAL = 50 # ms
-    STEPS_PER_ROTATION = 230
+    STEPS_PER_ROTATION = 150 * 11
     MIN_DISTANCE = 0.01
-    MAX_RPM = 200
-    KP = 0.5
+    MAX_RPM = 42
+    KP = 100 / 42
     KI = 1
-    KD = 0.1 * 30 / 1000
+    KD = 0.1 * 50 / 1000
     def __init__(self,
                  pin_e1a,
                  pin_e1b,
@@ -313,8 +313,8 @@ class MotorHandler(object):
         return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}"
 
     def adjust_speed(self, current_speed, new_speed):
-        if new_speed < 0.1: # Speed bellow 20 RPM, stop
-            motor_handler.stop()
+        if new_speed < 0.05: # Speed bellow 20 RPM, stop
+            self.stop()
         else:
             self.left_ref_speed = self.left_ref_speed * new_speed / current_speed
             self.right_ref_speed = self.right_ref_speed * new_speed / current_speed
@@ -324,17 +324,17 @@ class MotorHandler(object):
         now = utime.ticks_ms()
         interval = (now - self.previous_ts)
         if interval > MotorHandler.REFRESH_INTERVAL:
-            speed = abs(motor_handler.left_speed / MotorHandler.MAX_RPM + motor_handler.right_speed / MotorHandler.MAX_RPM) / 2
-            ref_speed = abs(motor_handler.left_ref_speed / MotorHandler.MAX_RPM + motor_handler.right_ref_speed / MotorHandler.MAX_RPM) / 2
+            speed = abs(self.left_speed / MotorHandler.MAX_RPM + self.right_speed / MotorHandler.MAX_RPM) / 2
+            ref_speed = abs(self.left_ref_speed / MotorHandler.MAX_RPM + self.right_ref_speed / MotorHandler.MAX_RPM) / 2
             ref_speed = speed
-            ref_differential_speed = abs(motor_handler.left_speed / MotorHandler.MAX_RPM - motor_handler.right_speed / MotorHandler.MAX_RPM) / 2
+            ref_differential_speed = abs(self.left_speed / MotorHandler.MAX_RPM - self.right_speed / MotorHandler.MAX_RPM) / 2
             # Avoid collision ?
             if self.auto_stop:
                 distances = ultrasonic_handler.distances()
                 if self.previous_distances != distances:
                     min_distance = max(0.5 * speed, MotorHandler.MIN_DISTANCE)
                     distance_to_closest_object = min(distances)
-                    if speed > 0 and distance_to_closest_object < min_distance and motor_handler.left_duty > 0 and motor_handler.right_duty > 0:
+                    if speed > 0 and distance_to_closest_object < min_distance and self.left_duty > 0 and self.right_duty > 0:
                         self.adjust_speed(speed, distance_to_closest_object / 0.5)
                              
                 self.previous_distances = distances
@@ -366,6 +366,7 @@ class MotorHandler(object):
                 elif (self.target_differential_nb_of_revolutions - self.total_abs_differential_nb_of_revolutions) < braking_nb_of_revolutions_at_max_speed * ref_differential_speed:
                     self.adjust_speed(ref_differential_speed, (self.target_differential_nb_of_revolutions - self.total_abs_differential_nb_of_revolutions) / braking_nb_of_revolutions_at_max_speed)
             if self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts:
+                print("Timeout!")
                 self.stop()
                 
             # Run speed regulation
@@ -498,8 +499,8 @@ motor_handler = MotorHandler(
                  pin_cw1=6,
                  pin_ccw1=7,
                  pin_pwm2=9,
-                 pin_cw2=10,
-                 pin_ccw2=11
+                 pin_cw2=11,
+                 pin_ccw2=10
     )
 
 servo_handler = ServoHandler(pins=[20, 21, 22, 26, 27], enable_pin=2)
