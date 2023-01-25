@@ -139,22 +139,42 @@
   },
   "voice_id": {
     "type": "str",
-    "default": "mb-en1",
-    "export": true
+    "default": "mb-en1"
   },
   "voice_rate": {
     "type": "int",
-    "default": 150,
-    "export": true
+    "default": 150
   },
   "voice_volume": {
     "type": "float",
-    "default": 1.0,
-    "export": true
+    "default": 1.0
   },
   "follow_face_speed": {
     "type": "int",
-    "default": 20,
-    "export": true
+    "default": 20
+  },
+  "motor_steps_per_rotation": {
+    "type": "int",
+    "default": 230
+  },
+  "motor_min_distance": {
+    "type": "float",
+    "default": 0.01
+  },
+  "motor_max_rpm": {
+    "type": "int",
+    "default": 200
+  },
+  "motor_kp": {
+    "type": "float",
+    "default": 0.5
+  },
+  "motor_ki": {
+    "type": "float",
+    "default": 1.0
+  },
+  "motor_kd": {
+    "type": "float",
+    "default": 0.003
   }
 }
