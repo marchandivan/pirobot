@@ -40,6 +40,14 @@ class PicoMotor(object):
         PicoMotor.wheel_d = Config.get("wheel_d")
         PicoMotor.robot_width = Config.get("robot_width")
         PicoMotor.status = "OK"
+        steps_per_rotation = Config.get("motor_steps_per_rotation")
+        min_distance = Config.get("motor_min_distance")
+        max_rpm = Config.get("motor_max_rpm")
+        kp = Config.get("motor_kp")
+        ki = Config.get("motor_ki")
+        kd = Config.get("motor_kd")
+        UART.write(f"M:C:{steps_per_rotation}:{min_distance}:{max_rpm}:{kp}:{ki}:{kd}")
+
         UART.register_consumer("motor_controller", PicoMotor, MessageOriginator.motor, MessageType.status)
 
     @staticmethod

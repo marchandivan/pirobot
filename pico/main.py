@@ -21,6 +21,7 @@ class Servo(object):
 
 class ServoHandler(object):
     range = [2500, 6200]
+
     def __init__(self, pins, enable_pin):
         self.servos = []
         for pin in pins:
@@ -55,9 +56,11 @@ class ServoHandler(object):
             return False, f"[Servo] Unable to decode arguments {args}"
         return True, "OK"
 
+
 class BatteryHandler(object):
     MAX_BATTERY = 65536
     MIN_BATTERY = 40000
+
     def __init__(self, pin_adc):
         self.converter = ADC(pin_adc)
         
@@ -67,7 +70,8 @@ class BatteryHandler(object):
     
     def get_status(self):
         return f"B:S:{self.get_battery_level()}"
-    
+
+
 class UltraSonicSensor(object):
     def __init__(self, name, pin_trigger, pin_echo):
         self.name = name
@@ -94,8 +98,8 @@ class UltraSonicSensor(object):
             self.start = utime.ticks_us()
             pin.irq(handler=handle_echo_fall, trigger=Pin.IRQ_FALLING, hard=True)
 
-
         self.echo.irq(handler=handle_echo_rise, trigger=Pin.IRQ_RISING, hard=True)
+
 
 class UltraSonicHandler(object):
     MAX_DISTANCE = 2 # In meter
@@ -138,15 +142,11 @@ class UltraSonicHandler(object):
             if sensor.timer is not None:
                 sensor.timer.deinit()
                 sensor.timer = None
-        
+
+
 class MotorHandler(object):
-    REFRESH_INTERVAL = 50 # ms
-    STEPS_PER_ROTATION = 150 * 11
-    MIN_DISTANCE = 0.01
-    MAX_RPM = 42
-    KP = 100 / 42
-    KI = 1
-    KD = 0.1 * 50 / 1000
+    REFRESH_INTERVAL = 50  # ms
+
     def __init__(self,
                  pin_e1a,
                  pin_e1b,
@@ -213,6 +213,13 @@ class MotorHandler(object):
         self.total_differential_nb_of_revolutions = 0
         self.total_abs_differential_nb_of_revolutions = 0
 
+        self.steps_per_rotation = 230
+        self.min_distance = 0.01
+        self.max_rpm = 200
+        self.kp = 0.5
+        self.ki = 1.0
+        self.kd = 0.1 * 30 / 1000
+
         # Setup interupts
         def handle_left_encoder_interrupt(pin):
             if self.e1b.value() == 1:
@@ -232,7 +239,17 @@ class MotorHandler(object):
         self.e1a.irq(trigger=Pin.IRQ_RISING, handler=handle_left_encoder_interrupt, hard=True)
         self.e2a.irq(trigger=Pin.IRQ_RISING, handler=handle_right_encoder_interrupt, hard=True)
 
-    def move(self, left_direction, left_speed, right_direction, right_speed, timeout, nb_of_revolutions=0, differential_nb_of_revolutions=0, auto_stop=True):
+    def move(
+            self,
+            left_direction,
+            left_speed,
+            right_direction,
+            right_speed,
+            timeout,
+            nb_of_revolutions=0.0,
+            differential_nb_of_revolutions=0.0,
+            auto_stop=True
+    ):
         self.auto_stop = auto_stop
         if nb_of_revolutions > 0:
             self.target_nb_of_revolutions = self.total_abs_nb_of_revolutions + nb_of_revolutions
@@ -241,14 +258,14 @@ class MotorHandler(object):
         self.timeout_ts = utime.ticks_ms() + timeout * 1000
 
         if left_direction == "F":
-            self.left_ref_speed = MotorHandler.MAX_RPM * left_speed // 100
+            self.left_ref_speed = self.max_rpm * left_speed // 100
         else:
-            self.left_ref_speed = -MotorHandler.MAX_RPM * left_speed // 100
+            self.left_ref_speed = -self.max_rpm * left_speed // 100
 
         if right_direction == "F":
-            self.right_ref_speed = MotorHandler.MAX_RPM * right_speed // 100
+            self.right_ref_speed = self.max_rpm * right_speed // 100
         else:
-            self.right_ref_speed = -MotorHandler.MAX_RPM * right_speed // 100
+            self.right_ref_speed = -self.max_rpm * right_speed // 100
 
         interval = max(utime.ticks_ms() - self.previous_ts, MotorHandler.REFRESH_INTERVAL)
         self.update_speeds(interval=interval,force=True)
@@ -259,7 +276,7 @@ class MotorHandler(object):
         if self.left_ref_speed != 0:
             left_current_error = self.left_ref_speed - self.left_speed
             self.left_integration_sum += (left_current_error * interval_s)
-            left_duty = self.KP * left_current_error + self.KI * self.left_integration_sum + self.KD * (left_current_error - self.left_previous_error) / interval_s
+            left_duty = self.kp * left_current_error + self.ki * self.left_integration_sum + self.kd * (left_current_error - self.left_previous_error) / interval_s
             left_duty = int(max(-100, min(100, left_duty)))
             self.left_previous_error = left_current_error
         else:
@@ -270,7 +287,7 @@ class MotorHandler(object):
         if self.right_ref_speed != 0:
             right_current_error = self.right_ref_speed - self.right_speed
             self.right_integration_sum += (right_current_error * interval_s)
-            right_duty = self.KP * right_current_error + self.KI * self.right_integration_sum + self.KD * (right_current_error - self.right_previous_error) / interval_s
+            right_duty = self.kp * right_current_error + self.ki * self.right_integration_sum + self.kd * (right_current_error - self.right_previous_error) / interval_s
             right_duty = int(max(-100, min(100, right_duty)))
             self.right_previous_error = right_current_error
         else:
@@ -313,7 +330,7 @@ class MotorHandler(object):
         return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}"
 
     def adjust_speed(self, current_speed, new_speed):
-        if new_speed < 0.05: # Speed bellow 20 RPM, stop
+        if new_speed < 0.05:  # Speed bellow 20 RPM, stop
             self.stop()
         else:
             self.left_ref_speed = self.left_ref_speed * new_speed / current_speed
@@ -324,15 +341,15 @@ class MotorHandler(object):
         now = utime.ticks_ms()
         interval = (now - self.previous_ts)
         if interval > MotorHandler.REFRESH_INTERVAL:
-            speed = abs(self.left_speed / MotorHandler.MAX_RPM + self.right_speed / MotorHandler.MAX_RPM) / 2
-            ref_speed = abs(self.left_ref_speed / MotorHandler.MAX_RPM + self.right_ref_speed / MotorHandler.MAX_RPM) / 2
+            speed = abs(self.left_speed / self.max_rpm + self.right_speed / self.max_rpm) / 2
+            ref_speed = abs(self.left_ref_speed / self.max_rpm + self.right_ref_speed / self.max_rpm) / 2
             ref_speed = speed
-            ref_differential_speed = abs(self.left_speed / MotorHandler.MAX_RPM - self.right_speed / MotorHandler.MAX_RPM) / 2
+            ref_differential_speed = abs(self.left_speed / self.max_rpm - self.right_speed / self.max_rpm) / 2
             # Avoid collision ?
             if self.auto_stop:
                 distances = ultrasonic_handler.distances()
                 if self.previous_distances != distances:
-                    min_distance = max(0.5 * speed, MotorHandler.MIN_DISTANCE)
+                    min_distance = max(0.5 * speed, self.min_distance)
                     distance_to_closest_object = min(distances)
                     if speed > 0 and distance_to_closest_object < min_distance and self.left_duty > 0 and self.right_duty > 0:
                         self.adjust_speed(speed, distance_to_closest_object / 0.5)
@@ -341,13 +358,13 @@ class MotorHandler(object):
 
             left_nb_of_steps = self.left_step_counter - self.previous_left_step_counter
             self.previous_left_step_counter = self.left_step_counter
-            self.left_speed = int(60000 * left_nb_of_steps / (interval * MotorHandler.STEPS_PER_ROTATION))
+            self.left_speed = int(60000 * left_nb_of_steps / (interval * self.steps_per_rotation))
             right_nb_of_steps = (self.previous_right_step_counter - self.right_step_counter)
             self.previous_right_step_counter = self.right_step_counter
-            self.right_speed = int(60000 * right_nb_of_steps / (interval * MotorHandler.STEPS_PER_ROTATION))
-            avg_nb_of_revolutions = (right_nb_of_steps + left_nb_of_steps) / (2 * MotorHandler.STEPS_PER_ROTATION)
-            self.total_abs_differential_nb_of_revolutions += abs((left_nb_of_steps - right_nb_of_steps) / MotorHandler.STEPS_PER_ROTATION)
-            self.total_differential_nb_of_revolutions += (left_nb_of_steps - right_nb_of_steps) / MotorHandler.STEPS_PER_ROTATION
+            self.right_speed = int(60000 * right_nb_of_steps / (interval * self.steps_per_rotation))
+            avg_nb_of_revolutions = (right_nb_of_steps + left_nb_of_steps) / (2 * self.steps_per_rotation)
+            self.total_abs_differential_nb_of_revolutions += abs((left_nb_of_steps - right_nb_of_steps) / self.steps_per_rotation)
+            self.total_differential_nb_of_revolutions += (left_nb_of_steps - right_nb_of_steps) / self.steps_per_rotation
             self.total_nb_of_revolutions += avg_nb_of_revolutions
             self.total_abs_nb_of_revolutions += abs(avg_nb_of_revolutions)
             self.previous_ts = now
@@ -378,6 +395,14 @@ class MotorHandler(object):
             if command == "S":
                 self.stop()
                 return True, "OK"
+            elif command == "C":
+                self.steps_per_rotation = int(args[1])
+                self.min_distance = float(args[2])
+                self.max_rpm = int(args[3])
+                self.kp = float(args[4])
+                self.ki = float(args[5])
+                self.kd = float(args[6])
+                return True, "OK"
             elif command == "M":
                 left_direction = args[1]
                 left_speed = int(args[2])
@@ -386,14 +411,25 @@ class MotorHandler(object):
                 nb_of_revolutions = float(args[5])
                 differential_nb_of_revolutions = float(args[6])
                 timeout = float(args[7])
+                auto_stop = bool(args[8]) if len(args) > 8 else True
 
-                self.move(left_direction, left_speed, right_direction, right_speed, timeout, nb_of_revolutions, differential_nb_of_revolutions)
+                self.move(
+                    left_direction=left_direction,
+                    left_speed=left_speed,
+                    right_direction=right_direction,
+                    right_speed=right_speed,
+                    timeout=timeout,
+                    nb_of_revolutions=nb_of_revolutions,
+                    differential_nb_of_revolutions=differential_nb_of_revolutions,
+                    auto_stop=auto_stop,
+                )
                 return True, "OK"
             else:
                 return False, f"Unknown command: {command}"
         except Exception as e:
             print(e)
             return False, f"[Motor] Unable to decode arguments {args}"
+
 
 class PatrollerHandler(object):
     
@@ -522,6 +558,7 @@ patroller_handler = PatrollerHandler(motor_handler, ultrasonic_handler, servo_ha
 status_handler = StatusHandler()
 status_handler.add_handler(motor_handler, 200)
 status_handler.add_handler(battery_handler, 60000)
+
 
 def process_command(cmd):
     command = cmd.split(':')
