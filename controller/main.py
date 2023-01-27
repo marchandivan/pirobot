@@ -70,6 +70,8 @@ if __name__ == "__main__":
                                 if m["type"] == "motor":
                                     if m["action"] == "move":
                                         Motor.move(**m["args"])
+                                    elif m["action"] == "stop":
+                                        Motor.stop()
 
             except KeyboardInterrupt:
                 break

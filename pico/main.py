@@ -411,7 +411,10 @@ class MotorHandler(object):
                 nb_of_revolutions = float(args[5])
                 differential_nb_of_revolutions = float(args[6])
                 timeout = float(args[7])
-                auto_stop = bool(args[8]) if len(args) > 8 else True
+                if len(args) > 8:
+                    auto_stop = args[8].lower() in ("y", "true")
+                else:
+                    auto_stop = False
 
                 self.move(
                     left_direction=left_direction,
@@ -500,6 +503,7 @@ class PatrollerHandler(object):
         self.running = False
         self.deadline = 0
         self.motor_handler.stop()
+
 
 class StatusHandler(object):
     class HandlerConfig(object):

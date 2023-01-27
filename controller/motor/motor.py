@@ -35,8 +35,8 @@ class Motor(object):
         Motor._controller.stop()
 
     @staticmethod
-    def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation):
-        Motor._controller.move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation)
+    def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation, auto_stop):
+        Motor._controller.move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation, auto_stop)
 
     @staticmethod
     def move_to_target(x, y, speed, timeout):

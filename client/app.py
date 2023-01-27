@@ -8,9 +8,12 @@ import cv2
 import numpy as np
 import socket
 import struct
+import threading
 
-host_ip = socket.gethostbyname("picaterpillar.local")
-#host_ip = socket.gethostbyname("localhost")
+from gamepad import GamePad
+
+#host_ip = socket.gethostbyname("picaterpillar.local")
+host_ip = socket.gethostbyname("localhost")
 
 
 class VideoThread(QThread):
@@ -76,6 +79,48 @@ class App(QWidget):
         self.thread.change_pixmap_signal.connect(self.update_image)
         # start the thread
         self.thread.start()
+
+        # GamePad
+        self.gamepad_thread = None
+        self.start_gamepad()
+
+    def start_gamepad(self):
+        callback = {
+            "joystick": self.joystick_callback
+        }
+        self.gamepad_thread = threading.Thread(target=GamePad.start_loop, kwargs=dict(callback=callback), daemon=True)
+        self.gamepad_thread.start()
+
+    def stop_gamepad(self):
+        if self.gamepad_thread is not None:
+            GamePad.stop_loop()
+            self.gamepad_thread = None
+
+    def joystick_callback(self, x_pos, y_pos):
+        if abs(x_pos) < 10 and abs(y_pos) < 10:
+            self.send_message(dict(type="motor", action="stop"))
+        else:
+            left_speed = 100 * (x_pos - y_pos) / (abs(x_pos) + abs(y_pos))
+            right_speed = 100 * (-x_pos - y_pos) / (abs(x_pos) + abs(y_pos))
+
+            if left_speed < 0:
+                left_orientation = 'B'
+            else:
+                left_orientation = 'F'
+
+            if right_speed < 0:
+                right_orientation = 'B'
+            else:
+                right_orientation = 'F'
+
+            self.send_message(dict(type="motor", action="move", args=dict(left_orientation=left_orientation,
+                                                                          left_speed=abs(left_speed),
+                                                                          right_orientation=right_orientation,
+                                                                          right_speed=abs(right_speed),
+                                                                          duration=10,
+                                                                          distance=None,
+                                                                          rotation=None
+                                                                          )))
 
     def connect(self):
         self.client_socket = socket.socket(socket.AF_INET)

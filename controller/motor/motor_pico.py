@@ -68,7 +68,7 @@ class PicoMotor(object):
         UART.write("M:S")
 
     @staticmethod
-    def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation):
+    def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation, auto_stop):
         nb_of_revolutions = 0
         if distance is not None:
             nb_of_revolutions = 1000 * distance / (math.pi * PicoMotor.wheel_d)
@@ -76,7 +76,7 @@ class PicoMotor(object):
         if rotation is not None:
             differential_nb_of_revolutions = rotation * PicoMotor.robot_width / (180.0 * PicoMotor.wheel_d)
         UART.write(
-            f"M:M:{left_orientation}:{int(left_speed)}:{right_orientation}:{int(right_speed)}:{nb_of_revolutions:.2f}:{differential_nb_of_revolutions:.2f}:{duration}"
+            f"M:M:{left_orientation}:{int(left_speed)}:{right_orientation}:{int(right_speed)}:{nb_of_revolutions:.2f}:{differential_nb_of_revolutions:.2f}:{duration}:{auto_stop}"
         )
 
     @staticmethod
