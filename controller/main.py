@@ -9,18 +9,13 @@ Camera.setup()
 Camera.start_continuous_capture()
 Motor.setup()
 
-# Socket Create
-server_socket = socket.socket(socket.AF_INET)
-host_name = socket.gethostname()
-host_ip = socket.gethostbyname(host_name)
-
 
 def stream_video():
     # Socket Create
     server_video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Socket Bind
-    server_video_socket.bind((host_ip, 8001))
+    server_video_socket.bind(('', 8001))
 
     # Socket Listen
     server_video_socket.listen(5)
@@ -49,8 +44,11 @@ if __name__=="__main__":
     # Start video streaming
     threading.Thread(target=stream_video, daemon=True).start()
 
+    # Socket Create
+    server_socket = socket.socket(socket.AF_INET)
+
     # Socket Bind
-    server_socket.bind((host_ip, 8000))
+    server_socket.bind(('', 8000))
 
     # Socket Listen
     server_socket.listen(5)
@@ -62,16 +60,19 @@ if __name__=="__main__":
                 client_socket, addr = server_socket.accept()
                 print('GOT CONNECTION FROM:', addr)
                 if client_socket:
-                    message = client_socket.recv(2048)
-                    Motor.move(
-                        left_orientation='F',
-                        left_speed=50,
-                        right_orientation='F',
-                        right_speed=50,
-                        duration=5,
-                        distance=None,
-                        rotation=None
-                    )
+                    while True:
+                        message = client_socket.recv(2048)
+                        if message:
+                            print(message)
+                            Motor.move(
+                                left_orientation='F',
+                                left_speed=50,
+                                right_orientation='F',
+                                right_speed=50,
+                                duration=5,
+                                distance=None,
+                                rotation=None
+                            )
 
             except KeyboardInterrupt:
                 break
