@@ -1,47 +1,34 @@
 import json
-
-with open('config.json') as config_file:
-    CONFIG_KEYS = json.load(config_file)
+import os
 
 
 # Create your models here.
 class Config(object):
-    #key = models.CharField(max_length=30, primary_key=True)
-    #value = models.CharField(max_length=2048)
+    CONFIG_KEYS = None
 
     @staticmethod
-    def _convert_to_type(value, config_type):
-        if config_type == "int":
-            return int(value)
-        elif config_type == "str":
-            return str(value)
-        elif config_type == "float":
-            return float(value)
-        elif config_type == "bool":
-            if type(value) == str:
-                return value.lower() in ('y', 'true')
-            else:
-                return bool(value)
-        elif config_type == json:
-            return json.loads(value)
-        else:
-            return value
+    def setup(config):
+        config_file_path = os.path.join(os.path.dirname(__file__), f"config/{config}.config.json")
+        if os.path.isfile(config):
+            config_file_path = config
+        elif not os.path.isfile(config_file_path):
+            print(f"Warning: Invalid config file {config}, using default instead")
+            config_file_path = os.path.join(os.path.dirname(__file__), "config/default.config.json")
+
+        with open(config_file_path) as config_file:
+            Config.CONFIG_KEYS = json.load(config_file)
 
     @staticmethod
     def get(key):
-        config = CONFIG_KEYS.get(key)
+        config = Config.CONFIG_KEYS.get(key)
         if config is None:
             raise KeyError(key)
-        try:
-            o = Config.objects.get(key=key)
-            return Config._convert_to_type(o.value, config.get("type"))
-        except:
-            return config.get("default")
+        return config.get("default")
 
     @staticmethod
     def get_config():
         config = {}
-        for key, key_config in CONFIG_KEYS.items():
+        for key, key_config in Config.CONFIG_KEYS.items():
             if key_config.get('export', False):
                 config[key] = Config.get(key)
         return config

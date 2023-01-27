@@ -24,8 +24,6 @@ class UART:
             self.message_type = message_type
 
     serial_port = None
-    use_websocket = Config.get('use_uart_websocket')
-    websocket_client = None
     consumers = {}
 
     @staticmethod
@@ -65,10 +63,6 @@ class UART:
             if consumer_config.message_type is not None and consumer_config.message_type.value != message_type:
                 continue
             consumer_config.consumer.receive_uart_message(message_parts[2:], originator, message_type)
-
-    @staticmethod
-    def run_websocket_forever(client):
-        client.run_forever()
 
     @staticmethod
     def open():

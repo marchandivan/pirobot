@@ -35,6 +35,8 @@ class GamePad(object):
         self.device = device
         self.x_pos = 0
         self.y_pos = 0
+        self.rx_pos = 0
+        self.ry_pos = 0
 
     def _update_position(self, event, axis):
         absinfo = self.device.absinfo(event.code)
@@ -59,3 +61,12 @@ class GamePad(object):
                 if event.code == ecodes.ABS_X:
                     self._update_position(event, "x")
                     callback["joystick"](self.x_pos, self.y_pos)
+                if event.code == ecodes.ABS_RY:
+                    self._update_position(event, "ry")
+                    callback["right_joystick"](self.rx_pos, self.ry_pos)
+                if event.code == ecodes.ABS_RX:
+                    self._update_position(event, "rx")
+                    callback["right_joystick"](self.rx_pos, self.ry_pos)
+            elif event.type == ecodes.EV_KEY:
+                if event.value == 1:
+                    callback["key"](event.code)

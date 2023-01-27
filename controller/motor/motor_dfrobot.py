@@ -14,7 +14,7 @@ class SpeedController(object):
     https://www.instructables.com/Speed-Control-of-DC-Motor-Using-PID-Algorithm-STM3/
     """
     KP = 1.0
-    KI = 100 / Config.get('max_rpm')
+    KI = 100 #/ Config.get('max_rpm')
     KD = 0.1 * SPEED_REFRESH_INTERVAL
 
     def __init__(self, interval):
