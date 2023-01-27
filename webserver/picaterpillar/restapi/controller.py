@@ -1,6 +1,6 @@
 import io
 import os
-import sys
+import platform
 from threading import Timer
 
 import pyttsx3
@@ -11,10 +11,11 @@ from restapi.camera import Camera
 from restapi.game import Games
 from restapi.light import Light
 from restapi.models import Config
-from restapi.motor import Motor
+from motor.motor import Motor
+from restapi.uart import UART
 from terminal import Terminal
 
-if sys.platform != "darwin":  # Mac OS
+if platform.machine() == "aarch64":  # Mac OS
     from lcd.LCD_2inch import LCD_2inch
 else:
     from lcd.LCD_Mock import LCD_2inch
@@ -30,20 +31,22 @@ lcd = LCD_2inch(rst=RST, dc=DC, bl=BL)
 lcd.Init()
 lcd.clear()
 terminal = Terminal("Courier", lcd)
-terminal.header("Buddy Bot v1.0")
+terminal.header("PiRobot v1.0")
 terminal.text("Starting...")
 
 # Motor Initialization
 Motor.setup()
-terminal.text(f"Motor setup... {Motor.status}")
+terminal.text(f"Motor setup... {Motor.get_status()}")
 
 # Light
-Light.setup()
-terminal.text(f"Light setup... {Light.status}")
+if Config.get('robot_has_light'):
+    Light.setup()
+    terminal.text(f"Light setup... {Light.status}")
 
 # Arm
-Arm.setup()
-terminal.text(f"Arm setup..... {Arm.status}")
+if Config.get('robot_has_arm'):
+    Arm.setup()
+    terminal.text(f"Arm setup..... {Arm.status}")
 
 # Motor Initialization
 Camera.setup()
@@ -69,7 +72,9 @@ class Controller(object):
 
     @staticmethod
     def stop():
-        Motor.stop ()
+        Motor.stop()
+        # Stop patroller
+        UART.write("P:0")
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation):
@@ -131,13 +136,13 @@ class Controller(object):
             if destination == "lcd":
                 terminal.text(text)
             elif destination == "audio":
-                config = Config.get_config()
-                voice_engine.setProperty('voice', config.get("voice_id", "mb-us1"))
-                voice_engine.setProperty('rate', int(config.get("voice_rate", 150)))
-                voice_engine.setProperty('volume', int(config.get("voice_volume", 1)))
 
                 if voice_engine._inLoop:
                     voice_engine.endLoop()
+
+                voice_engine.setProperty('voice', Config.get("voice_id"))
+                voice_engine.setProperty('rate', Config.get("voice_rate"))
+                voice_engine.setProperty('volume', Config.get("voice_volume"))
                 voice_engine.say(text)
                 voice_engine.runAndWait()
 
@@ -166,6 +171,10 @@ class Controller(object):
     def move_arm_to_position(position_id, lock_wrist):
         return Arm.move_to_position(position_id, lock_wrist)
 
+    @staticmethod
+    def patrol(speed, timeout, move_camera):
+        Controller.set_lcd_picture('patrol')
+        UART.write(f"P:{speed}:{timeout}:{move_camera}")
 
     @staticmethod
     def serialize():

@@ -18,6 +18,9 @@ import LockOpenIcon from '@mui/icons-material/LockOpen';
 class ArmControl extends React.Component {
 
     render() {
+        if (this.props.hide) {
+            return null;
+        }
         return (
             <Grid container justifyContent="center" alignItems="center">
                 <Grid item xl={12} md={12} sm={12} xs={12}>

@@ -4,10 +4,14 @@ import Stack from '@mui/material/Stack';
 import IconButton from "@material-ui/core/IconButton";
 import FlashlightOnIcon from '@mui/icons-material/FlashlightOn';
 import FlashlightOffIcon from '@mui/icons-material/FlashlightOff';
+import Divider from '@material-ui/core/Divider';
 
 class LightControl extends React.Component {
 
     render() {
+        if (this.props.hide) {
+            return null;
+        }
         return (
             <Grid container justifyContent="center" alignItems="center">
                 <Grid item xl={12} md={12} sm={12} xs={12}>
@@ -37,6 +41,9 @@ class LightControl extends React.Component {
                     </Grid>
                     <Grid item xl={1} md={1} sm={1} xs={1}/>
                 </Grid>
+            <Grid item xl={12} md={12} sm={12} xs={12}>
+                <Divider/>
+            </Grid>
             </Grid>
         )
     }

@@ -1,18 +1,20 @@
-import io
 import math
-import sys
+import platform
 import threading
 import time
 import traceback
 
 import cv2
 import numpy as np
-from restapi.motor import Motor
+from motor.motor import Motor
+from servo.servo_handler import ServoHandler
 
 from restapi.models import Config
-if sys.platform != "darwin":  # Mac OS
+if platform.machine() == "aarch":  # Mac OS
     import picamera
     from picamera.array import PiRGBArray
+elif platform.machine() == "aarch64":
+    import picamera2
 
 # Calculate model to covert the position of a pixel to the physical position on the floor,
 # using measurements (distances & y_pos) & polynomial regression
@@ -29,10 +31,14 @@ alpha = np.arctan([d / H for d in reference['distances']])
 poly_coefficients = np.polyfit(reference['y_pos'], alpha, 3)
 max_y_pos = 42
 
-target = None
-camera_semaphore = threading.Semaphore()
+camera_lock = threading.Lock()
 
-def getCameraIndex():
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+lower_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_lowerbody.xml')
+
+
+def get_camera_index():
     # checks the first 10 indexes.
     for index in [1, 0]:
         cap = cv2.VideoCapture(index)
@@ -41,48 +47,31 @@ def getCameraIndex():
             return index
     return None
 
+
 class CaptureDevice(object):
     target = None
-    target_img = None
-    catpures = []
     available_device = None
 
-    def __init__(self, resolution, capturing_device):
+    def __init__(self, resolution, capturing_device, angle):
         self.capturing_device = capturing_device
         self.frame_counter = 0
+        self.face = None
         self.res_x, self.res_y = resolution.split('x')
         self.res_x, self.res_y = int(self.res_x), int(self.res_y)
+        self.angle = angle
         if self.capturing_device == "usb":  # USB Camera?
-            self.device = cv2.VideoCapture(int(Config.get('front_device_id', Camera.available_device)))
+            self.device = cv2.VideoCapture(Camera.available_device)
             self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
             self.device.set(3, self.res_x)
             self.device.set(4, self.res_y)
         else:
-            self.device = picamera.PiCamera(resolution=resolution)
-
-    def _add_target(self, frame):
-        rect_size = 70
-        center = [int((CaptureDevice.target[0] * self.res_x) / 100), int((CaptureDevice.target[1] * self.res_y) / 100)]
-        if CaptureDevice.target_img is not None and self.frame_counter % 10 == 0:
-
-            result = cv2.matchTemplate(frame, CaptureDevice.target_img, cv2.TM_CCORR_NORMED)
-            # We want the minimum squared difference
-            mn, mx, mnLoc, mxLoc = cv2.minMaxLoc(result)
-
-            # Draw the rectangle:
-            # Extract the coordinates of our best match
-            if mx > 0.95:
-                center = [mxLoc[0] + rect_size, mxLoc[1] + rect_size]
-                CaptureDevice.target_img = frame[center[1] - rect_size:center[1] + rect_size, center[0] - rect_size:center[0] + rect_size]
-        else:
-            CaptureDevice.target_img = frame[center[1] - rect_size:center[1] + rect_size, center[0] - rect_size:center[0] + rect_size]
-
-
-
-        CaptureDevice.target = [100 * center[0] / self.res_x, 100 * center[1] / self.res_y]
-
-
-        cv2.rectangle(frame, [center[0] - 10, center[1] - 10], [center[0] + 10, center[1] + 10], (0, 0, 255), 2)
+            if platform.machine() == "aarch64":
+                self.device = picamera2.Picamera2()
+                config = self.device.create_preview_configuration({"size": (self.res_x, self.res_y), "format": "RGB888"})
+                self.device.configure(config)
+                self.device.start()
+            else:
+                self.device = picamera.PiCamera(resolution=resolution)
 
     def add_overlay(self, frame, overlay_frame, pos, size):
         resized = cv2.resize(overlay_frame,
@@ -91,6 +80,78 @@ class CaptureDevice(object):
         x_offset, y_offset = [int((pos[0] * self.res_x) / 100), int((pos[1] * self.res_y) / 100)]
 
         frame[y_offset:y_offset + resized.shape[0], x_offset:x_offset + resized.shape[1]] = resized
+
+    def add_radar(self, frame, pos, size):
+        motor_status = Motor.serialize()
+        left_us_distance, front_us_distance, right_us_distance = motor_status.get('us_distances')
+        radius = 0.15 * self.res_x
+
+        color = (0, 255, 0)
+        thickness = 2
+
+        def add_circle(distance, angle):
+            normalized_distance = radius * distance / 0.5
+            if normalized_distance <= radius:
+                cx = normalized_distance * math.sin(angle * math.pi / 180)
+                cy = normalized_distance * math.cos(angle * math.pi / 180)
+                x = int(cx + self.res_x // 2)
+                y = int(self.res_y - cy)
+                cv2.circle(frame, (x, y), radius=4, color=(0, 0, 255), thickness=2)
+
+        cv2.circle(frame, (self.res_x // 2, self.res_y), radius=int(radius), color=(0, 255, 0), thickness=2)
+        cv2.line(frame,
+                 (self.res_x // 2, self.res_y),
+                 (int(self.res_x // 2 - radius * math.sin(math.pi / 4)), int(self.res_y - radius * math.sin(math.pi / 4))),
+                 color,
+                 thickness)
+        cv2.circle(frame, (self.res_x // 2, self.res_y), radius=int(2 * radius / 3), color=(0, 255, 0), thickness=2)
+        cv2.line(frame,
+                 (self.res_x // 2, self.res_y),
+                 (self.res_x // 2, int(self.res_y - radius)),
+                 color,
+                 thickness)
+        cv2.circle(frame, (self.res_x // 2, self.res_y), radius=int(radius / 3), color=(0, 255, 0), thickness=2)
+        cv2.line(frame,
+                 (self.res_x // 2, self.res_y),
+                 (int(self.res_x // 2 + radius * math.sin(math.pi / 4)), int(self.res_y - radius * math.sin(math.pi / 4))),
+                 color,
+                 thickness)
+
+        add_circle(left_us_distance, -45)
+        add_circle(front_us_distance, 0)
+        add_circle(right_us_distance, 45)
+
+    def detect_face(self, frame):
+        if self.frame_counter % 2 == 0:
+            self.face = None
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+            # Look for faces with 2 eyes or more
+            for (x, y, w, h) in faces:
+                size_percent = 100 * w / self.res_x
+                if size_percent < 5 or size_percent > 40:
+                    continue
+                if self.face is None:
+                    self.face = (x, y, w, h)
+                roi_gray = gray[y:y + h, x:x + w]
+                eyes = eye_cascade.detectMultiScale(roi_gray)
+                if len(eyes) >= 2:  # At least 2 eyes :-) Third one could be the mouth
+                    self.face = (x, y, w, h)
+                    break
+
+            if self.face is not None:
+                x, y, w, h = self.face
+                speed = Config.get("follow_face_speed")
+                timeout = 3
+                x_pos = (x + w//2) * 100 / self.res_x
+                y_pos = (y + h // 2) * 100 / self.res_y
+                Camera.set_position(y)
+                x_pos, y_pos = Camera.get_target_position(x_pos, y_pos)
+                Motor.move_to_target(x_pos, y_pos, speed, timeout)
+
+        if self.face is not None:
+            x, y, w, h = self.face
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
 
     def add_navigation_lines(self, frame):
         color = (0, 255, 0)
@@ -112,9 +173,8 @@ class CaptureDevice(object):
 
         # Speed and distance
         font = cv2.FONT_HERSHEY_SIMPLEX
-        fontScale = 1
+        fontScale = 0.8
         color = (0, 255, 0)
-        thickness = 2
 
         motor_status = Motor.serialize()
 
@@ -139,13 +199,18 @@ class CaptureDevice(object):
             self.device.grab()
 
     def retrieve(self):
+        self.frame_counter += 1
         if self.capturing_device == "usb":
             ret, frame = self.device.retrieve()
             return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
         else:  # picamera
-            output = PiRGBArray(self.device)
-            self.device.capture(output, format="bgr", use_video_port=True)
-            return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
+            if platform.machine() == "aarch64":
+                frame = self.device.capture_array()
+                return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+            else:
+                output = PiRGBArray(self.device)
+                self.device.capture(output, format="bgr", use_video_port=True)
+                return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
  
     def capture(self):
         max_retries = 3
@@ -153,14 +218,18 @@ class CaptureDevice(object):
             max_retries -= 1
             try:
                 if self.capturing_device == "usb":
-                    camera_semaphore.acquire()
+                    camera_lock.acquire()
                     ret, frame = self.device.read()
-                    camera_semaphore.release()
+                    camera_lock.release()
                     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
                 else:  # picamera
-                    output = PiRGBArray(self.device)
-                    self.device.capture(output, format="rgb")
-                    return cv2.cvtColor(output.array, cv2.COLOR_BGRA2BGR)
+                    if platform.machine() == "aarch64":
+                        frame = self.device.capture_array()
+                        return cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+                    else:
+                        output = PiRGBArray(self.device)
+                        self.device.capture(output, format="rgb")
+                        return cv2.cvtColor(output.array, cv2.COLOR_BGRA2BGR)
             except:
                 print ("Failed to capture image, retrying")
                 traceback.print_exc()
@@ -169,15 +238,10 @@ class CaptureDevice(object):
     def capture_continuous(self, stream, format='jpeg'):
         if self.capturing_device == "usb":
             while True:
-                camera_semaphore.acquire()
+                camera_lock.acquire()
                 ret, frame = self.device.read()
-                camera_semaphore.release()
+                camera_lock.release()
                 self.frame_counter += 1
-
-                #if CaptureDevice.target is not None:
-                #    self._add_target(frame)
-
-                self.add_navigation_lines(frame)
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
 
@@ -199,58 +263,109 @@ class CaptureDevice(object):
 class Camera(object):
     status = "UK"
     streaming = False
+    capturing = False
+    capturing_thread = None
     overlay = True
     selected_camera = "front"
+    face_detection = False
     front_capture_device = None
     arm_capture_device = None
+    last_frame_lock = threading.Lock()
+    last_frame = None
+    servo_id = 1
+    servo_center_position = 60
+    servo_position = 0
 
     @staticmethod
     def setup():
-        Camera.available_device = getCameraIndex()
-        if Camera.available_device is None:
+        Camera.available_device = get_camera_index()
+        Camera.center_position()
+        if Config.get('front_capturing_device') == "usb" and Camera.available_device is None:
             Camera.status = "KO"
         else:
             Camera.status = "OK"
 
     @staticmethod
+    def set_position(position):
+        Camera.servo_position = int(position)
+        ServoHandler.move(Camera.servo_id, 100 - Camera.servo_position)
+
+    @staticmethod
+    def center_position():
+        Camera.set_position(Camera.servo_center_position)
+
+    @staticmethod
     def stream():
-        config = Config.get_config()
-        if sys.platform == "darwin":
-            front_capturing_device = "usb"
-            front_resolution = '1280x720'
+        Camera.streaming = True
+        Camera.start_continuous_capture()
+        while Camera.streaming:
+            try:
+                Camera.last_frame_lock.acquire()
+                last_frame = Camera.last_frame
+                Camera.last_frame_lock.release()
+                Camera.last_frame = None
+                if last_frame is not None:
+                    yield "--FRAME\r\n"
+                    yield "Content-Type: image/jpeg\r\n"
+                    yield "Content-Length: %i\r\n" % len(last_frame)
+                    yield "\r\n"
+                    yield last_frame
+                    yield "\r\n"
+            except:
+                traceback.print_exc()
+                if Camera.last_frame_lock.locked():
+                    Camera.last_frame_lock.release()
+                continue
+        Camera.streaming = False
+
+    @staticmethod
+    def capture_continuous():
+        front_capturing_device = Config.get('front_capturing_device')
+        front_resolution = Config.get('front_capturing_resolution')
+        front_angle = Config.get('front_capturing_angle')
+        if platform.machine() not in ["aarch", "aarch64"]:
+            arm_capturing_device = None
         else:
-            front_capturing_device = config.get('front_capturing_device', 'usb')
-            front_resolution = config.get('front_capturing_resolution', '1280x720')
-            arm_capturing_device = config.get('arm_capturing_device', 'picamera')
-            arm_resolution = config.get('back_capturing_resolution', '640x480')
+            arm_capturing_device = Config.get('back_capturing_device')
+        arm_resolution = Config.get('back_capturing_resolution')
+        arm_angle = Config.get('back_capturing_angle')
+
         Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
-                                                    capturing_device=front_capturing_device)
-        if sys.platform == "darwin":
-            Camera.arm_capture_device = Camera.front_capture_device
+                                                    capturing_device=front_capturing_device,
+                                                    angle=front_angle)
+        if arm_capturing_device is None:
+            if platform.machine() not in ["aarch", "aarch64"] and Config.get('robot_has_back_camera'):
+                Camera.arm_capture_device = Camera.front_capture_device
+            else:
+                Camera.arm_capture_device = None
         else:
             Camera.arm_capture_device = CaptureDevice(resolution=arm_resolution,
-                                                       capturing_device=arm_capturing_device)
+                                                      capturing_device=arm_capturing_device,
+                                                      angle=arm_angle)
 
-        framerate = float(config.get('capturing_framerate', 5))
-        stream = io.BytesIO()
-        try:
-            Camera.streaming = True
-            frame_delay = 1.0 / framerate
-            last_frame_ts = 0
-            while Camera.streaming:
+        framerate = Config.get('capturing_framerate')
+        Camera.capturing = True
+        frame_delay = 1.0 / framerate
+        last_frame_ts = 0
+        while Camera.capturing:
+            try:
                 Camera.front_capture_device.grab()
-                Camera.arm_capture_device.grab()
+                if Camera.arm_capture_device is not None:
+                    Camera.arm_capture_device.grab()
 
                 if time.time() > last_frame_ts + frame_delay:
                     last_frame_ts = time.time()
-                    if Camera.selected_camera == "front":
+                    if Camera.arm_capture_device is None or Camera.selected_camera == "front":
                         frame = Camera.front_capture_device.retrieve()
+                        # Detect face
+                        if Camera.face_detection:
+                            Camera.front_capture_device.detect_face(frame)
                         # Navigation
                         Camera.front_capture_device.add_navigation_lines(frame)
                     else:
                         frame = Camera.arm_capture_device.retrieve()
-
-                    if Camera.overlay:
+                    Camera.front_capture_device.add_radar(frame, [50, 0], [25, 25])
+                    if Camera.arm_capture_device is not None and Camera.overlay:
                         if Camera.selected_camera == "front":
                             overlay_frame = Camera.arm_capture_device.retrieve()
                             Camera.front_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
@@ -258,29 +373,50 @@ class Camera(object):
                             overlay_frame = Camera.front_capture_device.retrieve()
                             Camera.arm_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
 
-
-                    frame = cv2.imencode('.jpg', frame)[1].tostring()
-                    stream.truncate()
-                    stream.seek(0)
-                    yield "--FRAME\r\n"
-                    yield "Content-Type: image/jpeg\r\n"
-                    yield "Content-Length: %i\r\n" % len(frame)
-                    yield "\r\n"
-                    yield frame
-                    yield "\r\n"
-        except Exception as e:
-            traceback.print_exc()
-        finally:
-            Camera.front_capture_device.close()
-            Camera.front_capture_device = None
+                    if Camera.streaming:
+                        frame = cv2.imencode('.jpg', frame)[1].tostring()
+                        Camera.last_frame_lock.acquire()
+                        Camera.last_frame = frame
+                        Camera.last_frame_lock.release()
+            except Exception:
+                traceback.print_exc()
+                if Camera.last_frame_lock.locked():
+                    Camera.last_frame_lock.release()
+                continue
+        Camera.front_capture_device.close()
+        Camera.front_capture_device = None
+        if Camera.arm_capture_device is not None:
             Camera.arm_capture_device.close()
             Camera.arm_capture_device = None
-            Camera.streaming = False
+        Camera.capturing = False
+        print("Stop Capture")
 
     @staticmethod
-    def stream_setup(selected_camera, overlay):
+    def start_continuous_capture():
+        print(Camera.capturing, Camera.capturing_thread)
+        if not Camera.capturing or Camera.capturing_thread is None or not Camera.capturing_thread.is_alive():
+            Camera.capturing = True
+            print("Start capture")
+            Camera.capturing_thread = threading.Thread(target=Camera.capture_continuous, daemon=True)
+            Camera.capturing_thread.start()
+
+    @staticmethod
+    def stop_continuous_capture():
+        if not Camera.streaming:
+            Camera.capturing = False
+
+    @staticmethod
+    def stream_setup(selected_camera, overlay, face_detection):
         Camera.selected_camera = selected_camera
         Camera.overlay = overlay
+        Camera.face_detection = face_detection
+        if face_detection:
+            Camera.start_continuous_capture()
+            Camera.set_position(100)
+        else:
+            if Camera.streaming:
+               Camera.stop_continuous_capture()
+            Camera.center_position()
 
     @staticmethod
     def select_target(x, y):
@@ -295,7 +431,7 @@ class Camera(object):
         y_pos = H * math.tan(a)
 
         x_pos = (MAX_DISTANCE / (MAX_DISTANCE - min(y_pos, MAX_DISTANCE - 0.1))) * ((x - 50) / 50) * ROBOT_WIDTH/2
-        lense_coeff_x_pos = float(Config.get('lense_coeff_x_pos', '0.8'))
+        lense_coeff_x_pos = Config.get('lense_coeff_x_pos')
         return x_pos * lense_coeff_x_pos, y_pos
 
     @staticmethod
@@ -305,12 +441,14 @@ class Camera(object):
         elif camera == "arm" and Camera.arm_capture_device is not None:
             return Camera.arm_capture_device.capture()
 
-
     @staticmethod
     def serialize():
         return {
             'status': Camera.status,
             'streaming': Camera.streaming,
             'overlay': Camera.overlay,
-            'selected_camera': Camera.selected_camera
+            'face_detection': Camera.face_detection,
+            'selected_camera': Camera.selected_camera,
+            'position': Camera.servo_position,
+            'center_position': Camera.servo_center_position
         }

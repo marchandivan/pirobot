@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from restapi import serializers
 from restapi.camera import Camera
 from restapi.controller import Controller
+from restapi.models import Config
 from django.contrib.staticfiles.views import serve
 from django.contrib.auth.decorators import login_required
 
@@ -21,7 +22,8 @@ class RestApiViewSet(viewsets.ViewSet):
     def status(self, request):
         return Response({
             'status': 'OK',
-            'robot': Controller.serialize()
+            'robot': Controller.serialize(),
+            'config': Config.get_config()
         })
 
     @action(detail=False, methods=['post'])
@@ -209,7 +211,8 @@ class RestApiViewSet(viewsets.ViewSet):
         serializer = serializers.VideoStreamSetupSerializer(data=request.data)
         if serializer.is_valid():
             Camera.stream_setup(serializer.data['selected_camera'],
-                                                   serializer.data['overlay'])
+                                serializer.data['overlay'],
+                                serializer.data['face_detection'])
             return Response({
                 'status': 'OK',
                 'robot': Controller.serialize()
@@ -217,6 +220,27 @@ class RestApiViewSet(viewsets.ViewSet):
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def set_camera_position(self, request):
+        serializer = serializers.SetCameraPositionSerializer(data=request.data)
+        if serializer.is_valid():
+            Camera.set_position(serializer.data['position'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def center_camera_position(self, request):
+        Camera.center_position()
+        return Response({
+            'status': 'OK',
+            'robot': Controller.serialize()
+            })
 
     # Arm
     @action(detail=False, methods=['post'])
@@ -260,3 +284,17 @@ class RestApiViewSet(viewsets.ViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'])
+    def patrol(self, request):
+        serializer = serializers.PatrolCommandSerializer(data=request.data)
+        if serializer.is_valid():
+            Controller.patrol(serializer.data['speed'],
+                             serializer.data['timeout'],
+                             serializer.data['move_camera'])
+            return Response({
+                'status': 'OK',
+                'robot': Controller.serialize()
+                })
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
