@@ -1,6 +1,7 @@
 from camera import Camera
 from motor.motor import Motor
 
+import json
 import socket
 import struct
 import threading
@@ -63,16 +64,10 @@ if __name__=="__main__":
                     while True:
                         message = client_socket.recv(2048)
                         if message:
-                            print(message)
-                            Motor.move(
-                                left_orientation='F',
-                                left_speed=50,
-                                right_orientation='F',
-                                right_speed=50,
-                                duration=5,
-                                distance=None,
-                                rotation=None
-                            )
+                            message = json.loads(message)
+                            if message["type"] == "motor":
+                                if message["action"] == "move":
+                                    Motor.move(**message["args"])
 
             except KeyboardInterrupt:
                 break
