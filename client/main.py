@@ -3,7 +3,7 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 
-if __name__=="__main__":
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     a = App()
     a.show()

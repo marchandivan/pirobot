@@ -5,6 +5,7 @@ import json
 import socket
 import struct
 import threading
+import traceback
 
 Camera.setup()
 Camera.start_continuous_capture()
@@ -41,7 +42,7 @@ def stream_video():
         server_video_socket.close()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     # Start video streaming
     threading.Thread(target=stream_video, daemon=True).start()
 
@@ -64,14 +65,16 @@ if __name__=="__main__":
                     while True:
                         message = client_socket.recv(2048)
                         if message:
-                            message = json.loads(message)
-                            if message["type"] == "motor":
-                                if message["action"] == "move":
-                                    Motor.move(**message["args"])
+                            for m in message.decode().split("\n")[:-1]:
+                                m = json.loads(m)
+                                if m["type"] == "motor":
+                                    if m["action"] == "move":
+                                        Motor.move(**m["args"])
 
             except KeyboardInterrupt:
                 break
             except:
+                traceback.print_exc()
                 continue
     finally:
         server_socket.close()

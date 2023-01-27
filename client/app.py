@@ -1,12 +1,16 @@
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
 from PyQt5.QtGui import QPixmap
-import cv2
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
-import numpy as np
 
+import json
+import cv2
+import numpy as np
 import socket
 import struct
+
+host_ip = socket.gethostbyname("picaterpillar.local")
+#host_ip = socket.gethostbyname("localhost")
 
 
 class VideoThread(QThread):
@@ -15,7 +19,6 @@ class VideoThread(QThread):
     def run(self):
         # create socket
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        host_ip = '127.0.1.1'  # paste your server ip address here
         port = 8001
         client_socket.connect((host_ip, port))  # a tuple
         data = b""
@@ -63,6 +66,10 @@ class App(QWidget):
         # set the vbox layout as the widgets layout
         self.setLayout(vbox)
 
+        # Connect to server
+        self.client_socket = None
+        self.connect()
+
         # create the video capture thread
         self.thread = VideoThread()
         # connect its signal to the update_image slot
@@ -70,13 +77,9 @@ class App(QWidget):
         # start the thread
         self.thread.start()
 
-        # Connect to server
-        self.client_socket = None
-        self.connect()
-
     def connect(self):
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect(('127.0.1.1', 8000))
+        self.client_socket = socket.socket(socket.AF_INET)
+        self.client_socket.connect((host_ip, 8000))
 
     @pyqtSlot(np.ndarray)
     def update_image(self, cv_img):
@@ -100,6 +103,43 @@ class App(QWidget):
         p = convert_to_Qt_format.scaled(self.display_width, self.display_height, Qt.KeepAspectRatio)
         return QPixmap.fromImage(p)
 
+    def send_message(self, message):
+        self.client_socket.sendall(json.dumps(message).encode() + b"\n")
+
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Up:
-            self.client_socket.sendall("Hey".encode())
+            self.send_message(dict(type="motor", action="move", args=dict(left_orientation='F',
+                                                                          left_speed=100,
+                                                                          right_orientation='F',
+                                                                          right_speed=100,
+                                                                          duration=0.5,
+                                                                          distance=None,
+                                                                          rotation=None
+                                                                          )))
+        elif e.key() == Qt.Key_Down:
+            self.send_message(dict(type="motor", action="move", args=dict(left_orientation='B',
+                                                                          left_speed=100,
+                                                                          right_orientation='B',
+                                                                          right_speed=100,
+                                                                          duration=0.5,
+                                                                          distance=None,
+                                                                          rotation=None
+                                                                          )))
+        elif e.key() == Qt.Key_Right:
+            self.send_message(dict(type="motor", action="move", args=dict(left_orientation='F',
+                                                                          left_speed=100,
+                                                                          right_orientation='B',
+                                                                          right_speed=100,
+                                                                          duration=0.5,
+                                                                          distance=None,
+                                                                          rotation=None
+                                                                          )))
+        elif e.key() == Qt.Key_Left:
+            self.send_message(dict(type="motor", action="move", args=dict(left_orientation='B',
+                                                                          left_speed=100,
+                                                                          right_orientation='F',
+                                                                          right_speed=100,
+                                                                          duration=0.5,
+                                                                          distance=None,
+                                                                          rotation=None
+                                                                          )))
