@@ -58,25 +58,29 @@ if __name__ == "__main__":
     # Socket Accept
     try:
         while True:
-            try:
-                client_socket, addr = server_socket.accept()
-                print('GOT CONNECTION FROM:', addr)
-                if client_socket:
-                    while True:
-                        message = client_socket.recv(2048)
-                        if message:
-                            for m in message.decode().split("\n")[:-1]:
-                                m = json.loads(m)
-                                if m["type"] == "motor":
-                                    if m["action"] == "move":
-                                        Motor.move(**m["args"])
-                                    elif m["action"] == "stop":
-                                        Motor.stop()
+            client_socket, addr = server_socket.accept()
+            print('GOT CONNECTION FROM:', addr)
+            if client_socket:
+                message = ""
+                while True:
+                    try:
+                        message += client_socket.recv(4096).decode()
+                        pos = message.find("\n")
+                        while pos > 0:
+                            m = message[:pos]
+                            message = message[pos+1:]
+                            pos = message.find("\n")
+                            m = json.loads(m)
+                            if m["type"] == "motor":
+                                if m["action"] == "move":
+                                    Motor.move(**m["args"])
+                                elif m["action"] == "stop":
+                                    Motor.stop()
 
-            except KeyboardInterrupt:
-                break
-            except:
-                traceback.print_exc()
-                continue
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        traceback.print_exc()
+                        continue
     finally:
         server_socket.close()
