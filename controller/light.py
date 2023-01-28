@@ -12,7 +12,7 @@ except:
 LEFT_LIGHT_PIN = 16
 RIGHT_LIGHT_PIN = 17
 ARM_LIGHT_PIN = 21
-BLINK_DURATION = 1
+BLINK_DURATION = 0.5
 NB_OF_BLINKS = 5
 
 
@@ -50,6 +50,11 @@ class Light(object):
         Light.right_on = False
         Light.arm_on = False
         Light.status = "OK"
+
+    @staticmethod
+    def set_front_light(left_on, right_on):
+        Light._cancel_event()
+        Light.set(left_on, right_on, Light.arm_on)
 
     @staticmethod
     def set_light(left_on, right_on, arm_on):
@@ -95,4 +100,6 @@ class Light(object):
             for i in range(NB_OF_BLINKS):
                 Light._schedule_event(time, Light.toggle, kwargs=dict(left_on=left_on, right_on=right_on))
                 time += BLINK_DURATION
+        time += BLINK_DURATION
+        Light._schedule_event(time, Light.set_front_light, kwargs=dict(left_on=False, right_on=False))
         Light.set(Light.left_on, Light.right_on, Light.arm_on)

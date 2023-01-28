@@ -20,6 +20,7 @@ class Server(object):
                 args = message.get("args", {})
                 Light.blink(left_on=args.get('left_on', True), right_on=args.get('right_on', True))
         elif message["type"] == "camera":
+            print(message)
             if message["action"] == "set_position":
                 Camera.set_position(message["args"]["position"])
             elif message["action"] == "center_position":

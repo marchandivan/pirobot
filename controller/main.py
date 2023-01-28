@@ -6,6 +6,7 @@ from server import Server
 from terminal import Terminal
 
 import argparse
+import errno
 import json
 import platform
 import pyttsx3
@@ -55,32 +56,36 @@ def stream_video():
 def run_server():
     server_socket = socket.socket(socket.AF_INET)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.settimeout(1)
 
     server_socket.bind(('', 8000))
     server_socket.listen(5)
     try:
         while True:
-            client_socket, addr = server_socket.accept()
-            print('GOT CONNECTION FROM:', addr)
-            if client_socket:
-                message = ""
-                while True:
-                    try:
-                        message += client_socket.recv(4096).decode()
-                        pos = message.find("\n")
-                        while pos > 0:
-                            m = message[:pos]
-                            message = message[pos+1:]
+            try:
+                client_socket, addr = server_socket.accept()
+                print('GOT CONNECTION FROM:', addr)
+                if client_socket:
+                    message = ""
+                    while True:
+                            message += client_socket.recv(4096).decode()
                             pos = message.find("\n")
-                            m = json.loads(m)
-                            if "type" in m:
-                                Server.process(m)
+                            while pos > 0:
+                                m = message[:pos]
+                                message = message[pos+1:]
+                                pos = message.find("\n")
+                                m = json.loads(m)
+                                if "type" in m:
+                                    Server.process(m)
 
-                    except KeyboardInterrupt:
-                        raise
-                    except:
-                        traceback.print_exc()
-                        continue
+            except KeyboardInterrupt:
+                raise
+            except socket.timeout as e:
+                print("No clients found")
+                continue
+            except:
+                traceback.print_exc()
+                continue
     finally:
         server_socket.close()
 

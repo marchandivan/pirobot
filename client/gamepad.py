@@ -49,6 +49,10 @@ class GamePad(object):
             self.y_pos = position
         elif axis == "x":
             self.x_pos = position
+        elif axis == "ry":
+            self.ry_pos = position
+        elif axis == "rx":
+            self.rx_pos = position
 
     def loop(self, callback):
         for event in self.device.read_loop():

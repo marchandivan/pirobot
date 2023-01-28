@@ -3,6 +3,7 @@ import socket
 
 from PyQt5.QtCore import Qt
 
+
 class Client(object):
 
     def __init__(self, host_ip):
@@ -19,18 +20,19 @@ class Client(object):
             print(f"Unable to connect to {self.host_ip}")
 
     def gamepad_right_joystick_callback(self, x_pos, y_pos):
-        if abs(y_pos) < 10:
+        if abs(y_pos) < 2:
             self.send_message(dict(type="camera", action="center_position"))
         else:
-            position = (100 + y_pos) / 2
+            position = int(min(max(100 - (100 + y_pos) / 2, 0), 100))
             self.send_message(dict(type="camera", action="set_position", args=dict(position=position)))
 
     def gamepad_joystick_callback(self, x_pos, y_pos):
-        if abs(x_pos) < 10 and abs(y_pos) < 10:
+        if abs(x_pos) == 0 and abs(y_pos) == 0:
             self.send_message(dict(type="motor", action="stop"))
         else:
-            left_speed = 100 * (x_pos - y_pos) / (abs(x_pos) + abs(y_pos))
-            right_speed = 100 * (-x_pos - y_pos) / (abs(x_pos) + abs(y_pos))
+
+            right_speed = min(max(-y_pos - x_pos, -100), 100)
+            left_speed = min(max(-y_pos + x_pos, -100), 100)
 
             if left_speed < 0:
                 left_orientation = 'B'

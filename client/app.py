@@ -5,11 +5,11 @@ from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
 
-import json
 import cv2
 import numpy as np
 import socket
 import struct
+import time
 import threading
 
 from gamepad import GamePad
@@ -48,6 +48,12 @@ class VideoThread(QThread):
                     frame = np.frombuffer(frame_data, dtype="byte")
                     frame = cv2.imdecode(frame, cv2.IMREAD_UNCHANGED)
                     self.change_pixmap_signal.emit(frame)
+            except KeyboardInterrupt:
+                self.stop()
+            except ConnectionRefusedError:
+                print("Unable to connect to server")
+                time.sleep(1)
+                continue
             except:
                 traceback.print_exc()
                 continue
