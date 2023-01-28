@@ -64,7 +64,7 @@ class Client(object):
         elif key == 311:
             self.send_message(dict(type="sfx", action="play", args=dict(name="bike_horn")))
         elif key == 310:
-            self.send_message(dict(type="sfx", action="play", args=dict(name="small_car_horn")))
+            self.send_message(dict(type="sfx", action="play", args=dict(name="car_double_horn")))
         else:
             print(key)
 
