@@ -1,4 +1,5 @@
 from camera import Camera
+from sfx import SFX
 from light import Light
 from models import Config
 from motor.motor import Motor
@@ -127,6 +128,9 @@ if __name__ == "__main__":
     terminal.text(f"Camera setup.. {Camera.status}")
 
     terminal.text("Ready!")
+
+    # SFX
+    SFX.setup()
 
     # Start video streaming
     threading.Thread(target=stream_video, daemon=True).start()
