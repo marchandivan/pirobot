@@ -6,12 +6,12 @@ from server import Server
 from terminal import Terminal
 
 import argparse
-import errno
 import json
 import platform
 import pyttsx3
 import socket
 import struct
+import time
 import threading
 import traceback
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     while True:
         try:
-            pass
+            time.sleep(0.5)
         except KeyboardInterrupt:
             print("Stopping...")
             break
