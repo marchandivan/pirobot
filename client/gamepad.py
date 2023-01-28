@@ -21,11 +21,16 @@ class GamePad(object):
     def start_loop(device_name=None, callback=dict()):
         GamePad.running = True
         while GamePad.running:
-            device = GamePad.get_device(name=device_name)
-            if device is not None:
-                print(f"Connected to {device.name}")
-                GamePad.gamepad = GamePad(device)
-                GamePad.gamepad.loop(callback=callback)
+            try:
+                device = GamePad.get_device(name=device_name)
+                if device is not None:
+                    print(f"Connected to {device.name}")
+                    GamePad.gamepad = GamePad(device)
+                    GamePad.gamepad.loop(callback=callback)
+            except KeyboardInterrupt:
+                raise
+            except:
+                continue
 
     @staticmethod
     def stop_loop():

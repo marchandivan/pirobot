@@ -57,10 +57,14 @@ class Client(object):
     def gamepad_key_callback(self, key):
         if key == 305:
             self.send_message(dict(type="light", action="toggle"))
-        elif key == 313:
-            self.send_message(dict(type="light", action="blink", args=dict(left_on=False, right_on=True)))
         elif key == 312:
+            self.send_message(dict(type="light", action="blink", args=dict(left_on=False, right_on=True)))
+        elif key == 313:
             self.send_message(dict(type="light", action="blink", args=dict(left_on=True, right_on=False)))
+        elif key == 311:
+            self.send_message(dict(type="sfx", action="play", args=dict(name="bike_horn")))
+        elif key == 310:
+            self.send_message(dict(type="sfx", action="play", args=dict(name="small_car_horn")))
         else:
             print(key)
 
