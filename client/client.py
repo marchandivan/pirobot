@@ -86,9 +86,7 @@ class Client(object):
 
     def send_message(self, message):
         try:
-            print("A")
             self.socket.sendall(json.dumps(message).encode() + b"\n")
-            print("B")
         except:
             # In case of failure try to reconnect
             print("Unable to send message, reconnect")
