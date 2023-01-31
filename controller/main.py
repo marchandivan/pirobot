@@ -82,7 +82,6 @@ def run_socket_server():
                                 pos = message.find("\n")
                                 m = json.loads(m)
                                 if "type" in m:
-                                    print(len(client_sockets))
                                     Server.process(m)
                             message += client_socket.recv(4096).decode()
 
