@@ -3,6 +3,7 @@ from sfx import SFX
 from light import Light
 from models import Config
 from motor.motor import Motor
+from prettytable import PrettyTable
 from server import Server
 from terminal import Terminal
 
@@ -54,13 +55,13 @@ def stream_video():
         server_video_socket.close()
 
 
-def run_server():
+def run_socket_server():
     server_socket = socket.socket(socket.AF_INET)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.settimeout(1)
-
     server_socket.bind(('', 8000))
     server_socket.listen(5)
+
     try:
         while True:
             try:
@@ -91,15 +92,7 @@ def run_server():
         server_socket.close()
 
 
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='Start robot')
-    parser.add_argument('-c', '--config', type=str, help='Config name or config file path', default='default')
-
-    args = parser.parse_args()
-
-    Config.setup(args.config)
-
+def run_server():
     # Voice
     voice_engine = pyttsx3.init()
 
@@ -136,7 +129,7 @@ if __name__ == "__main__":
     threading.Thread(target=stream_video, daemon=True).start()
 
     # Start server
-    threading.Thread(target=run_server, daemon=True).start()
+    threading.Thread(target=run_socket_server, daemon=True).start()
 
     while True:
         try:
@@ -144,3 +137,62 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("Stopping...")
             break
+
+
+def configure(action, key, value):
+    table = PrettyTable()
+    table.field_names = ["Key", "Type", "Value"]
+    table.align = "l"
+    full_config = Config.get_config()
+    if action == "get":
+        if key is not None:
+            if key in full_config:
+                key_config = full_config[key]
+                table.add_row([key, key_config["type"], key_config["value"]])
+        else:
+            for k, key_config in full_config.items():
+                table.add_row([k, key_config["type"], key_config["value"]])
+        print(table)
+    elif action == "update":
+        if Config.save(key, value):
+            print("Configuration successfully updated")
+            table.add_row([key, value])
+            print(table)
+        else:
+            print("Unable to update configuration")
+
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='Start robot')
+    parser.add_argument('-c', '--config', type=str, help='Config name or config file path', default='default')
+    subparsers = parser.add_subparsers(dest="command")
+
+    # Run server parameters
+    parser_runserver = subparsers.add_parser('runserver')
+    parser_runserver.add_argument('-p', '--port', type=int, help='Port use by socket server', default=8000)
+
+    # Configuration parameters
+    parser_configure = subparsers.add_parser('configuration')
+    parser_configure.add_argument('action', choices=["get", "update"])
+    parser_configure.add_argument('key', type=str, nargs='?')
+    parser_configure.add_argument('value', type=str, nargs='?')
+
+    # Create db
+    parser_create_db = subparsers.add_parser('create_db')
+
+    args = parser.parse_args()
+
+    Config.setup(args.config)
+
+    if args.command == "runserver":
+        run_server()
+    elif args.command == "create_db":
+        Config.create_db()
+    elif args.command == "configuration":
+        if args.action == "update" and not args.value:
+            print(f"Missing value for update")
+            parser.print_usage()
+        else:
+            configure(args.action, args.key, args.value)

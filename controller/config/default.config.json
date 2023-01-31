@@ -39,54 +39,9 @@
     "type": "bool",
     "default": false
   },
-  "exclusion_zones": {
-    "type": "json",
-    "default": [
-      {
-        "FOREARM": [
-          100,
-          180
-        ],
-        "SHOULDER": [
-          127,
-          270
-        ]
-      },
-      {
-        "FOREARM": [
-          145,
-          180
-        ],
-        "SHOULDER": [
-          0,
-          41
-        ]
-      },
-      {
-        "FOREARM": [
-          145,
-          180
-        ],
-        "SHOULDER": [
-          43,
-          180
-        ]
-      },
-      {
-        "FOREARM": [
-          171,
-          180
-        ],
-        "SHOULDER": [
-          42,
-          42
-        ]
-      }
-    ]
-  },
   "front_capturing_device": {
     "type": "str",
-    "default": "usb"
+    "default": "picamera"
   },
   "front_capturing_resolution": {
     "type": "str",

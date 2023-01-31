@@ -6,11 +6,13 @@ from PyQt5.QtCore import Qt
 
 class Client(object):
 
-    def __init__(self, host_ip):
+    def __init__(self, host_ip, app):
         # Connect to server
         self.host_ip = host_ip
+        self.app = app
         self.socket = None
         self.connect()
+        self.trimmer_mode = False
 
     def connect(self):
         try:
@@ -33,6 +35,10 @@ class Client(object):
 
             right_speed = min(max(-y_pos - x_pos, -100), 100)
             left_speed = min(max(-y_pos + x_pos, -100), 100)
+
+            if self.trimmer_mode:
+                right_speed = int(0.3 * right_speed)
+                left_speed = int(0.3 * left_speed)
 
             if left_speed < 0:
                 left_orientation = 'B'
@@ -59,12 +65,16 @@ class Client(object):
             self.send_message(dict(type="light", action="toggle"))
         elif key == 312:
             self.send_message(dict(type="light", action="blink", args=dict(left_on=False, right_on=True)))
+            self.send_message(dict(type="sfx", action="play", args=dict(name="blinker")))
         elif key == 313:
             self.send_message(dict(type="light", action="blink", args=dict(left_on=True, right_on=False)))
+            self.send_message(dict(type="sfx", action="play", args=dict(name="blinker")))
         elif key == 311:
             self.send_message(dict(type="sfx", action="play", args=dict(name="bike_horn")))
         elif key == 310:
             self.send_message(dict(type="sfx", action="play", args=dict(name="car_double_horn")))
+        elif key == 317:
+            self.trimmer_mode = not self.trimmer_mode
         else:
             print(key)
 
@@ -75,6 +85,22 @@ class Client(object):
             # In case of failure try to reconnect
             self.connect()
             self.socket.sendall(json.dumps(message).encode() + b"\n")
+
+    def button_callback(self, id):
+        if id == "light_toggle":
+            self.send_message(dict(type="light", action="toggle"))
+        elif id == "light_blink_right":
+            self.send_message(dict(type="light", action="blink", args=dict(left_on=False, right_on=True)))
+            self.send_message(dict(type="sfx", action="play", args=dict(name="blinker")))
+        elif id == "light_blink_right":
+            self.send_message(dict(type="light", action="blink", args=dict(left_on=True, right_on=False)))
+            self.send_message(dict(type="sfx", action="play", args=dict(name="blinker")))
+        elif id == "sfx_bike_horn":
+            self.send_message(dict(type="sfx", action="play", args=dict(name="bike_horn")))
+        elif id == "sfx_car_double_horn":
+            self.send_message(dict(type="sfx", action="play", args=dict(name="car_double_horn")))
+        else:
+            print(id)
 
     def key_press_callback(self, e):
         if e.key() == Qt.Key_Up:
@@ -117,3 +143,5 @@ class Client(object):
                                                                           rotation=None,
                                                                           auto_stop=False,
                                                                           )))
+        elif e.key() == Qt.Key_Q:
+            self.app.close()

@@ -5,6 +5,7 @@ from sfx import SFX
 
 import threading
 
+
 class Server(object):
 
     @staticmethod
@@ -29,4 +30,3 @@ class Server(object):
         elif message["type"] == "sfx":
             if message["action"] == "play":
                 threading.Thread(target=SFX.play, args=(message["args"]["name"], )).start()
-
