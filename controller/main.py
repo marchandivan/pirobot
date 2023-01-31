@@ -39,7 +39,7 @@ def stream_video():
         while True:
             try:
                 client_socket, addr = server_video_socket.accept()
-                print('GOT CONNECTION FROM:', addr)
+                print('Get video connection:', addr)
                 if client_socket:
                     while True:
                         Camera.start_continuous_capture()
@@ -56,21 +56,25 @@ def stream_video():
 
 
 def run_socket_server():
-    server_socket = socket.socket(socket.AF_INET)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.settimeout(1)
+    server_socket.setblocking(False)
     server_socket.bind(('', 8000))
     server_socket.listen(5)
 
+    client_sockets = set()
     try:
         while True:
             try:
-                client_socket, addr = server_socket.accept()
-                print('GOT CONNECTION FROM:', addr)
-                if client_socket:
-                    message = ""
-                    while True:
-                            message += client_socket.recv(4096).decode()
+                try:
+                    client_socket, addr = server_socket.accept()
+                    client_sockets.add(client_socket)
+                except BlockingIOError:
+                    pass
+                for client_socket in client_sockets:
+                    try:
+                        message = client_socket.recv(4096).decode()
+                        while len(message) > 0:
                             pos = message.find("\n")
                             while pos > 0:
                                 m = message[:pos]
@@ -78,13 +82,13 @@ def run_socket_server():
                                 pos = message.find("\n")
                                 m = json.loads(m)
                                 if "type" in m:
+                                    print(len(client_sockets))
                                     Server.process(m)
+                            message += client_socket.recv(4096).decode()
 
-            except KeyboardInterrupt:
-                raise
-            except socket.timeout as e:
-                print("No clients found")
-                continue
+                    except socket.timeout as e:
+                        print("No clients found")
+                        continue
             except:
                 traceback.print_exc()
                 continue

@@ -1,5 +1,6 @@
 import json
 import socket
+import traceback
 
 from PyQt5.QtCore import Qt
 
@@ -14,9 +15,14 @@ class Client(object):
         self.connect()
         self.trimmer_mode = False
 
+    def __del__(self):
+        if self.socket is not None:
+            self.socket.close()
+
     def connect(self):
         try:
             self.socket = socket.socket(socket.AF_INET)
+            self.socket.settimeout(1)
             self.socket.connect((self.host_ip, 8000))
         except:
             print(f"Unable to connect to {self.host_ip}")
@@ -80,9 +86,12 @@ class Client(object):
 
     def send_message(self, message):
         try:
+            print("A")
             self.socket.sendall(json.dumps(message).encode() + b"\n")
+            print("B")
         except:
             # In case of failure try to reconnect
+            print("Unable to send message, reconnect")
             self.connect()
             self.socket.sendall(json.dumps(message).encode() + b"\n")
 
