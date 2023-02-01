@@ -1,7 +1,7 @@
 import traceback
 
 from PyQt5 import QtGui
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QDialog, QMainWindow
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
 
@@ -22,9 +22,14 @@ class VideoThread(QThread):
     def __init__(self, host_ip):
         super().__init__()
         self.host_ip = host_ip
+        self.running = False
+
+    def stop(self):
+        self.running = False
 
     def run(self):
-        while True:
+        self.running = True
+        while self.running:
             try:
                 # create socket
                 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -32,7 +37,7 @@ class VideoThread(QThread):
                 client_socket.connect((self.host_ip, port))  # a tuple
                 data = b""
                 payload_size = struct.calcsize("Q")
-                while True:
+                while self.running:
                     while len(data) < payload_size:
                         packet = client_socket.recv(4 * 1024)  # 4K
                         if not packet: break
@@ -74,42 +79,91 @@ class Button(QPushButton):
         self.clicked.connect(lambda: client.button_callback(id))
 
 
-class App(QWidget):
+class ConnectToHostPopup(QDialog):
+    def __init__(self, callback, message=None):
+        super().__init__()
+        self.setWindowTitle("Select Host")
+        self.setGeometry(50, 50, 500, 110)
+        self.callback = callback
+        self.host = "localhost"
+
+        vbox = QVBoxLayout()
+        if message is not None:
+            label = QLabel(message)
+            label.setStyleSheet("color: red;")
+            vbox.addWidget(label)
+
+        host_selector = QComboBox()
+        host_selector.addItems(['localhost', 'picaterpillar.local', 'raspberrypi.local'])
+        host_selector.currentTextChanged.connect(self.host_selected)
+        vbox.addWidget(host_selector)
+
+        hbox = QHBoxLayout()
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(self.close)
+        ok_button = QPushButton("OK")
+        ok_button.clicked.connect(self.connect_to_host)
+        hbox.addWidget(cancel_button)
+        hbox.addWidget(ok_button)
+
+        vbox.addLayout(hbox)
+        self.setLayout(vbox)
+
+    def connect_to_host(self):
+        self.callback(self.host)
+        self.close()
+
+    def host_selected(self, value):
+        self.host = value
+
+
+class App(QMainWindow):
     def __init__(self, hostname, full_screen=False):
         super().__init__()
-        host_ip = socket.gethostbyname(hostname)
 
-        self.client = Client(host_ip, self)
-
-        self.setWindowTitle("PiCaterillar")
+        self.setWindowTitle("PiRobot Remote Control")
         self.resize(640, 480)
         if full_screen:
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
             self.showFullScreen()
 
-        # create a vertical box layout and add the two labels
-        vbox = QHBoxLayout()
-        vbox.setContentsMargins(0, 0, 0, 0)
-
         # create the label that holds the image
         self.image_label = ImageLabel(self)
+        self.setCentralWidget(self.image_label)
 
-#        vbox.addWidget(Button('light_toggle', self.client, 'Front Lights'))
-        vbox.addWidget(self.image_label)
-#        vbox.addWidget(Button('face_detection', self.client, 'Face Detection'))
-        # set the vbox layout as the widgets layout
-        self.setLayout(vbox)
 
-        # create the video capture thread
-        self.thread = VideoThread(host_ip)
-        # connect its signal to the update_image slot
-        self.thread.change_pixmap_signal.connect(self.update_image)
-        # start the thread
-        self.thread.start()
-
-        # GamePad
+        # Connect to Host
+        self.client = Client(self)
+        self.video_thread = None
         self.gamepad_thread = None
-        self.start_gamepad()
+        if hostname is None:
+            self.open_select_host_window()
+        else:
+            self.connect_to_host(hostname)
+
+    def connect_to_host(self, hostname):
+        try:
+            host_ip = socket.gethostbyname(hostname)
+            self.client = Client(self)
+            self.client.connect(host_ip)
+            # create the video capture thread
+            if self.video_thread is not None:
+                self.video_thread.stop()
+            self.video_thread = VideoThread(host_ip)
+            # connect its signal to the update_image slot
+            self.video_thread.change_pixmap_signal.connect(self.update_image)
+            # start the thread
+            self.video_thread.start()
+            # GamePad
+            if self.gamepad_thread is not None:
+                self.stop_gamepad()
+            self.start_gamepad()
+        except:
+            self.open_select_host_window(f"Unable to connect to f{hostname}")
+
+    def open_select_host_window(self, message=None):
+        self.p = ConnectToHostPopup(callback=self.connect_to_host, message=message)
+        self.p.show()
 
     def start_gamepad(self):
         callback = {

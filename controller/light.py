@@ -97,7 +97,7 @@ class Light(object):
     def blink(left_on, right_on):
         if left_on or right_on:
             time = 0
-            for i in range(NB_OF_BLINKS):
+            for i in range(NB_OF_BLINKS * 2):
                 Light._schedule_event(time, Light.toggle, kwargs=dict(left_on=left_on, right_on=right_on))
                 time += BLINK_DURATION
         Light._schedule_event(time, Light.set_front_light, kwargs=dict(left_on=False, right_on=False))

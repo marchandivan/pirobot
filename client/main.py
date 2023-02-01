@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Start robot')
-    parser.add_argument('--host', type=str, help='Server host name', default="localhost")
+    parser.add_argument('--host', type=str, help='Server host name', required=False)
     parser.add_argument('-f', '--full_screen', action='store_true')
     args = parser.parse_args()
 

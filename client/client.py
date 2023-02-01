@@ -1,31 +1,29 @@
 import json
 import socket
-import traceback
 
 from PyQt5.QtCore import Qt
 
 
 class Client(object):
 
-    def __init__(self, host_ip, app):
-        # Connect to server
-        self.host_ip = host_ip
+    def __init__(self, app):
         self.app = app
         self.socket = None
-        self.connect()
         self.trimmer_mode = False
 
     def __del__(self):
         if self.socket is not None:
             self.socket.close()
 
-    def connect(self):
+    def connect(self, host_ip):
         try:
+            if self.socket is not None:
+                self.socket.close()
             self.socket = socket.socket(socket.AF_INET)
             self.socket.settimeout(1)
-            self.socket.connect((self.host_ip, 8000))
+            self.socket.connect((host_ip, 8000))
         except:
-            print(f"Unable to connect to {self.host_ip}")
+            print(f"Unable to connect to {host_ip}")
 
     def gamepad_right_joystick_callback(self, x_pos, y_pos):
         if abs(y_pos) < 2:
@@ -152,3 +150,7 @@ class Client(object):
                                                                           )))
         elif e.key() == Qt.Key_Q:
             self.app.close()
+        elif e.key() == Qt.Key_C:
+            self.app.open_select_host_window()
+        elif e.key() == Qt.Key_Space:
+            self.send_message(dict(type="sfx", action="play", args=dict(name="bike_horn")))
