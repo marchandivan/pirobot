@@ -7,6 +7,7 @@ uart = UART(0)                         # init with given baudrate
 uart.init(baudrate=115200, bits=8, parity=None , stop=1, tx=Pin(0), rx=Pin(1)) # init with given parameters
 uart.flush()
 
+
 class Servo(object):
     def __init__(self, pin, range):
         self.pwm = PWM(Pin(pin))

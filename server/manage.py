@@ -188,17 +188,12 @@ if __name__ == "__main__":
     parser_configure.add_argument('key', type=str, nargs='?')
     parser_configure.add_argument('value', type=str, nargs='?')
 
-    # Create db
-    parser_create_db = subparsers.add_parser('create_db')
-
     args = parser.parse_args()
 
     Config.setup(args.config)
 
     if args.command == "runserver":
         run_server()
-    elif args.command == "create_db":
-        Config.create_db()
     elif args.command == "configuration":
         if args.action == "update" and not args.value:
             print(f"Missing value for update")

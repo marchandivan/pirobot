@@ -11,6 +11,7 @@ Base = declarative_base()
 # Create your models here.
 class Config(Base):
     CONFIG_KEYS = None
+    USER_CONFIG_DIR = os.path.join(os.environ["HOME"], ".pirobot")
     db_engine = None
 
     __tablename__ = 'server_config'
@@ -38,24 +39,27 @@ class Config(Base):
 
     @staticmethod
     def setup(config):
-        config_file_path = os.path.join(os.path.dirname(__file__), f"config/{config}.config.json")
+        config_file_dir = os.path.join(os.path.dirname(__file__), "config")
+        if not os.path.isdir(config_file_dir):
+            config_file_dir = "/etc/pirobot/config"
+        config_file_path = os.path.join(config_file_dir, f"{config}.config.json")
         if os.path.isfile(config):
             config_file_path = config
         elif not os.path.isfile(config_file_path):
             print(f"Warning: Invalid config file {config}, using default instead")
-            config_file_path = os.path.join(os.path.dirname(__file__), "config/default.config.json")
+            config_file_path = os.path.join(config_file_dir, "default.config.json")
         with open(config_file_path) as config_file:
             Config.CONFIG_KEYS = json.load(config_file)
 
-        Config.db_engine = create_engine('sqlite:///db.sqlite3')
-        Config.session_maker = sessionmaker(bind=Config.db_engine)
+        if not os.path.isdir(Config.USER_CONFIG_DIR):
+            os.mkdirs(Config.USER_CONFIG_DIR)
+        db_file_path = os.path.join(Config.USER_CONFIG_DIR, "db.sqlite3")
+        Config.db_engine = create_engine(f"sqlite:///{db_file_path}")
 
-    @staticmethod
-    def create_db():
-        if Config.db_engine is not None:
+        if not os.path.isfile(db_file_path):
             Base.metadata.create_all(Config.db_engine)
-        else:
-            print("DB Engine not found, run setup() first")
+
+        Config.session_maker = sessionmaker(bind=Config.db_engine)
 
     @staticmethod
     def get_session():
