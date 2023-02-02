@@ -5,10 +5,13 @@ from PIL import Image, ImageFont, ImageDraw
 class Terminal(object):
 
     def __init__(self, font, lcd, background="BLACK", color=(0, 255, 0), font_size=30, interline=6):
-        font_filepath = os.path.join("assets/Fonts", f"{font}.ttf")
+        assets_dir = os.path.join(os.path.dirname(__file__), "assets/Fonts")
+        if not os.path.isdir(assets_dir):
+            asset_dir = "/etc/pirobot/assets/Fonts"
+        font_filepath = os.path.join(asset_dir, f"{font}.ttf")
         self._lcd = lcd
         if not os.path.isfile(font_filepath):
-            font_filepath = "assets/Fonts/Courier.ttf"
+            font_filepath = os.path.join(asset_dir, "Courier.ttf")
         self._font = ImageFont.truetype(font_filepath, font_size)
         _, font_h = self._font.getsize("A")
         self._line_h = font_h + interline
