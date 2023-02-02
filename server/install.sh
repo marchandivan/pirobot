@@ -8,4 +8,9 @@ sudo cp dist/$DAEMON_NAME /usr/local/bin/
 sudo mkdir -p /etc/$APP_NAME
 sudo cp -rf config /etc/$APP_NAME/
 
+sudo adduser www-data spi
+sudo mkdir -p /var/www
+sudo chown www-data /var/www/
+sudo chgrp www-data /var/www/
+
 sudo cp pirobot.service /etc/systemd/system/
