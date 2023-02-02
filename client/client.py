@@ -10,6 +10,7 @@ class Client(object):
         self.app = app
         self.socket = None
         self.trimmer_mode = False
+        self.host_ip = None
 
     def __del__(self):
         if self.socket is not None:
@@ -22,8 +23,10 @@ class Client(object):
             self.socket = socket.socket(socket.AF_INET)
             self.socket.settimeout(1)
             self.socket.connect((host_ip, 8000))
+            self.host_ip = host_ip
         except:
             print(f"Unable to connect to {host_ip}")
+            raise
 
     def gamepad_right_joystick_callback(self, x_pos, y_pos):
         if abs(y_pos) < 2:
@@ -87,9 +90,10 @@ class Client(object):
             self.socket.sendall(json.dumps(message).encode() + b"\n")
         except:
             # In case of failure try to reconnect
-            print("Unable to send message, reconnect")
-            self.connect()
-            self.socket.sendall(json.dumps(message).encode() + b"\n")
+            if self.host_ip is not None:
+                print("Unable to send message, reconnect")
+                self.connect(self.host_ip)
+                self.socket.sendall(json.dumps(message).encode() + b"\n")
 
     def button_callback(self, id):
         if id == "light_toggle":

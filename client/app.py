@@ -101,9 +101,11 @@ class ConnectToHostPopup(QDialog):
         hbox = QHBoxLayout()
         cancel_button = QPushButton("Cancel")
         cancel_button.clicked.connect(self.close)
-        ok_button = QPushButton("OK")
-        ok_button.clicked.connect(self.connect_to_host)
         hbox.addWidget(cancel_button)
+        ok_button = QPushButton("OK")
+        ok_button.setDefault(True)
+        ok_button.setFocus()
+        ok_button.clicked.connect(self.connect_to_host)
         hbox.addWidget(ok_button)
 
         vbox.addLayout(hbox)

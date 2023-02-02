@@ -7,8 +7,8 @@ class Terminal(object):
     def __init__(self, font, lcd, background="BLACK", color=(0, 255, 0), font_size=30, interline=6):
         assets_dir = os.path.join(os.path.dirname(__file__), "assets/Fonts")
         if not os.path.isdir(assets_dir):
-            asset_dir = "/etc/pirobot/assets/Fonts"
-        font_filepath = os.path.join(asset_dir, f"{font}.ttf")
+            assets_dir = "/etc/pirobot/assets/Fonts"
+        font_filepath = os.path.join(assets_dir, f"{font}.ttf")
         self._lcd = lcd
         if not os.path.isfile(font_filepath):
             font_filepath = os.path.join(asset_dir, "Courier.ttf")
