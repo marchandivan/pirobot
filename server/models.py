@@ -52,7 +52,7 @@ class Config(Base):
             Config.CONFIG_KEYS = json.load(config_file)
 
         if not os.path.isdir(Config.USER_CONFIG_DIR):
-            os.mkdirs(Config.USER_CONFIG_DIR)
+            os.makedirs(Config.USER_CONFIG_DIR)
         db_file_path = os.path.join(Config.USER_CONFIG_DIR, "db.sqlite3")
         Config.db_engine = create_engine(f"sqlite:///{db_file_path}")
 
