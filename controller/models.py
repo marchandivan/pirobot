@@ -99,6 +99,17 @@ class Config(Base):
             return False
 
     @staticmethod
+    def delete(key):
+        session = Config.get_session()
+        c = Config.get_from_db(session, key)
+        if c is not None:
+            session.delete(c)
+            session.commit()
+            return True
+
+        return False
+
+    @staticmethod
     def is_valid(key, value):
         config = Config.CONFIG_KEYS.get(key)
         if config is not None:

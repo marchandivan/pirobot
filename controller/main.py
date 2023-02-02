@@ -159,11 +159,17 @@ def configure(action, key, value):
     elif action == "update":
         if Config.save(key, value):
             print("Configuration successfully updated")
-            table.add_row([key, value])
+            table.add_row([key, full_config[key]["type"], value])
             print(table)
         else:
             print("Unable to update configuration")
-
+    elif action == "delete":
+        if Config.delete(key):
+            print("Key successfully deleted")
+            table.add_row([key, full_config[key]["type"], full_config[key]["default"]])
+            print(table)
+        else:
+            print("Unable to delete configuration")
 
 
 if __name__ == "__main__":
@@ -178,7 +184,7 @@ if __name__ == "__main__":
 
     # Configuration parameters
     parser_configure = subparsers.add_parser('configuration')
-    parser_configure.add_argument('action', choices=["get", "update"])
+    parser_configure.add_argument('action', choices=["get", "update", "delete"])
     parser_configure.add_argument('key', type=str, nargs='?')
     parser_configure.add_argument('value', type=str, nargs='?')
 
@@ -196,6 +202,9 @@ if __name__ == "__main__":
     elif args.command == "configuration":
         if args.action == "update" and not args.value:
             print(f"Missing value for update")
+            parser.print_usage()
+        elif args.action == "delete" and not args.key:
+            print(f"Missing key for delete")
             parser.print_usage()
         else:
             configure(args.action, args.key, args.value)

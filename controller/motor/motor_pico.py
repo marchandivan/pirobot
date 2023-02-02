@@ -36,7 +36,7 @@ class PicoMotor(object):
         # Open UART Port
         UART.open()
         # Motor Initialization
-        PicoMotor.max_rpm = Config.get("max_rpm")
+        PicoMotor.max_rpm = Config.get("motor_max_rpm")
         PicoMotor.wheel_d = Config.get("wheel_d")
         PicoMotor.robot_width = Config.get("robot_width")
         PicoMotor.status = "OK"

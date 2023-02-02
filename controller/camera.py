@@ -326,8 +326,8 @@ class Camera(object):
             try:
                 Camera.last_frame_lock.acquire()
                 last_frame = Camera.last_frame
-                Camera.last_frame_lock.release()
                 Camera.last_frame = None
+                Camera.last_frame_lock.release()
                 return last_frame
             except:
                 traceback.print_exc()

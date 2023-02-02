@@ -23,10 +23,6 @@
     "type": "int",
     "default": 66
   },
-  "max_rpm": {
-    "type": "int",
-    "default": 42
-  },
   "show_mock_screen" : {
     "type": "bool",
     "default": false

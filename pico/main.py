@@ -324,6 +324,11 @@ class MotorHandler(object):
         self.target_nb_of_revolutions = None
         self.target_differential_nb_of_revolutions = None
         self.timeout_ts = None
+        self.left_integration_sum = 0
+        self.left_previous_error = 0
+        self.right_integration_sum = 0
+        self.right_previous_error = 0
+
 
     def get_status(self):
         left_distance, front_distance, right_distance = ultrasonic_handler.distances()

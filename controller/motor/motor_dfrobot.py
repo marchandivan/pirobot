@@ -95,7 +95,7 @@ class DFRobotMotor(object):
     @staticmethod
     def setup():
         # Motor Initialization
-        DFRobotMotor.max_rpm = Config.get("max_rpm")
+        DFRobotMotor.max_rpm = Config.get("motor_max_rpm")
         DFRobotMotor.wheel_d = Config.get("wheel_d")
         DFRobotMotor.robot_width = Config.get("robot_width")
         DFRobotMotor.status = "OK"
