@@ -10,6 +10,8 @@ sudo cp -rf assets /etc/$APP_NAME/
 
 sudo adduser www-data spi
 sudo adduser www-data gpio
+sudo adduser www-data dialout
+sudo adduser www-data video
 sudo mkdir -p /var/www
 sudo chown www-data /var/www/
 sudo chgrp www-data /var/www/
