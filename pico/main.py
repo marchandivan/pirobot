@@ -330,7 +330,6 @@ class MotorHandler(object):
         self.right_integration_sum = 0
         self.right_previous_error = 0
 
-
     def get_status(self):
         left_distance, front_distance, right_distance = ultrasonic_handler.distances()
         return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}"
@@ -460,7 +459,7 @@ class PatrollerHandler(object):
                 self.speed = 50
             
             if len(args) > 1:
-                self.timeout = int(args[1]) * 1000
+                self.timeout = int(args[1])
             else:
                 self.timeout = 0
 
@@ -475,7 +474,7 @@ class PatrollerHandler(object):
                 self.running = True
                 
             if self.running and self.timeout > 0:
-                self.deadline = utime.ticks_add(utime.ticks_ms(), self.timeout)
+                self.deadline = utime.ticks_add(utime.ticks_ms(), self.timeout * 1000)
             else:
                 self.deadline = 0
 
@@ -491,20 +490,37 @@ class PatrollerHandler(object):
         elif self.running and self.motor_handler.left_duty == 0 and self.motor_handler.right_duty == 0:
             distances = self.ultrasonic_handler.distances()
             left_distance, front_distance, right_distance = distances
-            min_distance = max(0.5 * self.speed / 100, 0.01)
+            min_distance = max(0.5 * self.speed / 100, self.motor_handler.min_distance)
             if min(distances) > min_distance:
-                if self.move_camera:
-                    self.servo_handler.s1.duty_u16(4000)
-                    utime.sleep(1.0)
-                    self.servo_handler.s1.duty_u16(3000)
-                    utime.sleep(1.0)
-                    self.servo_handler.s1.duty_u16(3400)
-                self.motor_handler.move("F", self.speed, "F", self.speed, 10)
+                print("Forward")
+                self.motor_handler.move(
+                    left_direction="F",
+                    left_speed=self.speed,
+                    right_direction="F",
+                    right_speed=self.speed,
+                    timeout=10
+                )
             elif right_distance > left_distance:
-                self.motor_handler.move("F", self.speed, "B", self.speed, 10, 0, 0.1)
+                print("Right")
+                self.motor_handler.move(
+                    left_direction="F",
+                    left_speed=self.speed,
+                    right_direction="B",
+                    right_speed=self.speed,
+                    timeout=10,
+                    differential_nb_of_revolutions=5.0
+                )
             else:
-                self.motor_handler.move("B", self.speed, "F", self.speed, 10, 0, 0.1)
-    
+                print("Left")
+                self.motor_handler.move(
+                    left_direction="B",
+                    left_speed=self.speed,
+                    right_direction="F",
+                    right_speed=self.speed,
+                    timeout=10,
+                    differential_nb_of_revolutions=5.0
+                )
+
     def stop(self):
         self.running = False
         self.deadline = 0
@@ -533,7 +549,6 @@ class StatusHandler(object):
                 uart.write(status)
                 uart.flush()
 
-            
 
 motor_handler = MotorHandler(
                  pin_e1a=15,

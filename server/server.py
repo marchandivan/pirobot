@@ -2,7 +2,6 @@ from camera import Camera
 from light import Light
 from motor.motor import Motor
 from sfx import SFX
-from uart import UART
 
 import os
 from PIL import Image
@@ -34,8 +33,6 @@ class Server(object):
                 Motor.move(**message["args"])
             elif message["action"] == "stop":
                 Motor.stop()
-                # Stop patroller
-                UART.write("P:0")
             elif message["action"] == "patrol":
                 Motor.patrol()
         elif message["type"] == "light":

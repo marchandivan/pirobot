@@ -66,6 +66,8 @@ class PicoMotor(object):
     @staticmethod
     def stop():
         UART.write("M:S")
+        # Stop patroller
+        UART.write("P:0")
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation, auto_stop):
