@@ -98,3 +98,10 @@ class PicoMotor(object):
     @staticmethod
     def get_obstacles():
         return PicoMotor.obstacles
+
+    @staticmethod
+    def patrol():
+        timeout = 300
+        speed = Config.get("motor_patrol_speed")
+        UART.write(f"P:{speed}:{timeout}:false")
+

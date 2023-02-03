@@ -27,6 +27,12 @@
       "307": {
         "action": "toggle_face_detection"
       },
+      "308": {
+        "action": "patrol"
+      },
+      "304": {
+        "action": "motor_stop"
+      },
       "312": {
         "action": "right_blink"
       },

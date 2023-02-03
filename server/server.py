@@ -3,10 +3,27 @@ from light import Light
 from motor.motor import Motor
 from sfx import SFX
 
+import os
+from PIL import Image
 import threading
 
 
 class Server(object):
+
+    @staticmethod
+    def setup(lcd):
+        Server.lcd = lcd
+        Server.pics_path = os.path.join(os.path.dirname(__file__), 'assets/Pics')
+        if not os.path.isdir(Server.pics_path):
+            Server.pics_path = "/etc/pirobot/assets/Pics"
+
+    @staticmethod
+    def set_lcd_picture(name):
+        file_path = os.path.join(Server.pics_path, f"{name}.png")
+        if os.path.isfile(file_path):
+            image = Image.open(file_path)
+            image = image.resize((Server.lcd.height, Server.lcd.width)).convert('RGB')
+            Server.lcd.ShowImage(image)
 
     @staticmethod
     def process(message):
@@ -16,6 +33,8 @@ class Server(object):
                 Motor.move(**message["args"])
             elif message["action"] == "stop":
                 Motor.stop()
+            elif message["action"] == "patrol":
+                Motor.patrol()
         elif message["type"] == "light":
             if message["action"] == "toggle":
                 Light.toggle_front_light()
@@ -36,3 +55,6 @@ class Server(object):
         elif message["type"] == "sfx":
             if message["action"] == "play":
                 threading.Thread(target=SFX.play, args=(message["args"]["name"], )).start()
+        elif message["type"] == "lcd":
+            if message["action"] == "display_picture":
+                Server.set_lcd_picture(message["args"]["name"])

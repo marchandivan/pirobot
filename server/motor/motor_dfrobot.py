@@ -203,6 +203,10 @@ class DFRobotMotor(object):
         DFRobotMotor._schedule_event(duration, DFRobotMotor.stop)
 
     @staticmethod
+    def patrol(speed, timeout):
+        pass # Not implemented
+
+    @staticmethod
     def get_motor_status():
         return DFRobotMotor.left_speed_controller.serialize(), DFRobotMotor.left_speed_controller.serialize()
 

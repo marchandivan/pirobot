@@ -69,6 +69,10 @@ class Motor(object):
                                    auto_stop=True)
 
     @staticmethod
+    def patrol():
+        Motor._controller.patrol()
+
+    @staticmethod
     def serialize():
         left_status, right_status = Motor._controller.get_motor_status()
         distance, abs_distance = Motor._controller.get_distance()

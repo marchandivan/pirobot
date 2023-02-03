@@ -104,6 +104,10 @@
     "type": "int",
     "default": 90
   },
+  "motor_patrol_speed": {
+    "type": "int",
+    "default": 90
+  },
   "motor_steps_per_rotation": {
     "type": "int",
     "default": 1650

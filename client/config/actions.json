@@ -1,4 +1,23 @@
 {
+  "motor_stop": [
+    {
+      "type": "motor",
+      "action": "stop"
+    }
+  ],
+  "patrol": [
+    {
+      "type": "motor",
+      "action": "patrol"
+    },
+    {
+      "type": "lcd",
+      "action": "display_picture",
+      "args": {
+        "name": "patrol"
+      }
+    }
+  ],
   "move_motor_forward": [
     {
       "type": "motor",

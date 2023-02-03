@@ -128,6 +128,9 @@ def run_server():
     # SFX
     SFX.setup()
 
+    # Setup server
+    Server.setup(lcd)
+
     # Start video streaming
     threading.Thread(target=stream_video, daemon=True).start()
 
