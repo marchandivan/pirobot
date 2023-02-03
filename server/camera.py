@@ -141,13 +141,12 @@ class CaptureDevice(object):
 
             if self.face is not None:
                 x, y, w, h = self.face
-                speed = Config.get("follow_face_speed")
                 timeout = 3
                 x_pos = (x + w//2) * 100 / self.res_x
                 y_pos = (y + h // 2) * 100 / self.res_y
                 Camera.set_position(y)
                 x_pos, y_pos = Camera.get_target_position(x_pos, y_pos)
-                Motor.move_to_target(x_pos, y_pos, speed, timeout)
+                Motor.move_to_target(x_pos, y_pos, Camera.follow_face_speed, timeout)
 
         if self.face is not None:
             x, y, w, h = self.face
@@ -280,6 +279,8 @@ class Camera(object):
     def setup():
         Camera.available_device = get_camera_index()
         Camera.center_position()
+        Camera.lense_coeff_x_pos = Config.get("lense_coeff_x_pos")
+        Camera.follow_face_speed = Config.get("follow_face_speed")
         if Config.get('front_capturing_device') == "usb" and Camera.available_device is None:
             Camera.status = "KO"
         else:
@@ -463,8 +464,7 @@ class Camera(object):
         y_pos = H * math.tan(a)
 
         x_pos = (MAX_DISTANCE / (MAX_DISTANCE - min(y_pos, MAX_DISTANCE - 0.1))) * ((x - 50) / 50) * ROBOT_WIDTH/2
-        lense_coeff_x_pos = Config.get('lense_coeff_x_pos')
-        return x_pos * lense_coeff_x_pos, y_pos
+        return x_pos * Camera.lense_coeff_x_pos, y_pos
 
     @staticmethod
     def capture_image(camera):
