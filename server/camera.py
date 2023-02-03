@@ -426,14 +426,29 @@ class Camera(object):
     def stream_setup(selected_camera, overlay, face_detection):
         Camera.selected_camera = selected_camera
         Camera.overlay = overlay
-        Camera.face_detection = face_detection
         if face_detection:
-            Camera.start_continuous_capture()
-            Camera.set_position(100)
+            Camera.start_face_detection()
         else:
-            if Camera.streaming:
-               Camera.stop_continuous_capture()
-            Camera.center_position()
+            Camera.stop_face_detection()
+    @staticmethod
+    def start_face_detection():
+        Camera.face_detection = True
+        Camera.start_continuous_capture()
+        Camera.set_position(100)
+
+    @staticmethod
+    def stop_face_detection():
+        if Camera.streaming:
+           Camera.stop_continuous_capture()
+        Camera.center_position()
+        Camera.face_detection = False
+
+    @staticmethod
+    def toggle_face_detection():
+        if Camera.face_detection:
+            Camera.stop_face_detection()
+        else:
+            Camera.start_face_detection()
 
     @staticmethod
     def select_target(x, y):

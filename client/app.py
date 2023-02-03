@@ -56,6 +56,7 @@ class VideoThread(QThread):
             except KeyboardInterrupt:
                 self.stop()
             except ConnectionRefusedError:
+                traceback.print_exc()
                 print("Unable to connect to video server")
                 time.sleep(1)
                 continue
@@ -133,7 +134,6 @@ class App(QMainWindow):
         self.image_label = ImageLabel(self)
         self.setCentralWidget(self.image_label)
 
-
         # Connect to Host
         self.client = Client(self)
         self.video_thread = None
@@ -161,6 +161,7 @@ class App(QMainWindow):
                 self.stop_gamepad()
             self.start_gamepad()
         except:
+            traceback.print_exc()
             self.open_select_host_window(f"Unable to connect to f{hostname}")
 
     def open_select_host_window(self, message=None):
@@ -169,8 +170,7 @@ class App(QMainWindow):
 
     def start_gamepad(self):
         callback = {
-            "joystick": self.client.gamepad_joystick_callback,
-            "right_joystick":  self.client.gamepad_right_joystick_callback,
+            "absolute_axis": self.client.gamepad_absolute_axis_callback,
             "key": self.client.gamepad_key_callback
         }
         self.gamepad_thread = threading.Thread(target=GamePad.start_loop, kwargs=dict(callback=callback), daemon=True)

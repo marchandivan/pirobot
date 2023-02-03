@@ -1,3 +1,5 @@
+import traceback
+
 from evdev import InputDevice, categorize, ecodes, list_devices
 
 
@@ -30,6 +32,7 @@ class GamePad(object):
             except KeyboardInterrupt:
                 raise
             except:
+                traceback.print_exc()
                 continue
 
     @staticmethod
@@ -38,44 +41,19 @@ class GamePad(object):
 
     def __init__(self, device):
         self.device = device
-        self.x_pos = 0
-        self.y_pos = 0
-        self.rx_pos = 0
-        self.ry_pos = 0
+        self.absolute_axis_positions = {}
 
-    def _update_position(self, event, axis):
+    def get_position(self, event):
         absinfo = self.device.absinfo(event.code)
-        value_normalized = float(event.value - absinfo.min) / float(absinfo.max - absinfo.min)
-        position = int(-100 + (value_normalized * 200))
-        position = min(100, position)
-        position = max(-100, position)
-
-        if axis == "y":
-            self.y_pos = position
-        elif axis == "x":
-            self.x_pos = position
-        elif axis == "ry":
-            self.ry_pos = position
-        elif axis == "rx":
-            self.rx_pos = position
+        return dict(value=event.value, min=absinfo.min, max=absinfo.max)
 
     def loop(self, callback):
         for event in self.device.read_loop():
             if not GamePad.running:
                 break
             if event.type == ecodes.EV_ABS:
-                if event.code == ecodes.ABS_Y:
-                    self._update_position(event, "y")
-                    callback["joystick"](self.x_pos, self.y_pos)
-                if event.code == ecodes.ABS_X:
-                    self._update_position(event, "x")
-                    callback["joystick"](self.x_pos, self.y_pos)
-                if event.code == ecodes.ABS_RY:
-                    self._update_position(event, "ry")
-                    callback["right_joystick"](self.rx_pos, self.ry_pos)
-                if event.code == ecodes.ABS_RX:
-                    self._update_position(event, "rx")
-                    callback["right_joystick"](self.rx_pos, self.ry_pos)
+                self.absolute_axis_positions[event.code] = self.get_position(event)
+                callback["absolute_axis"](event.code, self.absolute_axis_positions)
             elif event.type == ecodes.EV_KEY:
                 if event.value == 1:
                     callback["key"](event.code)

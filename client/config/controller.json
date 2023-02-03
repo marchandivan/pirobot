@@ -1,0 +1,82 @@
+{
+  "gamepad": {
+    "absolute_axis": {
+      "0": {
+        "action": "motor",
+        "axis": "x",
+        "min": -1200,
+        "max": 1200
+      },
+      "1": {
+        "action": "motor",
+        "axis": "y",
+        "min": -1200,
+        "max": 1200
+      },
+      "4": {
+        "action": "camera",
+        "axis": "y",
+        "min": -1200,
+        "max": 1200
+      }
+    },
+    "key": {
+      "305": {
+        "action": "light_toggle"
+      },
+      "307": {
+        "action": "toggle_face_detection"
+      },
+      "312": {
+        "action": "right_blink"
+      },
+      "313": {
+        "action": "left_blink"
+      },
+      "311": {
+        "action": "sfx_play_bike_horn"
+      },
+      "310": {
+        "action": "sfx_play_car_double_horn"
+      },
+      "317": {
+        "action": "motor_slow_mode"
+      },
+      "544": {
+        "action": "move_motor_forward"
+      },
+      "545": {
+        "action": "move_motor_backward"
+      },
+      "546": {
+        "action": "move_motor_left"
+      },
+      "547": {
+        "action": "move_motor_right"
+      }
+    }
+  },
+  "keyboard": {
+    "UP": {
+      "action": "move_motor_forward"
+    },
+    "DOWN": {
+      "action": "move_motor_backward"
+    },
+    "LEFT": {
+      "action": "move_motor_left"
+    },
+    "RIGHT": {
+      "action": "move_motor_right"
+    },
+    "Q": {
+      "action": "app_close"
+    },
+    "C": {
+      "action": "select_host"
+    },
+    "SPACE": {
+      "action": "sfx_play_bike_horn"
+    }
+  }
+}

@@ -27,6 +27,12 @@ class Server(object):
                 Camera.set_position(message["args"]["position"])
             elif message["action"] == "center_position":
                 Camera.center_position()
+            elif message["action"] == "toggle_face_detection":
+                Camera.toggle_face_detection()
+            elif message["action"] == "start_face_detection":
+                Camera.start_face_detection()
+            elif message["action"] == "stop_face_detection":
+                Camera.stop_face_detection()
         elif message["type"] == "sfx":
             if message["action"] == "play":
                 threading.Thread(target=SFX.play, args=(message["args"]["name"], )).start()

@@ -65,7 +65,8 @@ class Motor(object):
                                    right_speed=right_speed,
                                    duration=timeout,
                                    distance=target_distance,
-                                   rotation=None)
+                                   rotation=None,
+                                   auto_stop=True)
 
     @staticmethod
     def serialize():
