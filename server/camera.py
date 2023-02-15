@@ -10,10 +10,10 @@ from motor.motor import Motor
 from servo.servo_handler import ServoHandler
 
 from models import Config
-if platform.machine() == "aarch":  # Mac OS
+if platform.machine() == "aarch":  # Raspberry 32 bits
     import picamera
     from picamera.array import PiRGBArray
-elif platform.machine() == "aarch64":
+elif platform.machine() == "aarch64":  # Raspberry 64 bits
     import picamera2
 
 # Calculate model to covert the position of a pixel to the physical position on the floor,
