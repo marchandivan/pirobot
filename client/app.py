@@ -2,7 +2,7 @@ import traceback
 
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QDialog, QMainWindow
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread
 
 import cv2
@@ -67,17 +67,38 @@ class VideoThread(QThread):
                 client_socket.close()
 
 
+class Button(QPushButton):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.resize(100, 100)
+        self.setFlat(True)
+        self.setStyleSheet("color: rgb(0, 255, 0); border :2px solid; border-color: rgb(0, 255, 0);")
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setFont(QFont('Times', 20))
+        #self.clicked.connect(lambda: client.button_callback(id))
+
+
 class ImageLabel(QLabel):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        #button = Button("...")
+
+        # setting geometry of button
+        #button.resize(200, 200)
+
+        #vlayout = QVBoxLayout(self)
+        #vlayout.setAlignment(Qt.AlignRight | Qt.AlignTop)
+        #vlayout.addWidget(Button("..."))
+        #vlayout.addWidget(Button("Hello"))
+
     def mousePressEvent(self, event):
         print("clicked", event)
         cursor = QtGui.QCursor()
         print(event.pos())
-
-
-class Button(QPushButton):
-    def __init__(self, id, client, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.clicked.connect(lambda: client.button_callback(id))
 
 
 class ConnectToHostPopup(QDialog):

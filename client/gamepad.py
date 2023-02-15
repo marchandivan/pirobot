@@ -1,6 +1,7 @@
 import traceback
 
 from evdev import InputDevice, categorize, ecodes, list_devices
+from evdev.util import resolve_ecodes
 
 
 class GamePad(object):
@@ -52,8 +53,11 @@ class GamePad(object):
             if not GamePad.running:
                 break
             if event.type == ecodes.EV_ABS:
-                self.absolute_axis_positions[event.code] = self.get_position(event)
-                callback["absolute_axis"](event.code, self.absolute_axis_positions)
+                axis, _ = resolve_ecodes(ecodes.ABS, [event.code])[0]
+                self.absolute_axis_positions[axis] = self.get_position(event)
+                callback["absolute_axis"](axis, self.absolute_axis_positions)
             elif event.type == ecodes.EV_KEY:
                 if event.value == 1:
-                    callback["key"](event.code)
+                    callback["key"](resolve_ecodes(ecodes.keys, [event.code])[0])
+            elif event.type == ecodes.EV_SYN:
+                pass
