@@ -1,3 +1,4 @@
+import configparser
 import json
 import os
 
@@ -38,21 +39,33 @@ class Config(Base):
             return value
 
     @staticmethod
-    def setup(config):
+    def setup(config_name):
+        if not os.path.isdir(Config.USER_CONFIG_DIR):
+            os.makedirs(Config.USER_CONFIG_DIR)
+
+        user_config_file_path = os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")
+        user_config = configparser.ConfigParser({"config_name": "default"}, default_section="pirobot")
+        if os.path.isfile(user_config_file_path):
+            user_config.read(user_config_file_path)
+        else:
+            with open(user_config_file_path, "w") as configfile:
+                user_config.write(configfile)
+
+        if config_name is None:
+            config_name = user_config.get("pirobot", "config_name")
+
         config_file_dir = os.path.join(os.path.dirname(__file__), "config")
         if not os.path.isdir(config_file_dir):
             config_file_dir = "/etc/pirobot/config"
-        config_file_path = os.path.join(config_file_dir, f"{config}.config.json")
-        if os.path.isfile(config):
-            config_file_path = config
+        config_file_path = os.path.join(config_file_dir, f"{config_name}.config.json")
+        if os.path.isfile(config_name):
+            config_file_path = config_name
         elif not os.path.isfile(config_file_path):
-            print(f"Warning: Invalid config file {config}, using default instead")
+            print(f"Warning: Invalid config file {config_name}, using default instead")
             config_file_path = os.path.join(config_file_dir, "default.config.json")
         with open(config_file_path) as config_file:
             Config.CONFIG_KEYS = json.load(config_file)
 
-        if not os.path.isdir(Config.USER_CONFIG_DIR):
-            os.makedirs(Config.USER_CONFIG_DIR)
         db_file_path = os.path.join(Config.USER_CONFIG_DIR, "db.sqlite3")
         Config.db_engine = create_engine(f"sqlite:///{db_file_path}")
 
