@@ -9,24 +9,25 @@ uart.flush()
 
 
 class Servo(object):
-    def __init__(self, pin, range):
+    min_ps = 1.0 * 1_000_000
+    max_ps = 2.0 * 1_000_000
+
+    def __init__(self, pin):
         self.pwm = PWM(Pin(pin))
         self.pwm.freq(50)
-        self.range = range
     
     def move(self, position):
         self.pwm.freq(50)
-        duty = self.range[0] + (self.range[1] - self.range[0]) * position / 100
-        self.pwm.duty_u16(int(duty))
+        duty = Servo.min_ps + (Servo.max_ps - Servo.min_ps) * position / 100
+        self.pwm.duty_ns(int(duty))
         
 
 class ServoHandler(object):
-    range = [2500, 6200]
 
     def __init__(self, pins, enable_pin):
         self.servos = []
         for pin in pins:
-            self.servos.append(Servo(pin, ServoHandler.range))
+            self.servos.append(Servo(pin))
 
         self.enable = Pin(enable_pin, Pin.OUT)
         self.enable.low()
@@ -566,6 +567,8 @@ motor_handler = MotorHandler(
 
 servo_handler = ServoHandler(pins=[20, 21, 22, 26, 27], enable_pin=2)
 servo_handler.start()
+servo_handler.move(1, 50)
+
 ultrasonic_handler = UltraSonicHandler(
     sensors=[
         UltraSonicSensor("right", pin_trigger=17, pin_echo=16),

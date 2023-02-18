@@ -58,7 +58,7 @@ def stream_video():
 def run_socket_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.setblocking(True)
+    server_socket.setblocking(False)
     server_socket.bind(('', 8000))
     server_socket.listen(5)
 
