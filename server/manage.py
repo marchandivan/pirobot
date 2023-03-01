@@ -1,3 +1,5 @@
+import sys
+
 from camera import Camera
 from sfx import SFX
 from light import Light
@@ -8,14 +10,12 @@ from server import Server
 from terminal import Terminal
 
 import argparse
+import asyncio
 import json
 import platform
 import pyttsx3
 import socket
 import struct
-import time
-import threading
-import traceback
 
 if platform.machine() == "aarch64":  # Mac OS
     from lcd.LCD_2inch import LCD_2inch
@@ -23,79 +23,47 @@ else:
     from lcd.LCD_Mock import LCD_2inch
 
 
-def stream_video():
-    # Socket Create
-    server_video_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_video_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    # Socket Bind
-    server_video_socket.bind(('', 8001))
-
-    # Socket Listen
-    server_video_socket.listen(5)
-
-    # Socket Accept
-    try:
-        while True:
-            try:
-                client_socket, addr = server_video_socket.accept()
-                print('Get video connection:', addr)
-                if client_socket:
-                    while True:
-                        Camera.start_continuous_capture()
-                        frame = Camera.get_last_frame()
-                        if frame is not None:
-                            message = struct.pack("Q", len(frame)) + frame
-                            client_socket.sendall(message)
-            except KeyboardInterrupt:
-                break
-            except:
-                continue
-    finally:
-        server_video_socket.close()
+async def handle_video_client(reader, writer):
+    Camera.start_continuous_capture()
+    while True:
+        frame = await Camera.next_frame()
+        writer.write(struct.pack("Q", len(frame)) + frame)
+        await writer.drain()
 
 
-def run_socket_server():
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.setblocking(False)
-    server_socket.bind(('', 8000))
-    server_socket.listen(5)
+async def run_video_server():
+    server_video = await asyncio.start_server(
+        handle_video_client, port=8001, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
+    )
 
-    client_sockets = set()
-    try:
-        while True:
-            try:
-                try:
-                    client_socket, addr = server_socket.accept()
-                    client_sockets.add(client_socket)
-                except BlockingIOError:
-                    pass
-                for client_socket in client_sockets:
-                    try:
-                        message = client_socket.recv(4096).decode()
-                        while len(message) > 0:
-                            pos = message.find("\n")
-                            while pos > 0:
-                                m = message[:pos]
-                                message = message[pos+1:]
-                                pos = message.find("\n")
-                                m = json.loads(m)
-                                if "type" in m:
-                                    Server.process(m)
-                            message += client_socket.recv(4096).decode()
-
-                    except socket.timeout as e:
-                        print("No clients found")
-                        continue
-            except:
-                traceback.print_exc()
-                continue
-    finally:
-        server_socket.close()
+    async with server_video:
+        await server_video.serve_forever()
 
 
-def run_server():
+async def handle_command(reader, writer):
+    message = (await reader.read(4096)).decode()
+    while len(message) > 0:
+        pos = message.find("\n")
+        while pos > 0:
+            m = message[:pos]
+            message = message[pos+1:]
+            pos = message.find("\n")
+            m = json.loads(m)
+            if "type" in m:
+                Server.process(m)
+        message += (await reader.read(4096)).decode()
+
+
+async def run_server():
+    server_socket = await asyncio.start_server(
+        handle_command, port=8000, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
+    )
+
+    async with server_socket:
+        await server_socket.serve_forever()
+
+
+async def start_server():
     # Voice
     voice_engine = pyttsx3.init()
 
@@ -131,18 +99,12 @@ def run_server():
     # Setup server
     Server.setup(lcd)
 
-    # Start video streaming
-    threading.Thread(target=stream_video, daemon=True).start()
-
-    # Start server
-    threading.Thread(target=run_socket_server, daemon=True).start()
-
-    while True:
-        try:
-            time.sleep(0.5)
-        except KeyboardInterrupt:
-            print("Stopping...")
-            break
+    try:
+        # Start video streaming
+        await asyncio.gather(run_video_server(), run_server(), return_exceptions=True)
+    except KeyboardInterrupt:
+        print("Stopping...")
+        sys.exit(0)
 
 
 def configure(action, key, value):
@@ -196,7 +158,7 @@ if __name__ == "__main__":
     Config.setup(args.config)
 
     if args.command == "runserver":
-        run_server()
+        asyncio.run(start_server())
     elif args.command == "configuration":
         if args.action == "update" and not args.value:
             print(f"Missing value for update")

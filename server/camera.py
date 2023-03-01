@@ -271,6 +271,7 @@ class Camera(object):
     arm_capture_device = None
     last_frame_lock = threading.Lock()
     last_frame = None
+    frame_counter = 0
     servo_id = 1
     servo_center_position = 60
     servo_position = 0
@@ -320,16 +321,15 @@ class Camera(object):
         Camera.streaming = False
 
     @staticmethod
-    def get_last_frame():
+    async def next_frame():
         Camera.streaming = True
         Camera.start_continuous_capture()
+        last_frame_counter = 0
         while Camera.streaming:
             try:
-                Camera.last_frame_lock.acquire()
-                last_frame = Camera.last_frame
-                Camera.last_frame = None
-                Camera.last_frame_lock.release()
-                return last_frame
+                if Camera.last_frame is not None and Camera.frame_counter > last_frame_counter:
+                    last_frame_counter = Camera.frame_counter
+                    return Camera.last_frame
             except:
                 traceback.print_exc()
                 if Camera.last_frame_lock.locked():
@@ -396,6 +396,7 @@ class Camera(object):
                         frame = cv2.imencode('.jpg', frame)[1].tostring()
                         Camera.last_frame_lock.acquire()
                         Camera.last_frame = frame
+                        Camera.frame_counter += 1
                         Camera.last_frame_lock.release()
             except Exception:
                 traceback.print_exc()
@@ -439,8 +440,7 @@ class Camera(object):
 
     @staticmethod
     def stop_face_detection():
-        if Camera.streaming:
-           Camera.stop_continuous_capture()
+        Camera.stop_continuous_capture()
         Camera.center_position()
         Camera.face_detection = False
 
