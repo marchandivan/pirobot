@@ -17,7 +17,7 @@
   },
   "robot_width": {
     "type": "int",
-    "default": 170
+    "default": 137
   },
   "wheel_d": {
     "type": "int",
@@ -37,7 +37,7 @@
   },
   "front_capturing_device": {
     "type": "str",
-    "default": "usb"
+    "default": "picamera"
   },
   "front_capturing_resolution": {
     "type": "str",
@@ -70,17 +70,17 @@
   },
   "robot_has_light": {
     "type": "bool",
-    "default": true,
+    "default": false,
     "export": true
   },
   "robot_has_screen": {
     "type": "bool",
-    "default": true,
+    "default": false,
     "export": true
   },
   "robot_has_speakder": {
     "type": "bool",
-    "default": true,
+    "default": false,
     "export": true
   },
   "robot_has_back_camera": {
@@ -94,7 +94,7 @@
   },
   "voice_rate": {
     "type": "int",
-    "default": 120
+    "default": 150
   },
   "voice_volume": {
     "type": "float",
@@ -102,27 +102,27 @@
   },
   "follow_face_speed": {
     "type": "int",
-    "default": 90
+    "default": 20
   },
   "motor_patrol_speed": {
     "type": "int",
-    "default": 90
+    "default": 50
   },
   "motor_steps_per_rotation": {
     "type": "int",
-    "default": 1650
+    "default": 660
   },
   "motor_min_distance": {
     "type": "float",
-    "default": 0.1
+    "default": 0.01
   },
   "motor_max_rpm": {
     "type": "int",
-    "default": 42
+    "default": 100
   },
   "motor_kp": {
     "type": "float",
-    "default": 2.38
+    "default": 0.5
   },
   "motor_ki": {
     "type": "float",
@@ -130,6 +130,6 @@
   },
   "motor_kd": {
     "type": "float",
-    "default": 0.05
+    "default": 0.003
   }
 }

@@ -44,7 +44,7 @@ class Config(Base):
             os.makedirs(Config.USER_CONFIG_DIR)
 
         user_config_file_path = os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")
-        user_config = configparser.ConfigParser({"config_name": "default"}, default_section="pirobot")
+        user_config = configparser.ConfigParser({"config_name": "pirobot"}, default_section="pirobot")
         if os.path.isfile(user_config_file_path):
             user_config.read(user_config_file_path)
         else:
@@ -62,7 +62,7 @@ class Config(Base):
             config_file_path = config_name
         elif not os.path.isfile(config_file_path):
             print(f"Warning: Invalid config file {config_name}, using default instead")
-            config_file_path = os.path.join(config_file_dir, "default.config.json")
+            config_file_path = os.path.join(config_file_dir, "pirobot.config.json")
         with open(config_file_path) as config_file:
             Config.CONFIG_KEYS = json.load(config_file)
 
