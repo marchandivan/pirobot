@@ -26,6 +26,11 @@ class Server(object):
             Server.lcd.ShowImage(image)
 
     @staticmethod
+    def connection_lost():
+        # Stop the robot in case of lost connection
+        Motor.stop()
+
+    @staticmethod
     def process(message):
         # Motor
         if message["type"] == "motor":

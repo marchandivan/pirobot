@@ -12,7 +12,6 @@ class OutputProtocol(asyncio.Protocol):
         self.transport = transport
         print('port opened', transport)
         transport.serial.rts = False  # You can manipulate Serial object via transport
-        transport.write(b'Hello, World!\n')  # Write serial data via transport
 
     def data_received(self, data):
         buffer = data
@@ -68,24 +67,6 @@ class UART:
         del UART.consumers[name]
 
     @staticmethod
-    def read_uart_forever(port):
-        buffer = bytearray()
-        while True:
-            try:
-                if port.in_waiting > 0:
-                    buffer += port.read(port.in_waiting)
-                i = buffer.find(b"\n")
-                if i >= 0:
-                    line = buffer[:i + 1]
-                    buffer = buffer[i + 1:]
-                    message = line[:-1].decode()
-                    UART.dispatch_uart_message(message)
-            except:
-                print("Unable to read UART message")
-                # printing stack trace
-                traceback.print_exc()
-
-    @staticmethod
     def dispatch_uart_message(message):
         message_parts = message.split(':')
         originator = message_parts[0]
@@ -114,16 +95,6 @@ class UART:
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE
             )
-            #UART.serial_port = serial.Serial(
-            #    port=Config.get("uart_port"),
-            #    baudrate=Config.get("uart_baudrate"),
-            #    bytesize=serial.EIGHTBITS,
-            #    parity=serial.PARITY_NONE,
-            #    stopbits=serial.STOPBITS_ONE
-            #)
-            #UART.serial_port.reset_input_buffer()
-            #threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
-            #threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
         except:
             traceback.print_exc()
 

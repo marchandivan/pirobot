@@ -41,23 +41,33 @@ async def run_video_server():
         await server_video.serve_forever()
 
 
-async def handle_command(reader, writer):
-    message = (await reader.read(4096)).decode()
-    while len(message) > 0:
-        pos = message.find("\n")
-        while pos > 0:
-            m = message[:pos]
-            message = message[pos+1:]
+class ServerProtocol(asyncio.Protocol):
+    def connection_made(self, transport):
+        peername = transport.get_extra_info('peername')
+        print('Connection from {}'.format(peername))
+
+    def data_received(self, data):
+        message = data.decode()
+        while len(message) > 0:
             pos = message.find("\n")
-            m = json.loads(m)
-            if "type" in m:
-                Server.process(m)
-        message += (await reader.read(4096)).decode()
+            if pos > 0:
+                m = message[:pos]
+                message = message[pos + 1:]
+                m = json.loads(m)
+                if "type" in m:
+                    Server.process(m)
+            else:
+                break
+
+    def connection_lost(self, exc):
+        print('The client closed the connection')
+        Server.connection_lost()
 
 
 async def run_server():
-    server_socket = await asyncio.start_server(
-        handle_command, port=8000, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
+    loop = asyncio.get_running_loop()
+    server_socket = await loop.create_server(
+        lambda: ServerProtocol(), port=8000, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
     )
 
     async with server_socket:
