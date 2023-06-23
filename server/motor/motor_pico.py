@@ -33,8 +33,6 @@ class PicoMotor(object):
 
     @staticmethod
     def setup():
-        # Open UART Port
-        UART.open()
         # Motor Initialization
         PicoMotor.max_rpm = Config.get("motor_max_rpm")
         PicoMotor.wheel_d = Config.get("wheel_d")

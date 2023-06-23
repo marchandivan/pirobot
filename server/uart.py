@@ -1,9 +1,42 @@
 from enum import Enum
+import asyncio
 import serial
-import threading
+import serial_asyncio
 import traceback
 
 from models import Config
+
+
+class OutputProtocol(asyncio.Protocol):
+    def connection_made(self, transport):
+        self.transport = transport
+        print('port opened', transport)
+        transport.serial.rts = False  # You can manipulate Serial object via transport
+        transport.write(b'Hello, World!\n')  # Write serial data via transport
+
+    def data_received(self, data):
+        buffer = data
+        while len(buffer) > 0:
+            i = buffer.find(b"\n")
+            if i >= 0:
+                line = buffer[:i + 1]
+                buffer = buffer[i + 1:]
+                message = line[:-1].decode()
+                UART.dispatch_uart_message(message)
+            else:
+                break
+
+    def connection_lost(self, exc):
+        print('port closed')
+        self.transport.loop.stop()
+
+    def pause_writing(self):
+        print('pause writing')
+        print(self.transport.get_write_buffer_size())
+
+    def resume_writing(self):
+        print(self.transport.get_write_buffer_size())
+        print('resume writing')
 
 
 class MessageOriginator(Enum):
@@ -65,22 +98,32 @@ class UART:
             consumer_config.consumer.receive_uart_message(message_parts[2:], originator, message_type)
 
     @staticmethod
-    def open():
+    async def open():
         if UART.serial_port is None:
-            UART.open()
+            await UART.open_serial_port()
 
     @staticmethod
-    def open():
+    async def open_serial_port():
         try:
-            UART.serial_port = serial.Serial(
-                port=Config.get("uart_port"),
+            loop = asyncio.get_event_loop()
+            UART.serial_port, protocol = await serial_asyncio.create_serial_connection(
+                loop=loop, protocol_factory=OutputProtocol,
+                url=Config.get("uart_port"),
                 baudrate=Config.get("uart_baudrate"),
                 bytesize=serial.EIGHTBITS,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE
             )
-            UART.serial_port.reset_input_buffer()
-            threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
+            #UART.serial_port = serial.Serial(
+            #    port=Config.get("uart_port"),
+            #    baudrate=Config.get("uart_baudrate"),
+            #    bytesize=serial.EIGHTBITS,
+            #    parity=serial.PARITY_NONE,
+            #    stopbits=serial.STOPBITS_ONE
+            #)
+            #UART.serial_port.reset_input_buffer()
+            #threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
+            #threading.Thread(target=UART.read_uart_forever, args=(UART.serial_port,), daemon=True).start()
         except:
             traceback.print_exc()
 

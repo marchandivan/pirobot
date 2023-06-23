@@ -8,6 +8,7 @@ from motor.motor import Motor
 from prettytable import PrettyTable
 from server import Server
 from terminal import Terminal
+from uart import UART
 
 import argparse
 import asyncio
@@ -77,6 +78,9 @@ async def start_server():
     terminal = Terminal("Courier", lcd)
     terminal.header("PiRobot v1.0")
     terminal.text("Starting...")
+
+    # Open UART Port
+    await UART.open()
 
     # Motor Initialization
     Motor.setup()

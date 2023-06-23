@@ -118,7 +118,7 @@
   },
   "motor_max_rpm": {
     "type": "int",
-    "default": 100
+    "default": 90
   },
   "motor_kp": {
     "type": "float",
