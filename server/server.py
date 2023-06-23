@@ -1,5 +1,6 @@
 from camera import Camera
 from light import Light
+from models import Config
 from motor.motor import Motor
 from sfx import SFX
 
@@ -40,7 +41,7 @@ class Server(object):
                 Motor.stop()
             elif message["action"] == "patrol":
                 Motor.patrol()
-        elif message["type"] == "light":
+        elif message["type"] == "light" and Config.get('robot_has_light'):
             if message["action"] == "toggle":
                 Light.toggle_front_light()
             elif message["action"] == "blink":

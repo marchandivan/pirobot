@@ -17,6 +17,7 @@ import platform
 import pyttsx3
 import socket
 import struct
+import traceback
 
 if platform.machine() == "aarch64":  # Mac OS
     from lcd.LCD_2inch import LCD_2inch
@@ -55,7 +56,10 @@ class ServerProtocol(asyncio.Protocol):
                 message = message[pos + 1:]
                 m = json.loads(m)
                 if "type" in m:
-                    Server.process(m)
+                    try:
+                        Server.process(m)
+                    except:
+                        traceback.print_exc()
             else:
                 break
 
