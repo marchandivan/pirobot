@@ -8,19 +8,22 @@ from models import Config
 
 
 class OutputProtocol(asyncio.Protocol):
+    def __init__(self):
+        self.buffer = ""
+
     def connection_made(self, transport):
         self.transport = transport
         print('port opened', transport)
         transport.serial.rts = False  # You can manipulate Serial object via transport
 
     def data_received(self, data):
-        buffer = data
-        while len(buffer) > 0:
-            i = buffer.find(b"\n")
+        self.buffer += data.decode()
+        while len(self.buffer) > 0:
+            i = self.buffer.find("\n")
             if i >= 0:
-                line = buffer[:i + 1]
-                buffer = buffer[i + 1:]
-                message = line[:-1].decode()
+                line = self.buffer[:i + 1]
+                self.buffer = self.buffer[i + 1:]
+                message = line[:-1]
                 UART.dispatch_uart_message(message)
             else:
                 break
@@ -71,6 +74,9 @@ class UART:
         message_parts = message.split(':')
         originator = message_parts[0]
         message_type = message_parts[1]
+        # Received keepalive message?
+        if originator == "K":
+            UART.write("K:OK")
         for consumer_config in UART.consumers.values():
             if consumer_config.originator is not None and consumer_config.originator.value != originator:
                 continue

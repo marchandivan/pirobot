@@ -528,7 +528,16 @@ class PatrollerHandler(object):
         self.motor_handler.stop()
 
 
+class RobotState:
+    UNINITIALIZED = 0
+    CONNECTION_LOST = 2
+    READY = 3
+
 class StatusHandler(object):
+    FAST_BLINK_INTERVAL = 0.25
+    SLOW_BLINK_INTERVAL = 1.5
+    ITO = 2
+        
     class HandlerConfig(object):
         def __init__(self, handler, refresh_interval, deadline):
             self.handler = handler
@@ -537,18 +546,67 @@ class StatusHandler(object):
     
     def __init__(self):
         self.handlers = []
-        
+        self.led = Pin(25, Pin.OUT)
+        self.led_update_ts = 0
+        self.state = RobotState.UNINITIALIZED
+        self.robot_initialized = False
+        self.last_message_ts = 0
+        self.last_keepalive_ts = 0
+
+    def blink_led(self, now):
+        self.led_update_ts = now
+        self.led.toggle()
+    
+    def fast_blink_led(self, now):
+        if now > self.led_update_ts + StatusHandler.FAST_BLINK_INTERVAL * 500:
+            self.blink_led(now)
+
+    def slow_blink_led(self, now):
+        if now > self.led_update_ts + StatusHandler.SLOW_BLINK_INTERVAL * 500:
+            self.blink_led(now)
+
+    def update_led(self, now):
+        if self.state == RobotState.UNINITIALIZED:
+            self.fast_blink_led(now)
+        elif self.state == RobotState.CONNECTION_LOST:
+            self.slow_blink_led(now)
+        elif self.state == RobotState.READY:
+            self.led.on()
+
     def add_handler(self, handler, refresh_interval):
         self.handlers.append(self.HandlerConfig(handler, refresh_interval, utime.ticks_ms()))
     
     def iterate(self):
+        now = utime.ticks_ms()
         for handler_config in self.handlers:
-            now = utime.ticks_ms()
             if now > handler_config.deadline:
                 handler_config.deadline = utime.ticks_add(now, handler_config.refresh_interval)
                 status = handler_config.handler.get_status() + "\n"
                 uart.write(status)
                 uart.flush()
+
+        # Reach inactivity timeout?
+        if now > self.last_message_ts + StatusHandler.ITO * 1000:
+            if self.robot_initialized:
+                self.state = RobotState.CONNECTION_LOST
+                # Stop robot if connection is lost
+                patroller_handler.stop()
+                motor_handler.stop()
+
+        # Send keepalive message? Sent every ITO/2
+        if now > self.last_keepalive_ts + StatusHandler.ITO * 500:
+            self.last_keepalive_ts = now
+            uart.write("K:OK")
+            uart.flush()
+                
+        # Update led
+        self.update_led(now)
+
+    def process_command(self, args):
+        self.robot_initialized = True
+        self.last_message_ts = utime.ticks_ms()
+        self.state = RobotState.READY
+        return True, args[0]
 
 
 motor_handler = MotorHandler(
@@ -598,6 +656,8 @@ def process_command(cmd):
         return patroller_handler.process_command(args)
     elif sensor == "S":
         return servo_handler.process_command(args)
+    elif sensor == "K":
+        return status_handler.process_command(args)
     else:
         return False, f"Unknown sensor {sensor}"
 
@@ -610,7 +670,7 @@ try:
                 for cmd in [c for c in commands.split('\n') if c]:
                     success, data = process_command(cmd)
                     print(success, data)
-
+                    
         motor_handler.iterate()
         patroller_handler.iterate()
         status_handler.iterate()
