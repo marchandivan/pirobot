@@ -47,24 +47,28 @@ async def run_video_server():
 
 
 class ServerProtocol(asyncio.Protocol):
+
+    def __init__(self):
+        self.buffer = ""
+
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
         logger.info('Connection from {}'.format(peername))
 
     def data_received(self, data):
-        message = data.decode()
-        while len(message) > 0:
-            pos = message.find("\n")
+        self.buffer += data.decode()
+        while len(self.buffer) > 0:
+            pos = self.buffer.find("\n")
             if pos > 0:
-                m = message[:pos]
-                message = message[pos + 1:]
-                RobotLogger.log_message("SOCKET", "R", m)
-                m = json.loads(m)
-                if "type" in m:
-                    try:
-                        Server.process(m)
-                    except:
-                        logger.error(f"Unable to process message {m}", exc_info=True)
+                message = self.buffer[:pos]
+                self.buffer = self.buffer[pos + 1:]
+                RobotLogger.log_message("SOCKET", "R", message)
+                try:
+                    message = json.loads(message)
+                    if "type" in message:
+                        Server.process(message)
+                except:
+                    logger.error(f"Unable to process message {message}", exc_info=True)
             else:
                 break
 
