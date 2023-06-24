@@ -331,9 +331,13 @@ class MotorHandler(object):
         self.right_integration_sum = 0
         self.right_previous_error = 0
 
+    @property
+    def is_timeout(self):
+        return self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts
+
     def get_status(self):
         left_distance, front_distance, right_distance = ultrasonic_handler.distances()
-        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}"
+        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}:{self.is_timeout}"
 
     def adjust_speed(self, current_speed, new_speed):
         if new_speed < 0.05:  # Speed bellow 20 RPM, stop
@@ -388,7 +392,7 @@ class MotorHandler(object):
                     self.stop()
                 elif (self.target_differential_nb_of_revolutions - self.total_abs_differential_nb_of_revolutions) < braking_nb_of_revolutions_at_max_speed * ref_differential_speed:
                     self.adjust_speed(ref_differential_speed, (self.target_differential_nb_of_revolutions - self.total_abs_differential_nb_of_revolutions) / braking_nb_of_revolutions_at_max_speed)
-            if self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts:
+            if self.is_timeout:
                 print("Timeout!")
                 self.stop()
                 
@@ -596,7 +600,7 @@ class StatusHandler(object):
         # Send keepalive message? Sent every ITO/2
         if now > self.last_keepalive_ts + StatusHandler.ITO * 500:
             self.last_keepalive_ts = now
-            uart.write("K:OK")
+            uart.write("K:OK\n")
             uart.flush()
                 
         # Update led

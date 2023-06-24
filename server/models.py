@@ -6,8 +6,16 @@ from sqlalchemy import create_engine, Column, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from logger import RobotLogger
+
 Base = declarative_base()
 
+DEFAULT_CONFIG = {
+    "config_name": "pirobot",
+    "log_file": None,
+    "message_log_file": None,
+    "log_level": "WARNING",
+}
 
 # Create your models here.
 class Config(Base):
@@ -44,13 +52,19 @@ class Config(Base):
             os.makedirs(Config.USER_CONFIG_DIR)
 
         user_config_file_path = os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")
-        user_config = configparser.ConfigParser({"config_name": "pirobot"}, default_section="pirobot")
+        user_config = configparser.ConfigParser(defaults=DEFAULT_CONFIG, default_section="pirobot", allow_no_value=True)
         if os.path.isfile(user_config_file_path):
             user_config.read(user_config_file_path)
         else:
             with open(user_config_file_path, "w") as configfile:
                 user_config.write(configfile)
 
+        # Setup logger
+        RobotLogger.setup_logger(
+            app_log_file=user_config.get("pirobot", "log_file"),
+            message_log_file=user_config.get("pirobot", "message_log_file"),
+            level=user_config.get("pirobot", "log_level")
+        )
         if config_name is None:
             config_name = user_config.get("pirobot", "config_name")
 

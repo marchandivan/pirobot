@@ -1,10 +1,13 @@
 from enum import Enum
 import asyncio
+import logging
 import serial
 import serial_asyncio
-import traceback
 
 from models import Config
+from logger import RobotLogger
+
+logger = logging.getLogger(__name__)
 
 
 class OutputProtocol(asyncio.Protocol):
@@ -13,7 +16,7 @@ class OutputProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        print('port opened', transport)
+        logger.info('UART port opened', transport)
         transport.serial.rts = False  # You can manipulate Serial object via transport
 
     def data_received(self, data):
@@ -25,20 +28,21 @@ class OutputProtocol(asyncio.Protocol):
                 self.buffer = self.buffer[i + 1:]
                 message = line[:-1]
                 UART.dispatch_uart_message(message)
+                RobotLogger.log_message("UART", "R", message)
             else:
                 break
 
     def connection_lost(self, exc):
-        print('port closed')
+        logger.info("UART port closed")
         self.transport.loop.stop()
 
     def pause_writing(self):
-        print('pause writing')
-        print(self.transport.get_write_buffer_size())
+        logger.info("UART pause writing")
+        logger.info(self.transport.get_write_buffer_size())
 
     def resume_writing(self):
-        print(self.transport.get_write_buffer_size())
-        print('resume writing')
+        logger.info(self.transport.get_write_buffer_size())
+        logger.info("UART resume writing")
 
 
 class MessageOriginator(Enum):
@@ -102,7 +106,7 @@ class UART:
                 stopbits=serial.STOPBITS_ONE
             )
         except:
-            traceback.print_exc()
+            logger.error(f"Unable to open serial port {Config.get('uart_port')}", exc_info=True)
 
     @staticmethod
     def write(data):
@@ -110,8 +114,9 @@ class UART:
             message = data + "\n"
             if UART.serial_port is not None:
                 UART.serial_port.write(message.encode())
+                RobotLogger.log_message("UART", "S", data)
             else:
-                print("Unable to send serial message")
+                logger.warning("Unable to send serial message")
         except:
-            print("Unable to send serial message")
+            logger.error("Unable to send serial message", exc_info=True)
 

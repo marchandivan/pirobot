@@ -3,6 +3,7 @@ import sys
 from camera import Camera
 from sfx import SFX
 from light import Light
+from logger import RobotLogger
 from models import Config
 from motor.motor import Motor
 from prettytable import PrettyTable
@@ -13,16 +14,19 @@ from uart import UART
 import argparse
 import asyncio
 import json
+import logging
 import platform
 import pyttsx3
 import socket
 import struct
-import traceback
 
 if platform.machine() == "aarch64":  # Mac OS
     from lcd.LCD_2inch import LCD_2inch
 else:
     from lcd.LCD_Mock import LCD_2inch
+
+
+logger = logging.getLogger(__name__)
 
 
 async def handle_video_client(reader, writer):
@@ -45,7 +49,7 @@ async def run_video_server():
 class ServerProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        print('Connection from {}'.format(peername))
+        logger.info('Connection from {}'.format(peername))
 
     def data_received(self, data):
         message = data.decode()
@@ -54,17 +58,18 @@ class ServerProtocol(asyncio.Protocol):
             if pos > 0:
                 m = message[:pos]
                 message = message[pos + 1:]
+                RobotLogger.log_message("SOCKET", "R", m)
                 m = json.loads(m)
                 if "type" in m:
                     try:
                         Server.process(m)
                     except:
-                        traceback.print_exc()
+                        logger.error(f"Unable to process message {m}", exc_info=True)
             else:
                 break
 
     def connection_lost(self, exc):
-        print('The client closed the connection')
+        logger.info('The client closed the connection')
         Server.connection_lost()
 
 
@@ -121,7 +126,7 @@ async def start_server():
         # Start video streaming
         await asyncio.gather(run_video_server(), run_server(), return_exceptions=True)
     except KeyboardInterrupt:
-        print("Stopping...")
+        logger.info("Stopping...")
         sys.exit(0)
 
 
