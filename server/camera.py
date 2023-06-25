@@ -321,21 +321,22 @@ class Camera(object):
         Camera.streaming = False
 
     @staticmethod
-    async def next_frame():
+    async def next_frame(last_frame_counter):
         Camera.streaming = True
         Camera.start_continuous_capture()
-        last_frame_counter = 0
         while Camera.streaming:
             try:
-                if Camera.last_frame is not None and Camera.frame_counter > last_frame_counter:
-                    last_frame_counter = Camera.frame_counter
-                    return Camera.last_frame
+                if last_frame_counter is None or Camera.frame_counter > last_frame_counter:
+                    Camera.last_frame_lock.acquire()
+                    last_frame = Camera.last_frame
+                    Camera.last_frame_lock.release()
+                    if last_frame is not None:
+                        return last_frame, Camera.frame_counter
             except:
                 traceback.print_exc()
                 if Camera.last_frame_lock.locked():
                     Camera.last_frame_lock.release()
                 continue
-        Camera.streaming = False
 
     @staticmethod
     def capture_continuous():
@@ -371,9 +372,9 @@ class Camera(object):
                 Camera.front_capture_device.grab()
                 if Camera.arm_capture_device is not None:
                     Camera.arm_capture_device.grab()
-
-                if time.time() > last_frame_ts + frame_delay:
-                    last_frame_ts = time.time()
+                now = time.time()
+                if now > last_frame_ts + frame_delay:
+                    last_frame_ts = now
                     if Camera.arm_capture_device is None or Camera.selected_camera == "front":
                         frame = Camera.front_capture_device.retrieve()
                         # Detect face

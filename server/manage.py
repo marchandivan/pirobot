@@ -1,29 +1,16 @@
-import sys
-
-from camera import Camera
-from sfx import SFX
-from light import Light
-from logger import RobotLogger
-from models import Config
-from motor.motor import Motor
-from prettytable import PrettyTable
-from server import Server
-from terminal import Terminal
-from uart import UART
-
 import argparse
 import asyncio
 import json
 import logging
-import platform
-import pyttsx3
 import socket
 import struct
+import sys
 
-if platform.machine() == "aarch64":  # Mac OS
-    from lcd.LCD_2inch import LCD_2inch
-else:
-    from lcd.LCD_Mock import LCD_2inch
+from camera import Camera
+from logger import RobotLogger
+from models import Config
+from prettytable import PrettyTable
+from server import Server
 
 
 logger = logging.getLogger(__name__)
@@ -31,10 +18,29 @@ logger = logging.getLogger(__name__)
 
 async def handle_video_client(reader, writer):
     Camera.start_continuous_capture()
+    last_frame_counter = None
     while True:
-        frame = await Camera.next_frame()
+        frame, last_frame_counter = await Camera.next_frame(last_frame_counter)
         writer.write(struct.pack("Q", len(frame)) + frame)
         await writer.drain()
+
+
+class VideoServerProtocol(asyncio.Protocol):
+
+    def __init__(self):
+        self.buffer = ""
+
+    def connection_made(self, transport):
+        peername = transport.get_extra_info("peername")
+        logger.info(f"Connection from {peername}")
+        Camera.start_continuous_capture()
+        while True:
+            frame = Camera.next_frame()
+            transport.write(struct.pack("Q", len(frame)) + frame)
+
+    def connection_lost(self, exc):
+        logger.info(f"The client closed the connection {exc}")
+        Server.connection_lost()
 
 
 async def run_video_server():
@@ -73,7 +79,7 @@ class ServerProtocol(asyncio.Protocol):
                 break
 
     def connection_lost(self, exc):
-        logger.info('The client closed the connection')
+        logger.info(f"The client closed the connection {exc}")
         Server.connection_lost()
 
 
@@ -88,43 +94,8 @@ async def run_server():
 
 
 async def start_server():
-    # Voice
-    voice_engine = pyttsx3.init()
-
-    # LCD & terminal Initialization
-    RST = 24
-    DC = 25
-    BL = 23
-    lcd = LCD_2inch(rst=RST, dc=DC, bl=BL)
-    lcd.Init()
-    lcd.clear()
-    terminal = Terminal("Courier", lcd)
-    terminal.header("PiRobot v1.0")
-    terminal.text("Starting...")
-
-    # Open UART Port
-    await UART.open()
-
-    # Motor Initialization
-    Motor.setup()
-    terminal.text(f"Motor setup... {Motor.get_status()}")
-
-    # Light
-    if Config.get('robot_has_light'):
-        Light.setup()
-        terminal.text(f"Light setup... {Light.status}")
-
-    # Motor Initialization
-    Camera.setup()
-    terminal.text(f"Camera setup.. {Camera.status}")
-
-    terminal.text("Ready!")
-
-    # SFX
-    SFX.setup()
-
     # Setup server
-    Server.setup(lcd)
+    await Server.setup()
 
     try:
         # Start video streaming

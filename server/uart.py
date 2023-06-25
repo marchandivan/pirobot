@@ -16,7 +16,7 @@ class OutputProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        logger.info('UART port opened', transport)
+        logger.info(f"UART port opened {transport}")
         transport.serial.rts = False  # You can manipulate Serial object via transport
 
     def data_received(self, data):

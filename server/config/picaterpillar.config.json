@@ -78,7 +78,7 @@
     "default": true,
     "export": true
   },
-  "robot_has_speakder": {
+  "robot_has_speaker": {
     "type": "bool",
     "default": true,
     "export": true
