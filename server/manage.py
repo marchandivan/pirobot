@@ -16,36 +16,37 @@ from server import Server
 logger = logging.getLogger(__name__)
 
 
-async def handle_video_client(reader, writer):
-    Camera.start_continuous_capture()
-    last_frame_counter = None
-    while True:
-        frame, last_frame_counter = await Camera.next_frame(last_frame_counter)
-        writer.write(struct.pack("Q", len(frame)) + frame)
-        await writer.drain()
-
-
 class VideoServerProtocol(asyncio.Protocol):
 
     def __init__(self):
         self.buffer = ""
+        self.transport = None
+
+    def send_new_frame(self, frame):
+        if self.transport is not None:
+            self.transport.write(struct.pack("Q", len(frame)) + frame)
 
     def connection_made(self, transport):
+        self.transport = transport
         peername = transport.get_extra_info("peername")
         logger.info(f"Connection from {peername}")
-        Camera.start_continuous_capture()
-        while True:
-            frame = Camera.next_frame()
-            transport.write(struct.pack("Q", len(frame)) + frame)
+        Camera.add_new_frame_callback(self.send_new_frame)
+        Camera.start_continuous_capture(streaming=True)
 
     def connection_lost(self, exc):
         logger.info(f"The client closed the connection {exc}")
         Server.connection_lost()
+        self.transport = None
+        Camera.stop_streaming()
 
 
 async def run_video_server():
-    server_video = await asyncio.start_server(
-        handle_video_client, port=8001, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
+    #server_video = await asyncio.start_server(
+    #    handle_video_client, port=8001, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
+    #)
+    loop = asyncio.get_running_loop()
+    server_video = await loop.create_server(
+        lambda: VideoServerProtocol(), port=8001, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
     )
 
     async with server_video:

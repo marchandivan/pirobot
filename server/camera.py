@@ -1,8 +1,8 @@
+import logging
 import math
 import platform
 import threading
 import time
-import traceback
 
 import cv2
 import numpy as np
@@ -15,6 +15,8 @@ if platform.machine() == "aarch":  # Raspberry 32 bits
     from picamera.array import PiRGBArray
 elif platform.machine() == "aarch64":  # Raspberry 64 bits
     import picamera2
+
+logger = logging.getLogger(__name__)
 
 # Calculate model to covert the position of a pixel to the physical position on the floor,
 # using measurements (distances & y_pos) & polynomial regression
@@ -230,8 +232,7 @@ class CaptureDevice(object):
                         self.device.capture(output, format="rgb")
                         return cv2.cvtColor(output.array, cv2.COLOR_BGRA2BGR)
             except:
-                print ("Failed to capture image, retrying")
-                traceback.print_exc()
+                logger.error("Failed to capture image, retrying", exc_info=True)
                 time.sleep(0.1)
 
     def capture_continuous(self, stream, format='jpeg'):
@@ -275,6 +276,11 @@ class Camera(object):
     servo_id = 1
     servo_center_position = 60
     servo_position = 0
+    new_frame_callback = None
+
+    @staticmethod
+    def add_new_frame_callback(callback):
+        Camera.new_frame_callback = callback
 
     @staticmethod
     def setup():
@@ -314,29 +320,11 @@ class Camera(object):
                     yield last_frame
                     yield "\r\n"
             except:
-                traceback.print_exc()
+                logger.error("Unexpected exception while streaming", exc_info=True)
                 if Camera.last_frame_lock.locked():
                     Camera.last_frame_lock.release()
                 continue
         Camera.streaming = False
-
-    @staticmethod
-    async def next_frame(last_frame_counter):
-        Camera.streaming = True
-        Camera.start_continuous_capture()
-        while Camera.streaming:
-            try:
-                if last_frame_counter is None or Camera.frame_counter > last_frame_counter:
-                    Camera.last_frame_lock.acquire()
-                    last_frame = Camera.last_frame
-                    Camera.last_frame_lock.release()
-                    if last_frame is not None:
-                        return last_frame, Camera.frame_counter
-            except:
-                traceback.print_exc()
-                if Camera.last_frame_lock.locked():
-                    Camera.last_frame_lock.release()
-                continue
 
     @staticmethod
     def capture_continuous():
@@ -399,8 +387,10 @@ class Camera(object):
                         Camera.last_frame = frame
                         Camera.frame_counter += 1
                         Camera.last_frame_lock.release()
+                        if Camera.new_frame_callback is not None:
+                            Camera.new_frame_callback(Camera.last_frame)
             except Exception:
-                traceback.print_exc()
+                logger.error("Unexpected exception in continuous capture", exc_info=True)
                 if Camera.last_frame_lock.locked():
                     Camera.last_frame_lock.release()
                 continue
@@ -410,15 +400,20 @@ class Camera(object):
             Camera.arm_capture_device.close()
             Camera.arm_capture_device = None
         Camera.capturing = False
-        print("Stop Capture")
+        logger.info("Stop Capture")
 
     @staticmethod
-    def start_continuous_capture():
+    def start_continuous_capture(streaming=False):
         if not Camera.capturing or Camera.capturing_thread is None or not Camera.capturing_thread.is_alive():
             Camera.capturing = True
-            print("Start capture")
+            Camera.streaming = streaming
+            logger.info("Start capture")
             Camera.capturing_thread = threading.Thread(target=Camera.capture_continuous, daemon=True)
             Camera.capturing_thread.start()
+
+    @staticmethod
+    def stop_streaming():
+        Camera.streaming = False
 
     @staticmethod
     def stop_continuous_capture():
