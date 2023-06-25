@@ -596,16 +596,30 @@ class StatusHandler(object):
                 # Stop robot if connection is lost
                 patroller_handler.stop()
                 motor_handler.stop()
+                # Send keepalive to re-establish connection
+                self.send_keepalive()
+                
 
         # Send keepalive message? Sent every ITO/2
         if now > self.last_keepalive_ts + StatusHandler.ITO * 500:
             self.last_keepalive_ts = now
-            uart.write("K:OK\n")
-            uart.flush()
+            self.send_keepalive()
                 
         # Update led
         self.update_led(now)
 
+    def send_keepalive(self):
+        status = "UK"
+        if self.state == RobotState.UNINITIALIZED:
+            status = "UI"
+        elif self.state == RobotState.CONNECTION_LOST:
+            status = "CL"
+        elif self.state == RobotState.READY:
+            status = "OK"
+
+        uart.write(f"K:{status}\n")
+        uart.flush()
+        
     def process_command(self, args):
         self.robot_initialized = True
         self.last_message_ts = utime.ticks_ms()
@@ -666,14 +680,21 @@ def process_command(cmd):
         return False, f"Unknown sensor {sensor}"
 
 try:
+    buffer = ""
     while True:
         if uart.txdone():
             data = uart.read()
             if data is not None and len(data) > 0:
-                commands = data.decode()
-                for cmd in [c for c in commands.split('\n') if c]:
-                    success, data = process_command(cmd)
-                    print(success, data)
+                buffer += data.decode()
+                while len(buffer) > 0:
+                    pos = buffer.find("\n")
+                    if pos > 0:
+                        command = buffer[:pos]
+                        buffer = buffer[pos + 1:]
+                        success, data = process_command(command)
+                        print(success, data)
+                    else:
+                        break
                     
         motor_handler.iterate()
         patroller_handler.iterate()
