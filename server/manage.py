@@ -5,6 +5,7 @@ import logging
 import socket
 import struct
 import sys
+import threading
 
 from camera import Camera
 from logger import RobotLogger
@@ -21,15 +22,36 @@ class VideoServerProtocol(asyncio.Protocol):
     def __init__(self):
         self.buffer = ""
         self.transport = None
+        self.client_ready = threading.Event()
+        self.buffer = ""
 
     def send_new_frame(self, frame):
         if self.transport is not None:
-            self.transport.write(struct.pack("Q", len(frame)) + frame)
+            if self.client_ready.is_set():
+                self.transport.write(struct.pack("Q", len(frame)) + frame)
+                RobotLogger.log_message("VIDEO_SOCKET", "S", f"New frame of size {len(frame)}")
+                self.client_ready.clear()
+            else:
+                logger.info("Client not ready, skipping frame")
+
+    def data_received(self, data):
+        self.buffer += data.decode()
+        while len(self.buffer) > 0:
+            pos = self.buffer.find("\n")
+            if pos > 0:
+                message = self.buffer[:pos]
+                self.buffer = self.buffer[pos + 1:]
+                RobotLogger.log_message("VIDEO_SOCKET", "R", message)
+                if message == "RDY":
+                    self.client_ready.set()
+            else:
+                break
 
     def connection_made(self, transport):
         self.transport = transport
         peername = transport.get_extra_info("peername")
         logger.info(f"Connection to video server from {peername}")
+        self.client_ready.set()
         Camera.add_new_frame_callback(self.send_new_frame)
         Camera.start_streaming()
 
