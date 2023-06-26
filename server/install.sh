@@ -7,6 +7,7 @@ sudo cp dist/$DAEMON_NAME /usr/local/bin/
 sudo mkdir -p /etc/$APP_NAME
 sudo cp -rf config /etc/$APP_NAME/
 sudo cp -rf assets /etc/$APP_NAME/
+sudo cp pirobot.config /etc/$APP_NAME/
 
 sudo adduser www-data spi
 sudo adduser www-data gpio

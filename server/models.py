@@ -24,7 +24,7 @@ DEFAULT_CONFIG = {
 # Create your models here.
 class Config(Base):
     CONFIG_KEYS = None
-    USER_CONFIG_DIR = os.environ.get("PIROBOT_CONFIG_ROOT", os.path.join(os.environ["HOME"], ".pirobot"))
+    USER_CONFIG_DIR = os.path.join(os.environ["HOME"], ".pirobot")
     db_engine = None
 
     __tablename__ = 'server_config'
@@ -52,16 +52,9 @@ class Config(Base):
 
     @staticmethod
     def setup(config_name):
-        if not os.path.isdir(Config.USER_CONFIG_DIR):
-            os.makedirs(Config.USER_CONFIG_DIR)
 
-        user_config_file_path = os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")
         user_config = configparser.ConfigParser(defaults=DEFAULT_CONFIG, default_section="pirobot", allow_no_value=True)
-        if os.path.isfile(user_config_file_path):
-            user_config.read(user_config_file_path)
-        else:
-            with open(user_config_file_path, "w") as configfile:
-                user_config.write(configfile)
+        user_config.read(["/etc/config/pirobot.config", os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")])
 
         # Setup logger
         RobotLogger.setup_logger(

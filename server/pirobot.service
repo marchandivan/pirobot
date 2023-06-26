@@ -2,7 +2,6 @@
 Description=PiRobot Daemon
 
 [Service]
-Environment=PIROBOT_CONFIG_ROOT=/etc/pirobot/config
 Restart=always
 Type=simple
 User=www-data
