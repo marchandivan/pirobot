@@ -596,8 +596,6 @@ class StatusHandler(object):
                 # Stop robot if connection is lost
                 patroller_handler.stop()
                 motor_handler.stop()
-                # Send keepalive to re-establish connection
-                self.send_keepalive()
                 
 
         # Send keepalive message? Sent every ITO/2

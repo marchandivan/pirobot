@@ -1,5 +1,6 @@
 import configparser
 import json
+import logging
 import os
 
 from sqlalchemy import create_engine, Column, String
@@ -7,6 +8,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from logger import RobotLogger
+
+logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -17,10 +20,11 @@ DEFAULT_CONFIG = {
     "log_level": "WARNING",
 }
 
+
 # Create your models here.
 class Config(Base):
     CONFIG_KEYS = None
-    USER_CONFIG_DIR = os.path.join(os.environ["HOME"], ".pirobot")
+    USER_CONFIG_DIR = os.environ.get("PIROBOT_CONFIG_ROOT", os.path.join(os.environ["HOME"], ".pirobot"))
     db_engine = None
 
     __tablename__ = 'server_config'
@@ -67,6 +71,8 @@ class Config(Base):
         )
         if config_name is None:
             config_name = user_config.get("pirobot", "config_name")
+
+        logger.info(f"Starting robot with config {config_name}")
 
         config_file_dir = os.path.join(os.path.dirname(__file__), "config")
         if not os.path.isdir(config_file_dir):
