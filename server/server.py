@@ -1,4 +1,5 @@
 from camera import Camera
+from game import Games
 from light import Light
 from models import Config
 from motor.motor import Motor
@@ -26,15 +27,24 @@ class Server(object):
 
     @staticmethod
     async def setup():
-        if Config.get("robot_has_speaker"):
+        # Get capability flags for the robot
+        Server.robot_has_speaker = Config.get("robot_has_speaker")
+        Server.robot_has_screen = Config.get("robot_has_screen")
+        Server.robot_has_light = Config.get("robot_has_light")
+
+        if Server.robot_has_speaker:
             # Voice
             Server.voice_engine = pyttsx3.init()
+            Server.voice_engine.setProperty('voice', Config.get("voice_id"))
+            Server.voice_engine.setProperty('rate', Config.get("voice_rate"))
+            Server.voice_engine.setProperty('volume', Config.get("voice_volume"))
+
             # SFX
             SFX.setup()
         else:
             Server.voice_engine = None
 
-        if Config.get("robot_has_screen"):
+        if Server.robot_has_screen:
             # LCD & terminal Initialization
             RST = 24
             DC = 25
@@ -42,45 +52,48 @@ class Server(object):
             Server.lcd = LCD_2inch(rst=RST, dc=DC, bl=BL)
             Server.lcd.Init()
             Server.lcd.clear()
-            terminal = Terminal("Courier", Server.lcd)
-            terminal.header("PiRobot v1.0")
-            terminal.text("Starting...")
+            Server.terminal = Terminal("Courier", Server.lcd)
+            Server.terminal.header("PiRobot v1.0")
+            Server.terminal.text("Starting...")
             Server.pics_path = os.path.join(os.path.dirname(__file__), 'assets/Pics')
             if not os.path.isdir(Server.pics_path):
                 Server.pics_path = "/etc/pirobot/assets/Pics"
         else:
             Server.lcd = None
+            Server.terminal = None
 
         # Open UART Port
         await UART.open()
 
         # Motor Initialization
         Motor.setup()
-        if Config.get("robot_has_screen"):
-            terminal.text(f"Motor setup... {Motor.get_status()}")
+        if Server.robot_has_screen:
+            Server.terminal.text(f"Motor setup... {Motor.get_status()}")
 
         # Light
-        if Config.get('robot_has_light'):
+        if Server.robot_has_light:
             Light.setup()
-            if Config.get("robot_has_screen"):
-                terminal.text(f"Light setup... {Light.status}")
+            if Server.robot_has_screen:
+                Server.terminal.text(f"Light setup... {Light.status}")
 
         # Camera Initialization
         Camera.setup()
-        if Config.get("robot_has_screen"):
-            terminal.text(f"Camera setup.. {Camera.status}")
+        if Server.robot_has_screen:
+            Server.terminal.text(f"Camera setup.. {Camera.status}")
 
-        if Config.get("robot_has_screen"):
-            terminal.text("Ready!")
+        if Server.robot_has_screen:
+            Server.terminal.text("Ready!")
 
     @staticmethod
     def set_lcd_picture(name):
-        if Server.lcd is not None:
+        if Server.robot_has_screen:
             file_path = os.path.join(Server.pics_path, f"{name}.png")
             if os.path.isfile(file_path):
                 image = Image.open(file_path)
                 image = image.resize((Server.lcd.height, Server.lcd.width)).convert('RGB')
                 Server.lcd.ShowImage(image)
+            else:
+                logger.info(f"Picture not found {name}")
 
     @staticmethod
     def connection_lost():
@@ -98,7 +111,7 @@ class Server(object):
                 Motor.stop()
             elif message["action"] == "patrol":
                 Motor.patrol()
-        elif message["type"] == "light" and Config.get('robot_has_light'):
+        elif message["type"] == "light" and Server.robot_has_light:
             if message["action"] == "toggle":
                 Light.toggle_front_light()
             elif message["action"] == "blink":
@@ -115,9 +128,41 @@ class Server(object):
                 Camera.start_face_detection()
             elif message["action"] == "stop_face_detection":
                 Camera.stop_face_detection()
-        elif message["type"] == "sfx" and Config.get("robot_has_speaker"):
+        elif message["type"] == "sfx" and Server.robot_has_speaker:
             if message["action"] == "play":
                 threading.Thread(target=SFX.play, args=(message["args"]["name"], )).start()
-        elif message["type"] == "lcd" and Server.lcd is not None:
+        elif message["type"] == "message":
+            if message["action"] == "play":
+                Server.play_message(message["args"].get("destination", "lcd"), message["args"]["message"])
+        elif message["type"] == "lcd" and Server.robot_has_screen:
             if message["action"] == "display_picture":
                 Server.set_lcd_picture(message["args"]["name"])
+
+    @staticmethod
+    def play_message(destination, message):
+        if message.startswith("!"):
+            cmd = message[1:].split(' ')
+            if len(cmd) > 1:
+                command = cmd[0]
+                args = cmd[1:]
+                if command == "img":
+                    Server.set_lcd_picture(args[0])
+                    message = None
+                elif command == "play":
+                    print(args)
+                    message = Games.play(args[0], args[1:])
+                else:
+                    message = None
+            else:
+                message = None
+        if message is not None:
+            if destination == "lcd" and Server.robot_has_screen:
+                Server.terminal.text(message)
+            elif destination == "audio" and Server.robot_has_speaker:
+
+                if Server.voice_engine._inLoop:
+                    Server.voice_engine.endLoop()
+
+                Server.voice_engine.say(message)
+                Server.voice_engine.runAndWait()
+

@@ -5,6 +5,7 @@ import logging
 import socket
 import struct
 import sys
+import time
 import threading
 
 from camera import Camera
@@ -18,16 +19,20 @@ logger = logging.getLogger(__name__)
 
 
 class VideoServerProtocol(asyncio.Protocol):
+    NEW_FRAME_TIMEOUT = 2
 
     def __init__(self):
         self.buffer = ""
         self.transport = None
         self.client_ready = threading.Event()
         self.buffer = ""
+        self.last_frame_ts = 0
 
     def send_new_frame(self, frame):
         if self.transport is not None:
-            if self.client_ready.is_set():
+            now = time.time()
+            if self.client_ready.is_set() or now > self.last_frame_ts + VideoServerProtocol.NEW_FRAME_TIMEOUT:
+                self.last_frame_ts = now
                 self.transport.write(struct.pack("Q", len(frame)) + frame)
                 RobotLogger.log_message("VIDEO_SOCKET", "S", f"New frame of size {len(frame)}")
                 self.client_ready.clear()
@@ -51,7 +56,6 @@ class VideoServerProtocol(asyncio.Protocol):
         self.transport = transport
         peername = transport.get_extra_info("peername")
         logger.info(f"Connection to video server from {peername}")
-        self.client_ready.set()
         Camera.add_new_frame_callback(self.send_new_frame)
         Camera.start_streaming()
 

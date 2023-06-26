@@ -15,7 +15,7 @@ class LCD_2inch(object):
         pass
 
     def ShowImage(self, image, Xstart=0, Ystart=0):
-        if Config.get('show_mock_screen'):
+        if Config.get("show_mock_screen"):
             image.show()
 
     def bl_DutyCycle(self, dc):
