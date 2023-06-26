@@ -403,13 +403,17 @@ class Camera(object):
         logger.info("Stop Capture")
 
     @staticmethod
-    def start_continuous_capture(streaming=False):
+    def start_continuous_capture():
         if not Camera.capturing or Camera.capturing_thread is None or not Camera.capturing_thread.is_alive():
             Camera.capturing = True
-            Camera.streaming = streaming
             logger.info("Start capture")
             Camera.capturing_thread = threading.Thread(target=Camera.capture_continuous, daemon=True)
             Camera.capturing_thread.start()
+
+    @staticmethod
+    def start_streaming():
+        Camera.start_continuous_capture()
+        Camera.streaming = True
 
     @staticmethod
     def stop_streaming():

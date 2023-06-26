@@ -29,21 +29,17 @@ class VideoServerProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         self.transport = transport
         peername = transport.get_extra_info("peername")
-        logger.info(f"Connection from {peername}")
+        logger.info(f"Connection to video server from {peername}")
         Camera.add_new_frame_callback(self.send_new_frame)
-        Camera.start_continuous_capture(streaming=True)
+        Camera.start_streaming()
 
     def connection_lost(self, exc):
-        logger.info(f"The client closed the connection {exc}")
-        Server.connection_lost()
+        logger.info("The client closed the connection to video server")
         self.transport = None
         Camera.stop_streaming()
 
 
 async def run_video_server():
-    #server_video = await asyncio.start_server(
-    #    handle_video_client, port=8001, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
-    #)
     loop = asyncio.get_running_loop()
     server_video = await loop.create_server(
         lambda: VideoServerProtocol(), port=8001, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
@@ -60,7 +56,7 @@ class ServerProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        logger.info('Connection from {}'.format(peername))
+        logger.info('Connection to server from {}'.format(peername))
 
     def data_received(self, data):
         self.buffer += data.decode()
@@ -80,7 +76,7 @@ class ServerProtocol(asyncio.Protocol):
                 break
 
     def connection_lost(self, exc):
-        logger.info(f"The client closed the connection {exc}")
+        logger.info("The client closed the connection to server")
         Server.connection_lost()
 
 
