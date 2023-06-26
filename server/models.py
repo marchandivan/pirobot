@@ -17,7 +17,7 @@ DEFAULT_CONFIG = {
     "config_name": "pirobot",
     "log_file": None,
     "message_log_file": None,
-    "log_level": "WARNING",
+    "log_level": "INFO",
 }
 
 
@@ -81,7 +81,7 @@ class Config(Base):
         if os.path.isfile(config_name):
             config_file_path = config_name
         elif not os.path.isfile(config_file_path):
-            print(f"Warning: Invalid config file {config_name}, using default instead")
+            logger.warning(f"Warning: Invalid config file {config_name}, using default instead")
             config_file_path = os.path.join(config_file_dir, "pirobot.config.json")
         with open(config_file_path) as config_file:
             Config.CONFIG_KEYS = json.load(config_file)
@@ -99,7 +99,7 @@ class Config(Base):
         if Config.db_engine is not None:
             return Config.session_maker()
         else:
-            print("DB Engine not found, run setup() first")
+            logger.error("DB Engine not found, run setup() first")
 
     @staticmethod
     def get(key):
@@ -154,10 +154,10 @@ class Config(Base):
                 Config._convert_to_type(value, config.get("type"))
                 return True
             except:
-                print(f"Unable to parse value as {config.get('type')}")
+                logger.error(f"Unable to parse value as {config.get('type')}", exc_info=True)
                 return False
         else:
-            print(f"Unknown key {key}")
+            logger.error(f"Unknown key {key}")
             return False
 
     @staticmethod
