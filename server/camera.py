@@ -184,6 +184,15 @@ class CaptureDevice(object):
         _, text_h = cv2.getTextSize(text="ODO", fontFace=font, fontScale=fontScale, thickness=thickness)[0]
         cv2.putText(frame, f"ODO: {motor_status['abs_distance'] / 1000:.2f} m", (5, 5 + text_h), font, fontScale, color, thickness)
 
+        # Mode
+        mode = "REM"
+        if Camera.face_detection:
+            mode = "fD"
+        elif Motor.is_patrolling():
+            mode = "PAT"
+        text_w, text_h = cv2.getTextSize(text=mode, fontFace=font, fontScale=fontScale, thickness=thickness)[0]
+        cv2.putText(frame, mode, (self.res_x - text_w - 5, 5 + text_h), font, fontScale, color, thickness)
+
         # Left
         cv2.putText(frame, f"{motor_status['left']['speed_rpm']} RPM", (5, self.res_y - 15), font, fontScale, color, thickness)
         cv2.rectangle(frame, (5, self.res_y - 50), (5 + 40, self.res_y - 50 - 400), color, thickness)
@@ -286,13 +295,13 @@ class Camera(object):
 
     @staticmethod
     def setup():
-        Camera.available_device = get_camera_index()
         Camera.center_position()
         Camera.follow_face_speed = Config.get("follow_face_speed")
         Camera.servo_center_position = Config.get("camera_center_position")
         Camera.framerate = Config.get("capturing_framerate")
-        if Config.get('front_capturing_device') == "usb" and Camera.available_device is None:
-            Camera.status = "KO"
+        if Config.get('front_capturing_device') == "usb":
+            Camera.available_device = get_camera_index()
+            Camera.status = "KO" if Camera.available_device is None else "OK"
         else:
             Camera.status = "OK"
 

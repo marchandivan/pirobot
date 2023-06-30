@@ -92,7 +92,7 @@
     },
     "capturing_framerate": {
       "type": "int",
-      "default": 5,
+      "default": 20,
       "need_setup": true,
       "category": "camera"
     },

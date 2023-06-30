@@ -14,7 +14,7 @@ class SpeedController(object):
     https://www.instructables.com/Speed-Control-of-DC-Motor-Using-PID-Algorithm-STM3/
     """
     KP = 1.0
-    KI = 100 #/ Config.get('max_rpm')
+    KI = 100
     KD = 0.1 * SPEED_REFRESH_INTERVAL
 
     def __init__(self, interval):
@@ -203,8 +203,12 @@ class DFRobotMotor(object):
         DFRobotMotor._schedule_event(duration, DFRobotMotor.stop)
 
     @staticmethod
-    def patrol(speed, timeout):
-        pass # Not implemented
+    def patrol():
+        pass  # Not implemented
+
+    @staticmethod
+    def is_patrolling():
+        return False
 
     @staticmethod
     def get_motor_status():

@@ -73,6 +73,10 @@ class Motor(object):
         Motor._controller.patrol()
 
     @staticmethod
+    def is_patrolling():
+        return Motor._controller.is_patrolling()
+
+    @staticmethod
     def serialize():
         left_status, right_status = Motor._controller.get_motor_status()
         distance, abs_distance = Motor._controller.get_distance()
