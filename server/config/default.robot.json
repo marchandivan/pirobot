@@ -149,7 +149,7 @@
     },
     "follow_face_speed": {
       "type": "int",
-      "default": 20,
+      "default": 50,
       "need_setup": true,
       "category": "robot"
     },
