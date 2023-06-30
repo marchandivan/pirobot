@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 DEFAULT_CONFIG = {
-    "robot_name": "PiRobot",
     "robot_config": "pirobot",
     "log_file": None,
     "message_log_file": None,
@@ -175,6 +174,16 @@ class Config(Base):
         return False
 
     @staticmethod
+    def need_setup(key):
+        if key in Config.CONFIG_KEYS:
+            need_setup = Config.CONFIG_KEYS[key].get("need_setup", [])
+            if type(need_setup) == str:
+                return [need_setup]
+            else:
+                return need_setup
+        return []
+
+    @staticmethod
     def is_valid(key, value):
         config = Config.CONFIG_KEYS.get(key)
         if config is not None:
@@ -205,19 +214,23 @@ class Config(Base):
         return config
 
     @staticmethod
-    def process(message, server):
+    def process(message, protocol):
+        success = False
+        need_setup = []
         if message["action"] == "get":
-            server.send_message(
+            success = True
+            protocol.send_message(
                 {
                     "type": "configuration",
                     "action": "get",
                     "config": Config.get_config(),
-                    "success": True,
+                    "success": success,
                 }
             )
         elif message["action"] == "update":
             success = Config.save(message["args"]["key"], message["args"]["value"])
-            server.send_message(
+            need_setup = Config.need_setup(message["args"]["key"])
+            protocol.send_message(
                 {
                     "type": "configuration",
                     "action": "update",
@@ -227,7 +240,8 @@ class Config(Base):
             )
         elif message["action"] == "delete":
             success = Config.delete(message["args"]["key"])
-            server.send_message(
+            need_setup = Config.need_setup(message["args"]["key"])
+            protocol.send_message(
                 {
                     "type": "configuration",
                     "action": "delete",
@@ -235,3 +249,4 @@ class Config(Base):
                     "success": success,
                 }
             )
+        return success, need_setup

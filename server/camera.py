@@ -265,6 +265,7 @@ class Camera(object):
     streaming = False
     capturing = False
     capturing_thread = None
+    framerate = 5
     overlay = True
     selected_camera = "front"
     face_detection = False
@@ -288,6 +289,7 @@ class Camera(object):
         Camera.center_position()
         Camera.follow_face_speed = Config.get("follow_face_speed")
         Camera.servo_center_position = Config.get("camera_center_position")
+        Camera.framerate = Config.get("capturing_framerate")
         if Config.get('front_capturing_device') == "usb" and Camera.available_device is None:
             Camera.status = "KO"
         else:
@@ -351,9 +353,8 @@ class Camera(object):
                                                       capturing_device=arm_capturing_device,
                                                       angle=arm_angle)
 
-        framerate = Config.get('capturing_framerate')
         Camera.capturing = True
-        frame_delay = 1.0 / framerate
+        frame_delay = 1.0 / Camera.framerate
         last_frame_ts = 0
         while Camera.capturing:
             try:
@@ -362,6 +363,7 @@ class Camera(object):
                     Camera.arm_capture_device.grab()
                 now = time.time()
                 if now > last_frame_ts + frame_delay:
+                    frame_delay = 1.0 / Camera.framerate
                     last_frame_ts = now
                     if Camera.arm_capture_device is None or Camera.selected_camera == "front":
                         frame = Camera.front_capture_device.retrieve()

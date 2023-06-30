@@ -27,6 +27,12 @@ class Server(object):
 
     @staticmethod
     async def setup():
+        # Open UART Port
+        await UART.open()
+        Server._setup()
+
+    @staticmethod
+    def _setup():
         # Get capability flags for the robot
         Server.robot_has_speaker = Config.get("robot_has_speaker")
         Server.robot_has_screen = Config.get("robot_has_screen")
@@ -58,9 +64,6 @@ class Server(object):
         else:
             Server.lcd = None
             Server.terminal = None
-
-        # Open UART Port
-        await UART.open()
 
         # Motor Initialization
         Motor.setup()
@@ -99,7 +102,7 @@ class Server(object):
         Motor.stop()
 
     @staticmethod
-    def process(message, server):
+    def process(message, protocol):
         # Motor
         if message["type"] == "motor":
             if message["action"] == "move":
@@ -135,13 +138,18 @@ class Server(object):
             if message["action"] == "display_picture":
                 Server.set_lcd_picture(message["args"]["name"])
         elif message["type"] == "configuration":
-            Config.process(message, server)
+            success, need_setup = Config.process(message, protocol)
+            if success:
+                if need_setup:
+                    Server._setup()
+                # Update status
+                Server.send_status(protocol)
 
     @staticmethod
     def send_status(protocol):
         status = {
             "type": "status",
-            "robot_name": Config.robot_name
+            "robot_name": Config.get("robot_name")
         }
         protocol.send_message(status)
 

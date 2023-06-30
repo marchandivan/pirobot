@@ -29,9 +29,15 @@
       "default": 137,
       "category": "motor"
     },
+    "robot_name": {
+      "type": "str",
+      "default": "PiRobot",
+      "category": "robot"
+    },
     "wheel_d": {
       "type": "int",
       "default": 66,
+      "need_setup": true,
       "category": "robot"
     },
     "show_mock_screen": {
@@ -85,8 +91,9 @@
       "category": "camera"
     },
     "capturing_framerate": {
-      "type": "float",
-      "default": 5.0,
+      "type": "int",
+      "default": 5,
+      "need_setup": true,
       "category": "camera"
     },
     "robot_has_arm": {
@@ -122,6 +129,7 @@
     "camera_center_position": {
       "type": "int",
       "default": 60,
+      "need_setup": true,
       "category": "camera"
     },
     "voice_id": {
@@ -142,6 +150,7 @@
     "follow_face_speed": {
       "type": "int",
       "default": 20,
+      "need_setup": true,
       "category": "robot"
     },
     "motor_patrol_speed": {
@@ -152,31 +161,37 @@
     "motor_steps_per_rotation": {
       "type": "int",
       "default": 660,
+      "need_setup": true,
       "category": "motor"
     },
     "motor_min_distance": {
       "type": "float",
       "default": 0.01,
+      "need_setup": true,
       "category": "motor"
     },
     "motor_max_rpm": {
       "type": "int",
       "default": 90,
+      "need_setup": true,
       "category": "motor"
     },
     "motor_kp": {
       "type": "float",
       "default": 0.5,
+      "need_setup": true,
       "category": "motor"
     },
     "motor_ki": {
       "type": "float",
       "default": 1.0,
+      "need_setup": true,
       "category": "motor"
     },
     "motor_kd": {
       "type": "float",
       "default": 0.003,
+      "need_setup": true,
       "category": "motor"
     }
   }
