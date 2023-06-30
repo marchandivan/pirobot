@@ -70,7 +70,7 @@ class Motor(object):
                 duration=timeout,
                 distance=target_distance,
                 rotation=None,
-                auto_stop=True
+                auto_stop=False
             )
 
     @staticmethod

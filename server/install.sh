@@ -1,7 +1,7 @@
 APP_NAME=pirobot
 DAEMON_NAME=pirobotd
 
-pyinstaller manage.py -F -n $DAEMON_NAME
+pyinstaller manage.py --collect-all cv2 -F -n $DAEMON_NAME
 
 sudo cp dist/$DAEMON_NAME /usr/local/bin/
 sudo mkdir -p /etc/$APP_NAME
