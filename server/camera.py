@@ -124,7 +124,8 @@ class CaptureDevice(object):
         add_circle(right_us_distance, 45)
 
     def detect_face(self, frame):
-        if self.frame_counter % 2 == 0:
+        # Run face detection every second
+        if self.frame_counter % Camera.framerate == 0:
             self.face = None
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = face_cascade.detectMultiScale(gray, 1.1, 4)
