@@ -343,7 +343,7 @@ class Camera(object):
         Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
                                                     capturing_device=front_capturing_device,
                                                     angle=front_angle)
-        if arm_capturing_device is None:
+        if arm_capturing_device is None or arm_capturing_device == "none":
             if platform.machine() not in ["aarch", "aarch64"] and Config.get('robot_has_back_camera'):
                 Camera.arm_capture_device = Camera.front_capture_device
             else:
