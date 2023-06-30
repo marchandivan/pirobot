@@ -14,10 +14,13 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 DEFAULT_CONFIG = {
-    "config_name": "pirobot",
+    "robot_name": "PiRobot",
+    "robot_config": "pirobot",
     "log_file": None,
     "message_log_file": None,
     "log_level": "INFO",
+    "video_server_port": 8001,
+    "server_port": 8000
 }
 
 
@@ -26,6 +29,9 @@ class Config(Base):
     CONFIG_KEYS = None
     USER_CONFIG_DIR = os.path.join(os.environ["HOME"], ".pirobot")
     db_engine = None
+    db_session = None
+    user_config = None
+    robot_name = None
 
     __tablename__ = 'server_config'
 
@@ -51,33 +57,34 @@ class Config(Base):
             return value
 
     @staticmethod
-    def setup(config_name):
+    def setup(robot_config):
 
-        user_config = configparser.ConfigParser(defaults=DEFAULT_CONFIG, default_section="pirobot", allow_no_value=True)
-        user_config.read(["/etc/config/pirobot.config", os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")])
+        Config.user_config = configparser.ConfigParser(defaults=DEFAULT_CONFIG, default_section="pirobot", allow_no_value=True)
+        Config.user_config.read(["/etc/config/pirobot.config", os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")])
 
         # Setup logger
         RobotLogger.setup_logger(
-            app_log_file=user_config.get("pirobot", "log_file"),
-            message_log_file=user_config.get("pirobot", "message_log_file"),
-            level=user_config.get("pirobot", "log_level")
+            app_log_file=Config.user_config.get("pirobot", "log_file"),
+            message_log_file=Config.user_config.get("pirobot", "message_log_file"),
+            level=Config.user_config.get("pirobot", "log_level")
         )
-        if config_name is None:
-            config_name = user_config.get("pirobot", "config_name")
+        if robot_config is None:
+            robot_config = Config.user_config.get("pirobot", "robot_config")
 
-        logger.info(f"Starting robot with config {config_name}")
+        Config.robot_name = Config.user_config.get("pirobot", "robot_name")
+        logger.info(f"Starting robot with config {robot_config}")
 
         config_file_dir = os.path.join(os.path.dirname(__file__), "config")
         if not os.path.isdir(config_file_dir):
             config_file_dir = "/etc/pirobot/config"
-        config_file_path = os.path.join(config_file_dir, f"{config_name}.config.json")
-        if os.path.isfile(config_name):
-            config_file_path = config_name
+        config_file_path = os.path.join(config_file_dir, f"{robot_config}.robot.json")
+        if os.path.isfile(robot_config):
+            config_file_path = robot_config
         elif not os.path.isfile(config_file_path):
-            logger.warning(f"Warning: Invalid config file {config_name}, using default instead")
-            config_file_path = os.path.join(config_file_dir, "pirobot.config.json")
+            logger.warning(f"Warning: Invalid config file {robot_config}, using default instead")
+            config_file_path = os.path.join(config_file_dir, "pirobot.robot.json")
         with open(config_file_path) as config_file:
-            Config.CONFIG_KEYS = json.load(config_file)
+            Config.CONFIG_KEYS = Config.load_config_file(config_file_dir, config_file)
 
         db_file_path = os.path.join(Config.USER_CONFIG_DIR, "db.sqlite3")
         Config.db_engine = create_engine(f"sqlite:///{db_file_path}")
@@ -88,9 +95,29 @@ class Config(Base):
         Config.session_maker = sessionmaker(bind=Config.db_engine)
 
     @staticmethod
+    def merge_config(left_config, right_config):
+        merged_config = {}
+        for config_name in left_config.keys():
+            merged_config[config_name] = left_config[config_name]
+            merged_config[config_name].update(right_config.get(config_name, {}))
+        return merged_config
+
+    @staticmethod
+    def load_config_file(config_file_dir, config_file):
+        robot_config = json.load(config_file)
+        if "include" in robot_config:
+            with open(os.path.join(config_file_dir, robot_config["include"])) as include_config_file:
+                robot_config = Config.merge_config(
+                    json.load(include_config_file)["config"], robot_config.get("config", {})
+                )
+        return robot_config
+
+    @staticmethod
     def get_session():
         if Config.db_engine is not None:
-            return Config.session_maker()
+            if Config.db_session is None:
+                Config.db_session = Config.session_maker()
+            return Config.db_session
         else:
             logger.error("DB Engine not found, run setup() first")
 
@@ -105,6 +132,14 @@ class Config(Base):
             if c is not None:
                 return Config._convert_to_type(c.value, config.get("type"))
         return config.get("default")
+
+    @staticmethod
+    def get_video_server_port():
+        return int(Config.user_config.get("pirobot", "video_server_port"))
+
+    @staticmethod
+    def get_server_port():
+        return int(Config.user_config.get("pirobot", "server_port"))
 
     @staticmethod
     def get_from_db(session, key):
@@ -157,16 +192,46 @@ class Config(Base):
     def get_config():
         config = {}
         for key, key_config in Config.CONFIG_KEYS.items():
-            config[key] = dict(value=Config.get(key), type=key_config.get("type"), default=key_config.get("default"))
+            config[key] = key_config.copy()
+            config[key]["value"] = Config.get(key)
         return config
 
     @staticmethod
     def export_config():
         config = {}
         for key, key_config in Config.CONFIG_KEYS.items():
-            if  key_config.get('export', False):
+            if key_config.get('export', False):
                 config[key] = Config.get(key)
         return config
 
-    def __str__(self):
-        return self.key
+    @staticmethod
+    def process(message, server):
+        if message["action"] == "get":
+            server.send_message(
+                {
+                    "type": "configuration",
+                    "action": "get",
+                    "config": Config.get_config(),
+                    "success": True,
+                }
+            )
+        elif message["action"] == "update":
+            success = Config.save(message["args"]["key"], message["args"]["value"])
+            server.send_message(
+                {
+                    "type": "configuration",
+                    "action": "update",
+                    "config": Config.get_config(),
+                    "success": success,
+                }
+            )
+        elif message["action"] == "delete":
+            success = Config.delete(message["args"]["key"])
+            server.send_message(
+                {
+                    "type": "configuration",
+                    "action": "delete",
+                    "config": Config.get_config(),
+                    "success": success,
+                }
+            )

@@ -286,8 +286,8 @@ class Camera(object):
     def setup():
         Camera.available_device = get_camera_index()
         Camera.center_position()
-        Camera.lense_coeff_x_pos = Config.get("lense_coeff_x_pos")
         Camera.follow_face_speed = Config.get("follow_face_speed")
+        Camera.servo_center_position = Config.get("camera_center_position")
         if Config.get('front_capturing_device') == "usb" and Camera.available_device is None:
             Camera.status = "KO"
         else:
@@ -464,7 +464,7 @@ class Camera(object):
         y_pos = H * math.tan(a)
 
         x_pos = (MAX_DISTANCE / (MAX_DISTANCE - min(y_pos, MAX_DISTANCE - 0.1))) * ((x - 50) / 50) * ROBOT_WIDTH/2
-        return x_pos * Camera.lense_coeff_x_pos, y_pos
+        return x_pos * Config.get("lense_coeff_x_pos"), y_pos
 
     @staticmethod
     def capture_image(camera):

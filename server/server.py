@@ -35,9 +35,6 @@ class Server(object):
         if Server.robot_has_speaker:
             # Voice
             Server.voice_engine = pyttsx3.init()
-            Server.voice_engine.setProperty('voice', Config.get("voice_id"))
-            Server.voice_engine.setProperty('rate', Config.get("voice_rate"))
-            Server.voice_engine.setProperty('volume', Config.get("voice_volume"))
 
             # SFX
             SFX.setup()
@@ -102,7 +99,7 @@ class Server(object):
         Motor.stop()
 
     @staticmethod
-    def process(message):
+    def process(message, server):
         # Motor
         if message["type"] == "motor":
             if message["action"] == "move":
@@ -137,6 +134,16 @@ class Server(object):
         elif message["type"] == "lcd" and Server.robot_has_screen:
             if message["action"] == "display_picture":
                 Server.set_lcd_picture(message["args"]["name"])
+        elif message["type"] == "configuration":
+            Config.process(message, server)
+
+    @staticmethod
+    def send_status(protocol):
+        status = {
+            "type": "status",
+            "robot_name": Config.robot_name
+        }
+        protocol.send_message(status)
 
     @staticmethod
     def play_message(destination, message):
@@ -149,7 +156,6 @@ class Server(object):
                     Server.set_lcd_picture(args[0])
                     message = None
                 elif command == "play":
-                    print(args)
                     message = Games.play(args[0], args[1:])
                 else:
                     message = None
@@ -163,6 +169,9 @@ class Server(object):
                 if Server.voice_engine._inLoop:
                     Server.voice_engine.endLoop()
 
+                Server.voice_engine.setProperty('voice', Config.get("voice_id"))
+                Server.voice_engine.setProperty('rate', Config.get("voice_rate"))
+                Server.voice_engine.setProperty('volume', Config.get("voice_volume"))
                 Server.voice_engine.say(message)
                 Server.voice_engine.runAndWait()
 

@@ -1,0 +1,17 @@
+{
+  "include": "default.robot.json",
+  "config": {
+    "robot_width": {
+      "default": 175
+    },
+    "wheel_d": {
+      "default": 84
+    },
+    "motor_steps_per_rotation": {
+      "default": 230
+    },
+    "motor_max_rpm": {
+      "default": 200
+    }
+  }
+}

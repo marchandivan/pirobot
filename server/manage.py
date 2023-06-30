@@ -34,10 +34,10 @@ class VideoServerProtocol(asyncio.Protocol):
             if self.client_ready.is_set() or now > self.last_frame_ts + VideoServerProtocol.NEW_FRAME_TIMEOUT:
                 self.last_frame_ts = now
                 self.transport.write(struct.pack("Q", len(frame)) + frame)
-                RobotLogger.log_message("VIDEO_SOCKET", "S", f"New frame of size {len(frame)}")
+                #RobotLogger.log_message("VIDEO_SOCKET", "S", f"New frame of size {len(frame)}")
                 self.client_ready.clear()
             else:
-                logger.info("Client not ready, skipping frame")
+                logger.debug("Client not ready, skipping frame")
 
     def data_received(self, data):
         self.buffer += data.decode()
@@ -46,7 +46,7 @@ class VideoServerProtocol(asyncio.Protocol):
             if pos > 0:
                 message = self.buffer[:pos]
                 self.buffer = self.buffer[pos + 1:]
-                RobotLogger.log_message("VIDEO_SOCKET", "R", message)
+                #RobotLogger.log_message("VIDEO_SOCKET", "R", message)
                 if message == "RDY":
                     self.client_ready.set()
             else:
@@ -68,7 +68,11 @@ class VideoServerProtocol(asyncio.Protocol):
 async def run_video_server():
     loop = asyncio.get_running_loop()
     server_video = await loop.create_server(
-        lambda: VideoServerProtocol(), port=8001, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
+        lambda: VideoServerProtocol(),
+        port=Config.get_video_server_port(),
+        reuse_address=True,
+        family=socket.AF_INET,
+        flags=socket.SOCK_STREAM
     )
 
     async with server_video:
@@ -79,10 +83,13 @@ class ServerProtocol(asyncio.Protocol):
 
     def __init__(self):
         self.buffer = ""
+        self.transport = None
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
         logger.info('Connection to server from {}'.format(peername))
+        self.transport = transport
+        Server.send_status(self)
 
     def data_received(self, data):
         self.buffer += data.decode()
@@ -95,7 +102,7 @@ class ServerProtocol(asyncio.Protocol):
                 try:
                     message = json.loads(message)
                     if "type" in message:
-                        Server.process(message)
+                        Server.process(message, self)
                 except:
                     logger.error(f"Unable to process message {message}", exc_info=True)
             else:
@@ -104,12 +111,23 @@ class ServerProtocol(asyncio.Protocol):
     def connection_lost(self, exc):
         logger.info("The client closed the connection to server")
         Server.connection_lost()
+        self.transport = None
+
+    def send_message(self, message):
+         if self.transport is not None:
+            message_str = json.dumps(message)
+            RobotLogger.log_message("SOCKET", "S", message_str)
+            self.transport.write(message_str.encode() + b"\n")
 
 
 async def run_server():
     loop = asyncio.get_running_loop()
     server_socket = await loop.create_server(
-        lambda: ServerProtocol(), port=8000, reuse_address=True, family=socket.AF_INET, flags=socket.SOCK_STREAM
+        lambda: ServerProtocol(),
+        port=Config.get_server_port(),
+        reuse_address=True,
+        family=socket.AF_INET,
+        flags=socket.SOCK_STREAM
     )
 
     async with server_socket:
@@ -161,7 +179,7 @@ def configure(action, key, value):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Start robot')
-    parser.add_argument('-c', '--config', type=str, help='Config name or config file path')
+    parser.add_argument('-c', '--config', type=str, help='Robot config name or config file path')
     subparsers = parser.add_subparsers(dest="command")
 
     # Run server parameters
