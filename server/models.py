@@ -30,7 +30,6 @@ class Config(Base):
     db_engine = None
     db_session = None
     user_config = None
-    robot_name = None
 
     __tablename__ = 'server_config'
 
@@ -70,7 +69,6 @@ class Config(Base):
         if robot_config is None:
             robot_config = Config.user_config.get("pirobot", "robot_config")
 
-        Config.robot_name = Config.user_config.get("pirobot", "robot_name")
         logger.info(f"Starting robot with config {robot_config}")
 
         config_file_dir = os.path.join(os.path.dirname(__file__), "config")
