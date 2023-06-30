@@ -187,7 +187,7 @@ class CaptureDevice(object):
         # Mode
         mode = "REM"
         if Camera.face_detection:
-            mode = "fD"
+            mode = "FD"
         elif Motor.is_patrolling():
             mode = "PAT"
         text_w, text_h = cv2.getTextSize(text=mode, fontFace=font, fontScale=fontScale, thickness=thickness)[0]

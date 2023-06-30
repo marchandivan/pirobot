@@ -537,6 +537,7 @@ class RobotState:
     CONNECTION_LOST = 2
     READY = 3
 
+
 class StatusHandler(object):
     FAST_BLINK_INTERVAL = 0.25
     SLOW_BLINK_INTERVAL = 1.5
@@ -596,7 +597,6 @@ class StatusHandler(object):
                 # Stop robot if connection is lost
                 patroller_handler.stop()
                 motor_handler.stop()
-                
 
         # Send keepalive message? Sent every ITO/2
         if now > self.last_keepalive_ts + StatusHandler.ITO * 500:
@@ -667,15 +667,16 @@ def process_command(cmd):
     sensor = command[0]
     args = command[1:]
     if sensor == "M":
-        return motor_handler.process_command(args)
+        sucess, data = motor_handler.process_command(args)
     elif sensor == "P":
-        return patroller_handler.process_command(args)
+        sucess, data = patroller_handler.process_command(args)
     elif sensor == "S":
-        return servo_handler.process_command(args)
+        sucess, data = servo_handler.process_command(args)
     elif sensor == "K":
-        return status_handler.process_command(args)
+        sucess, data = status_handler.process_command(args)
     else:
-        return False, f"Unknown sensor {sensor}"
+        sucess, data = False, "Unknown sensor"
+    return sensor, sucess, data
 
 try:
     buffer = ""
@@ -689,8 +690,8 @@ try:
                     if pos > 0:
                         command = buffer[:pos]
                         buffer = buffer[pos + 1:]
-                        success, data = process_command(command)
-                        print(success, data)
+                        sensor, success, data = process_command(command)
+                        print(sensor, success, data)
                     else:
                         break
                     

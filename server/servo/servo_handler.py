@@ -1,7 +1,7 @@
 from uart import UART
 
 
-class ServoHandler():
+class ServoHandler:
 
     @staticmethod
     def move(servo_id, position):

@@ -42,13 +42,16 @@ class Motor(object):
     def move_to_target(x, y, speed, timeout):
         orientation = 'F' if y >= 0 else 'B'
         if x == 0:
-            Motor._controller.move(left_orientation=orientation,
-                                   left_speed=speed,
-                                   right_orientation=orientation,
-                                   right_speed=speed,
-                                   duration=timeout,
-                                   distance=y,
-                                   rotation=None)
+            Motor._controller.move(
+                left_orientation=orientation,
+                left_speed=speed,
+                right_orientation=orientation,
+                right_speed=speed,
+                duration=timeout,
+                distance=y,
+                rotation=None,
+                auto_stop=False
+            )
         else:
             R = (y*y + x*x) / (2 * abs(x))
             alpha = math.asin(y / R)
@@ -59,14 +62,16 @@ class Motor(object):
             else:
                 right_speed = speed
                 left_speed = speed * (R / (R + Motor.robot_width / 1000))
-            Motor._controller.move(left_orientation=orientation,
-                                   left_speed=left_speed,
-                                   right_orientation=orientation,
-                                   right_speed=right_speed,
-                                   duration=timeout,
-                                   distance=target_distance,
-                                   rotation=None,
-                                   auto_stop=True)
+            Motor._controller.move(
+                left_orientation=orientation,
+                left_speed=left_speed,
+                right_orientation=orientation,
+                right_speed=right_speed,
+                duration=timeout,
+                distance=target_distance,
+                rotation=None,
+                auto_stop=True
+            )
 
     @staticmethod
     def patrol():

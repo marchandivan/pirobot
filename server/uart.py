@@ -98,7 +98,8 @@ class UART:
         try:
             loop = asyncio.get_event_loop()
             UART.serial_port, protocol = await serial_asyncio.create_serial_connection(
-                loop=loop, protocol_factory=OutputProtocol,
+                loop=loop,
+                protocol_factory=OutputProtocol,
                 url=Config.get("uart_port"),
                 baudrate=Config.get("uart_baudrate"),
                 bytesize=serial.EIGHTBITS,
