@@ -295,9 +295,9 @@ class Camera(object):
 
     @staticmethod
     def setup():
-        Camera.center_position()
         Camera.follow_face_speed = Config.get("follow_face_speed")
         Camera.servo_center_position = Config.get("camera_center_position")
+        Camera.center_position()
         Camera.framerate = Config.get("capturing_framerate")
         if Config.get('front_capturing_device') == "usb":
             Camera.available_device = get_camera_index()
