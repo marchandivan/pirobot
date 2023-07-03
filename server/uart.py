@@ -114,7 +114,7 @@ class UART:
         try:
             message = data + "\n"
             if UART.serial_port is not None:
-                UART.serial_port.flush()
+                #UART.serial_port.flush()
                 UART.serial_port.write(message.encode())
                 RobotLogger.log_message("UART", "S", data)
             else:
