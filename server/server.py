@@ -149,7 +149,8 @@ class Server(object):
     def send_status(protocol):
         status = {
             "type": "status",
-            "robot_name": Config.get("robot_name")
+            "robot_name": Config.get("robot_name"),
+            "config": Config.export_config(),
         }
         protocol.send_message(status)
 
