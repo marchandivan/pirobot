@@ -1,5 +1,6 @@
 import random
 
+
 class EightBallGame(object):
     answers = [
         "It is certain.",
@@ -28,6 +29,7 @@ class EightBallGame(object):
     def play(args):
         return random.choice(EightBallGame.answers)
 
+
 class Dice(object):
 
     @staticmethod
@@ -36,6 +38,7 @@ class Dice(object):
             return random.choice(args)
         else:
             return random.choice([str(d) for d in range(1, 6)])
+
 
 class Games(object):
     games = {

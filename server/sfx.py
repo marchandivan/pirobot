@@ -1,5 +1,8 @@
-from pygame import mixer
+import logging
 import os
+from pygame import mixer
+
+logger = logging.getLogger(__name__)
 
 
 class SFX(object):
@@ -18,4 +21,4 @@ class SFX(object):
             mixer.Sound(file_path).play()
 
         else:
-            print(f"SFX not found: {name}")
+            logger.warning(f"SFX not found: {name}")

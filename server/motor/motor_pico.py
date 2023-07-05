@@ -1,7 +1,10 @@
+import logging
 import math
 
 from models import Config
 from uart import UART, MessageOriginator, MessageType
+
+logger = logging.getLogger(__name__)
 
 
 class PicoMotor(object):
@@ -46,8 +49,8 @@ class PicoMotor(object):
         ki = Config.get("motor_ki")
         kd = Config.get("motor_kd")
         UART.write(f"M:C:{steps_per_rotation}:{min_distance}:{max_rpm}:{kp}:{ki}:{kd}")
-
         UART.register_consumer("motor_controller", PicoMotor, MessageOriginator.motor, MessageType.status)
+        logger.info("Successfully initialized motor controller")
 
     @staticmethod
     def receive_uart_message(message, originator, message_type):

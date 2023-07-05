@@ -1,9 +1,12 @@
+import logging
 import math
 import time
 from threading import Semaphore, Timer
 
 from motor.DFRobot_RaspberryPi_DC_Motor import DFRobot_DC_Motor_IIC
 from models import Config
+
+logger = logging.getLogger(__name__)
 
 SPEED_REFRESH_INTERVAL = 0.1  # in seconds
 
@@ -114,7 +117,7 @@ class DFRobotMotor(object):
             time.sleep(1)
             max_retry -= 1
         if max_retry == 0:
-            print(f"Board begin failed: {DFRobotMotor._iic_motor.last_operate_status}")
+            logger.error(f"Board begin failed: {DFRobotMotor._iic_motor.last_operate_status}")
             DFRobotMotor.status = "KO"
         return DFRobotMotor.status
 

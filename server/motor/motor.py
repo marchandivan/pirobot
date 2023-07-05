@@ -1,8 +1,11 @@
+import logging
 import math
 
 from models import Config
 from motor.motor_dfrobot import DFRobotMotor
 from motor.motor_pico import PicoMotor
+
+logger = logging.getLogger(__name__)
 
 MOTOR_CONTROLLERS = dict(
     dfrobot=DFRobotMotor,
@@ -22,7 +25,7 @@ class Motor(object):
         if Motor._controller is not None:
             Motor._controller.setup()
         else:
-            print(f"Unknonw motor controller: {motor_controller}")
+            logger.error(f"Unknown motor controller: {motor_controller}")
         Motor.wheel_d = Config.get("wheel_d")
         Motor.robot_width = Config.get("robot_width")
 
