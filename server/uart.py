@@ -89,6 +89,10 @@ class UART:
             consumer_config.consumer.receive_uart_message(message_parts[2:], originator, message_type)
 
     @staticmethod
+    def ready():
+        return UART.serial_port is not None
+
+    @staticmethod
     async def open():
         if UART.serial_port is None:
             await UART.open_serial_port()
@@ -114,7 +118,6 @@ class UART:
         try:
             message = data + "\n"
             if UART.serial_port is not None:
-                #UART.serial_port.flush()
                 UART.serial_port.write(message.encode())
                 RobotLogger.log_message("UART", "S", data)
             else:

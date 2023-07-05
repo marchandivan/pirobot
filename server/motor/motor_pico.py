@@ -1,5 +1,6 @@
 import logging
 import math
+import time
 
 from models import Config
 from uart import UART, MessageOriginator, MessageType
@@ -48,9 +49,18 @@ class PicoMotor(object):
         kp = Config.get("motor_kp")
         ki = Config.get("motor_ki")
         kd = Config.get("motor_kd")
-        UART.write(f"M:C:{steps_per_rotation}:{min_distance}:{max_rpm}:{kp}:{ki}:{kd}")
+        success = False
+        for i in range(20):
+            if UART.ready():
+                success = True
+                UART.write(f"M:C:{steps_per_rotation}:{min_distance}:{max_rpm}:{kp}:{ki}:{kd}")
+                break
+            time.sleep(0.1)
+        if success:
+            logger.info("Successfully initialized motor controller")
+        else:
+            logger.error("Unable to initialized motor controller")
         UART.register_consumer("motor_controller", PicoMotor, MessageOriginator.motor, MessageType.status)
-        logger.info("Successfully initialized motor controller")
 
     @staticmethod
     def receive_uart_message(message, originator, message_type):
