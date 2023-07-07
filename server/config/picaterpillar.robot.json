@@ -42,6 +42,9 @@
     },
     "motor_kd": {
       "default": 0.05
+    },
+    "robot_us_sensors": {
+      "default": "front_and_side"
     }
   }
 }
