@@ -185,7 +185,7 @@
     },
     "motor_min_distance": {
       "type": "float",
-      "default": 0.01,
+      "default": 0.1,
       "need_setup": true,
       "category": "motor"
     },

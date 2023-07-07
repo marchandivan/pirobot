@@ -383,7 +383,7 @@ class MotorHandler(object):
         return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}:{self.initialized}:{self.is_timeout}"
 
     def adjust_speed(self, current_speed, new_speed):
-        if new_speed < 0.05:  # Speed bellow 20 RPM, stop
+        if new_speed < 0.1:  # Speed bellow 10% of max speedq, stop
             self.stop()
         else:
             self.left_ref_speed = self.left_ref_speed * new_speed / current_speed
@@ -405,7 +405,10 @@ class MotorHandler(object):
                     min_distance = max(0.5 * speed, self.min_distance)
                     distance_to_closest_object = min(distances)
                     if speed > 0 and distance_to_closest_object < min_distance and self.left_duty > 0 and self.right_duty > 0:
-                        self.adjust_speed(speed, distance_to_closest_object / 0.5)
+                        if distance_to_closest_object < self.min_distance:
+                            self.stop()
+                        else:
+                            self.adjust_speed(speed, distance_to_closest_object / 0.5)
                              
                 self.previous_distances = distances
 
@@ -544,7 +547,6 @@ class PatrollerHandler(object):
                 # No distance data, stop the robot
                 self.stop()
             elif min(distances) > min_distance:
-                print("Forward")
                 self.motor_handler.move(
                     left_direction="F",
                     left_speed=self.speed,
@@ -559,17 +561,16 @@ class PatrollerHandler(object):
                     right_direction="B",
                     right_speed=self.speed,
                     timeout=10,
-                    differential_nb_of_revolutions=5.0
+                    differential_nb_of_revolutions=1.0
                 )
             else:
-                print("Left")
                 self.motor_handler.move(
                     left_direction="B",
                     left_speed=self.speed,
                     right_direction="F",
                     right_speed=self.speed,
                     timeout=10,
-                    differential_nb_of_revolutions=5.0
+                    differential_nb_of_revolutions=1.0
                 )
 
     def stop(self):
