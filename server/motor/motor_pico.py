@@ -9,15 +9,17 @@ logger = logging.getLogger(__name__)
 
 
 class PicoMotor(object):
+    INIT_REFRESH_INTERVAL = 2.0  # Interval at which we check the initialization status
+
     status = "UK"
 
     distance = 0.0
     abs_distance = 0.0
     rotation = 0.0
     original_rotation = None
-    left_us_distance = 0.0
-    front_us_distance = 0.0
-    right_us_distance = 0.0
+    left_us_distance = None
+    front_us_distance = None
+    right_us_distance = None
     pos_x = 0
     pos_y = 0
 
@@ -36,9 +38,12 @@ class PicoMotor(object):
     obstacles = []
     patrolling = False
 
+    last_init_ts = 0.0
+
     @staticmethod
     def setup():
         # Motor Initialization
+        PicoMotor.last_init_ts = time.time()
         PicoMotor.max_rpm = Config.get("motor_max_rpm")
         PicoMotor.wheel_d = Config.get("wheel_d")
         PicoMotor.robot_width = Config.get("robot_width")
@@ -53,6 +58,15 @@ class PicoMotor(object):
         for i in range(20):
             if UART.ready():
                 success = True
+                # Config ultrasonic sensors
+                robot_us_sensor = Config.get("robot_us_sensors")
+                if robot_us_sensor == "front":
+                    UART.write("U:C:N:Y:N")
+                elif robot_us_sensor == "front_and_side":
+                    UART.write("U:C:Y:Y:Y")
+                else:
+                    UART.write("U:C:N:N:N")
+                # Configure Motor Handler
                 UART.write(f"M:C:{steps_per_rotation}:{min_distance}:{max_rpm}:{kp}:{ki}:{kd}")
                 break
             time.sleep(0.1)
@@ -71,9 +85,12 @@ class PicoMotor(object):
         PicoMotor.distance = float(message[4]) * math.pi * PicoMotor.wheel_d / 1000
         PicoMotor.abs_distance = float(message[5]) * math.pi * PicoMotor.wheel_d
         PicoMotor.rotation = float(message[6]) * 180 * PicoMotor.wheel_d / PicoMotor.robot_width
-        PicoMotor.left_us_distance = float(message[7])
-        PicoMotor.front_us_distance = float(message[8])
-        PicoMotor.right_us_distance = float(message[9])
+        PicoMotor.left_us_distance = float(message[7]) if message[7] != "null" else None
+        PicoMotor.front_us_distance = float(message[8]) if message[8] != "null" else None
+        PicoMotor.right_us_distance = float(message[9]) if message[9] != "null" else None
+        is_controller_initialized = message[10].lower() in ("y", "true")
+        if not is_controller_initialized and time.time() > PicoMotor.last_init_ts + PicoMotor.INIT_REFRESH_INTERVAL:
+            PicoMotor.setup()
 
     @staticmethod
     def stop():

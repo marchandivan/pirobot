@@ -26,6 +26,7 @@ class ServoHandler(object):
 
     def __init__(self, pins, enable_pin):
         self.servos = []
+        self.started = False
         for pin in pins:
             self.servos.append(Servo(pin))
 
@@ -33,9 +34,11 @@ class ServoHandler(object):
         self.enable.low()
 
     def stop(self):
+        self.started = False
         self.enable.low()
 
     def start(self):
+        self.started = True
         self.enable.high()
         
     def move(self, servo, position):
@@ -48,6 +51,8 @@ class ServoHandler(object):
             if command == "S":
                 self.stop()
             elif command == "M":
+                if not self.started:
+                    self.start()
                 servo = int(args[1])
                 position = int(args[2])
                 self.move(servo, position)
@@ -105,12 +110,27 @@ class UltraSonicSensor(object):
 
 class UltraSonicHandler(object):
     MAX_DISTANCE = 2 # In meter
+    SENSOR_PIN_CONFIG = {
+        "right": {"trigger": 17, "echo": 16},
+        "left": {"trigger": 19, "echo": 18},
+        "front": {"trigger": 3, "echo": 4},
+    }
 
-    def __init__(self, sensors):
-        self.sensors = sensors
+    def __init__(self):
+        self.sensors = []
+            
         self.timer = None
         # Time to wait between sensors
         self.wait_time = 2 + int(2 * 1000 * UltraSonicHandler.MAX_DISTANCE / 343)
+
+    def add_sensor(self, sensor_name):
+        if sensor_name in UltraSonicHandler.SENSOR_PIN_CONFIG:
+            sensor_config = UltraSonicHandler.SENSOR_PIN_CONFIG[sensor_name]
+            self.sensors.append(UltraSonicSensor(
+                sensor_name,
+                pin_trigger=sensor_config["trigger"],
+                pin_echo=sensor_config["echo"]
+            ))
 
     def run(self):
         for i, sensor in enumerate(self.sensors):
@@ -119,13 +139,19 @@ class UltraSonicHandler(object):
             else:
                 sensor.timer = Timer(period=self.wait_time * i, mode=Timer.ONE_SHOT, callback=sensor.pulse)
 
-    def start(self):
+    def start(self, left, front, right):
+        if left:
+            self.add_sensor("left")
+        if front:
+            self.add_sensor("front")
+        if right:
+            self.add_sensor("right")
         polling_period = int(self.wait_time * 1.1 * len(self.sensors))
         if len(self.sensors) > 0:
             self.timer = Timer(period=polling_period, mode=Timer.PERIODIC, callback=lambda t: self.run())
 
     def distances(self):
-        left, front, right = 0.0, 0.0, 0.0
+        left, front, right = None, None, None
         for sensor in self.sensors:
             if sensor.name == "left":
                 left = sensor.distance
@@ -145,6 +171,22 @@ class UltraSonicHandler(object):
                 sensor.timer.deinit()
                 sensor.timer = None
 
+    def process_command(self, args):
+        try:
+            command = args[0]
+            if command == "C":
+                left = args[1].lower() in ("y", "true")
+                front = args[2].lower() in ("y", "true")
+                right = args[3].lower() in ("y", "true")
+                self.stop()
+                self.sensors = []
+                self.start(left=left, front=front, right=right)
+            else:
+                return False, f"[Servo] Unknonw command {command}"
+        except Exception as e:
+            print(e)
+            return False, f"[Servo] Unable to decode arguments {args}"
+        return True, "OK"
 
 class MotorHandler(object):
     REFRESH_INTERVAL = 50  # ms
@@ -215,12 +257,13 @@ class MotorHandler(object):
         self.total_differential_nb_of_revolutions = 0
         self.total_abs_differential_nb_of_revolutions = 0
 
-        self.steps_per_rotation = 230
+        self.steps_per_rotation = 660
         self.min_distance = 0.01
-        self.max_rpm = 200
+        self.max_rpm = 90
         self.kp = 0.5
         self.ki = 1.0
         self.kd = 0.1 * 30 / 1000
+        self.initialized = False
 
         # Setup interupts
         def handle_left_encoder_interrupt(pin):
@@ -336,8 +379,8 @@ class MotorHandler(object):
         return self.timeout_ts is not None and utime.ticks_ms() > self.timeout_ts
 
     def get_status(self):
-        left_distance, front_distance, right_distance = ultrasonic_handler.distances()
-        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}:{self.is_timeout}"
+        left_distance, front_distance, right_distance = ["null" if d is None else d for d in ultrasonic_handler.distances()]
+        return f"M:S:{self.left_duty}:{self.left_speed}:{self.right_duty}:{self.right_speed}:{self.total_nb_of_revolutions}:{self.total_abs_nb_of_revolutions}:{self.total_differential_nb_of_revolutions}:{left_distance}:{front_distance}:{right_distance}:{self.initialized}:{self.is_timeout}"
 
     def adjust_speed(self, current_speed, new_speed):
         if new_speed < 0.05:  # Speed bellow 20 RPM, stop
@@ -357,8 +400,8 @@ class MotorHandler(object):
             ref_differential_speed = abs(self.left_speed / self.max_rpm - self.right_speed / self.max_rpm) / 2
             # Avoid collision ?
             if self.auto_stop:
-                distances = ultrasonic_handler.distances()
-                if self.previous_distances != distances:
+                distances = [d for d in ultrasonic_handler.distances() if d is not None]
+                if len(distances)> 0 and self.previous_distances != distances:
                     min_distance = max(0.5 * speed, self.min_distance)
                     distance_to_closest_object = min(distances)
                     if speed > 0 and distance_to_closest_object < min_distance and self.left_duty > 0 and self.right_duty > 0:
@@ -412,6 +455,7 @@ class MotorHandler(object):
                 self.kp = float(args[4])
                 self.ki = float(args[5])
                 self.kd = float(args[6])
+                self.initialized = True
                 return True, "OK"
             elif command == "M":
                 left_direction = args[1]
@@ -446,10 +490,9 @@ class MotorHandler(object):
 
 class PatrollerHandler(object):
     
-    def __init__(self, motor_handler, ultrasonic_handler, servo_handler):
+    def __init__(self, motor_handler, ultrasonic_handler):
         self.motor_handler = motor_handler
         self.ultrasonic_handler = ultrasonic_handler
-        self.servo_handler = servo_handler
         self.running = False
         self.speed = 0
         self.timeout = 0
@@ -495,8 +538,12 @@ class PatrollerHandler(object):
         elif self.running and self.motor_handler.left_duty == 0 and self.motor_handler.right_duty == 0:
             distances = self.ultrasonic_handler.distances()
             left_distance, front_distance, right_distance = distances
+            distances = [d for d in distances if d is not None]
             min_distance = max(0.5 * self.speed / 100, self.motor_handler.min_distance)
-            if min(distances) > min_distance:
+            if len(distances) == 0:
+                # No distance data, stop the robot
+                self.stop()
+            elif min(distances) > min_distance:
                 print("Forward")
                 self.motor_handler.move(
                     left_direction="F",
@@ -505,8 +552,7 @@ class PatrollerHandler(object):
                     right_speed=self.speed,
                     timeout=10
                 )
-            elif right_distance > left_distance:
-                print("Right")
+            elif right_distance is not None and right_distance > left_distance:
                 self.motor_handler.move(
                     left_direction="F",
                     left_speed=self.speed,
@@ -640,22 +686,14 @@ motor_handler = MotorHandler(
     )
 
 servo_handler = ServoHandler(pins=[20, 21, 22, 26, 27], enable_pin=2)
-servo_handler.start()
-servo_handler.move(1, 50)
 
-ultrasonic_handler = UltraSonicHandler(
-    sensors=[
-        UltraSonicSensor("right", pin_trigger=17, pin_echo=16),
-        UltraSonicSensor("left", pin_trigger=19, pin_echo=18),
-        UltraSonicSensor("front", pin_trigger=3, pin_echo=4),
-        ]
-    )
-ultrasonic_handler.start()
+ultrasonic_handler = UltraSonicHandler()
+
 previous_distances = ultrasonic_handler.distances()
 
 battery_handler = BatteryHandler(28)
 
-patroller_handler = PatrollerHandler(motor_handler, ultrasonic_handler, servo_handler)
+patroller_handler = PatrollerHandler(motor_handler, ultrasonic_handler)
 
 status_handler = StatusHandler()
 status_handler.add_handler(motor_handler, 200)
@@ -674,6 +712,8 @@ def process_command(cmd):
         sucess, data = servo_handler.process_command(args)
     elif sensor == "K":
         sucess, data = status_handler.process_command(args)
+    elif sensor == "U":
+        sucess, data = ultrasonic_handler.process_command(args)
     else:
         sucess, data = False, "Unknown sensor"
     return sensor, sucess, data

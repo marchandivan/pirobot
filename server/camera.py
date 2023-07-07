@@ -33,8 +33,6 @@ alpha = np.arctan([d / H for d in reference['distances']])
 poly_coefficients = np.polyfit(reference['y_pos'], alpha, 3)
 max_y_pos = 42
 
-camera_lock = threading.Lock()
-
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 lower_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_lowerbody.xml')
@@ -119,13 +117,16 @@ class CaptureDevice(object):
                  color,
                  thickness)
 
-        add_circle(left_us_distance, -45)
-        add_circle(front_us_distance, 0)
-        add_circle(right_us_distance, 45)
+        if left_us_distance is not None:
+            add_circle(left_us_distance, -45)
+        if front_us_distance is not None:
+            add_circle(front_us_distance, 0)
+        if right_us_distance is not None:
+            add_circle(right_us_distance, 45)
 
     def detect_face(self, frame):
         # Run face detection every second
-        if self.frame_counter % Camera.framerate == 0:
+        if self.frame_counter % Camera.frame_rate == 0:
             self.face = None
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = face_cascade.detectMultiScale(gray, 1.1, 4)
@@ -223,46 +224,6 @@ class CaptureDevice(object):
                 self.device.capture(output, format="bgr", use_video_port=True)
                 return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
  
-    def capture(self):
-        max_retries = 3
-        while max_retries > 0:
-            max_retries -= 1
-            try:
-                if self.capturing_device == "usb":
-                    camera_lock.acquire()
-                    ret, frame = self.device.read()
-                    camera_lock.release()
-                    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
-                else:  # picamera
-                    if platform.machine() == "aarch64":
-                        frame = self.device.capture_array()
-                        return cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-                    else:
-                        output = PiRGBArray(self.device)
-                        self.device.capture(output, format="rgb")
-                        return cv2.cvtColor(output.array, cv2.COLOR_BGRA2BGR)
-            except:
-                logger.error("Failed to capture image, retrying", exc_info=True)
-                time.sleep(0.1)
-
-    def capture_continuous(self, stream, format='jpeg'):
-        if self.capturing_device == "usb":
-            while True:
-                camera_lock.acquire()
-                ret, frame = self.device.read()
-                camera_lock.release()
-                self.frame_counter += 1
-
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
-
-                yield cv2.imencode('.jpg', rgb)[1].tostring()
-        else:
-            for frame in self.device.capture_continuous(stream,
-                                                        format=format,
-                                                        use_video_port=True):
-                self.frame_counter += 1
-                yield frame.getvalue()
-
     def close(self):
         if self.capturing_device == "usb":
             self.device.release()
@@ -275,15 +236,13 @@ class Camera(object):
     streaming = False
     capturing = False
     capturing_thread = None
-    framerate = 5
+    frame_rate = 5
     overlay = True
     selected_camera = "front"
     face_detection = False
     front_capture_device = None
     arm_capture_device = None
-    last_frame_lock = threading.Lock()
-    last_frame = None
-    frame_counter = 0
+    has_camera_servo = False
     servo_id = 1
     servo_center_position = 60
     servo_position = 0
@@ -296,9 +255,11 @@ class Camera(object):
     @staticmethod
     def setup():
         Camera.follow_face_speed = Config.get("follow_face_speed")
+        Camera.has_camera_servo = Config.get("robot_has_camera_servo")
         Camera.servo_center_position = Config.get("camera_center_position")
+        Camera.servo_id = Config.get("camera_servo_id")
         Camera.center_position()
-        Camera.framerate = Config.get("capturing_framerate")
+        Camera.frame_rate = Config.get("capturing_framerate")
         if Config.get('front_capturing_device') == "usb":
             Camera.available_device = get_camera_index()
             Camera.status = "KO" if Camera.available_device is None else "OK"
@@ -307,36 +268,13 @@ class Camera(object):
 
     @staticmethod
     def set_position(position):
-        Camera.servo_position = int(position)
-        ServoHandler.move(Camera.servo_id, 100 - Camera.servo_position)
+        if Camera.has_camera_servo:
+            Camera.servo_position = int(position)
+            ServoHandler.move(Camera.servo_id, 100 - Camera.servo_position)
 
     @staticmethod
     def center_position():
         Camera.set_position(Camera.servo_center_position)
-
-    @staticmethod
-    def stream():
-        Camera.streaming = True
-        Camera.start_continuous_capture()
-        while Camera.streaming:
-            try:
-                Camera.last_frame_lock.acquire()
-                last_frame = Camera.last_frame
-                Camera.last_frame_lock.release()
-                Camera.last_frame = None
-                if last_frame is not None:
-                    yield "--FRAME\r\n"
-                    yield "Content-Type: image/jpeg\r\n"
-                    yield "Content-Length: %i\r\n" % len(last_frame)
-                    yield "\r\n"
-                    yield last_frame
-                    yield "\r\n"
-            except:
-                logger.error("Unexpected exception while streaming", exc_info=True)
-                if Camera.last_frame_lock.locked():
-                    Camera.last_frame_lock.release()
-                continue
-        Camera.streaming = False
 
     @staticmethod
     def capture_continuous():
@@ -364,7 +302,7 @@ class Camera(object):
                                                       angle=arm_angle)
 
         Camera.capturing = True
-        frame_delay = 1.0 / Camera.framerate
+        frame_delay = 1.0 / Camera.frame_rate
         last_frame_ts = 0
         while Camera.capturing:
             try:
@@ -373,7 +311,7 @@ class Camera(object):
                     Camera.arm_capture_device.grab()
                 now = time.time()
                 if now > last_frame_ts + frame_delay:
-                    frame_delay = 1.0 / Camera.framerate
+                    frame_delay = 1.0 / Camera.frame_rate
                     last_frame_ts = now
                     if Camera.arm_capture_device is None or Camera.selected_camera == "front":
                         frame = Camera.front_capture_device.retrieve()
@@ -395,16 +333,10 @@ class Camera(object):
 
                     if Camera.streaming:
                         frame = cv2.imencode('.jpg', frame)[1].tostring()
-                        Camera.last_frame_lock.acquire()
-                        Camera.last_frame = frame
-                        Camera.frame_counter += 1
-                        Camera.last_frame_lock.release()
                         if Camera.new_frame_callback is not None:
-                            Camera.new_frame_callback(Camera.last_frame)
+                            Camera.new_frame_callback(frame)
             except Exception:
                 logger.error("Unexpected exception in continuous capture", exc_info=True)
-                if Camera.last_frame_lock.locked():
-                    Camera.last_frame_lock.release()
                 continue
         Camera.front_capture_device.close()
         Camera.front_capture_device = None
@@ -444,6 +376,7 @@ class Camera(object):
             Camera.start_face_detection()
         else:
             Camera.stop_face_detection()
+
     @staticmethod
     def start_face_detection():
         Camera.face_detection = True
@@ -477,13 +410,6 @@ class Camera(object):
 
         x_pos = (MAX_DISTANCE / (MAX_DISTANCE - min(y_pos, MAX_DISTANCE - 0.1))) * ((x - 50) / 50) * ROBOT_WIDTH/2
         return x_pos * Config.get("lense_coeff_x_pos"), y_pos
-
-    @staticmethod
-    def capture_image(camera):
-        if camera == "front" and Camera.front_capture_device is not None:
-            return Camera.front_capture_device.capture()
-        elif camera == "arm" and Camera.arm_capture_device is not None:
-            return Camera.arm_capture_device.capture()
 
     @staticmethod
     def serialize():

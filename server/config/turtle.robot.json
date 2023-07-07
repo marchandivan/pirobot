@@ -12,6 +12,15 @@
     },
     "motor_max_rpm": {
       "default": 200
+    },
+    "robot_has_camera_servo": {
+      "default": true
+    },
+    "robot_has_screen": {
+      "default": true
+    },
+    "robot_has_speaker": {
+      "default": true
     }
   }
 }

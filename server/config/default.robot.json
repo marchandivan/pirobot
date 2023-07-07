@@ -34,6 +34,12 @@
       "default": "PiRobot",
       "category": "robot"
     },
+    "robot_us_sensors": {
+      "type": "str",
+      "default": "front",
+      "choices": ["front", "front_and_side", "none"],
+      "category": "robot"
+    },
     "wheel_d": {
       "type": "int",
       "default": 66,
@@ -131,6 +137,19 @@
       "default": 60,
       "need_setup": true,
       "category": "camera"
+    },
+    "camera_servo_id": {
+      "type": "int",
+      "default": 1,
+      "need_setup": true,
+      "category": "camera"
+    },
+    "robot_has_camera_servo": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "need_setup": true,
+      "category": "capability"
     },
     "voice_id": {
       "type": "str",

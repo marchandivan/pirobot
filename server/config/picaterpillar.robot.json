@@ -7,6 +7,9 @@
     "front_capturing_device": {
       "default": "usb"
     },
+    "robot_has_camera_servo": {
+      "default": true
+    },
     "robot_has_light": {
       "default": true
     },
