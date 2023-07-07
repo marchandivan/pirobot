@@ -9,8 +9,8 @@ except:
     sys.modules['RPi.GPIO'] = fake_rpi.RPi.GPIO
     import RPi.GPIO as GPIO
 
-LEFT_LIGHT_PIN = 16
-RIGHT_LIGHT_PIN = 17
+LEFT_LIGHT_PIN = 17
+RIGHT_LIGHT_PIN = 16
 ARM_LIGHT_PIN = 21
 BLINK_DURATION = 0.5
 NB_OF_BLINKS = 5
