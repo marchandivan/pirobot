@@ -1,6 +1,7 @@
 import logging
 import math
 
+from handlers.base import BaseHandler
 from models import Config
 from motor.motor_dfrobot import DFRobotMotor
 from motor.motor_pico import PicoMotor
@@ -35,6 +36,8 @@ class Motor(object):
 
     @staticmethod
     def stop():
+        if BaseHandler.state == "patrolling":
+            BaseHandler.reset_state()
         Motor._controller.stop()
 
     @staticmethod
@@ -79,10 +82,6 @@ class Motor(object):
     @staticmethod
     def patrol():
         Motor._controller.patrol()
-
-    @staticmethod
-    def is_patrolling():
-        return Motor._controller.is_patrolling()
 
     @staticmethod
     def serialize():

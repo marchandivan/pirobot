@@ -102,12 +102,6 @@
       "need_setup": true,
       "category": "camera"
     },
-    "robot_has_arm": {
-      "type": "bool",
-      "default": false,
-      "export": true,
-      "category": "capability"
-    },
     "robot_has_light": {
       "type": "bool",
       "default": false,

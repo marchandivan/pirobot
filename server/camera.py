@@ -1,15 +1,17 @@
+import cv2
 import logging
+import numpy as np
 import math
 import platform
 import threading
 import time
 
-import cv2
-import numpy as np
+
+from handlers.base import BaseHandler
+from models import Config
 from motor.motor import Motor
 from servo.servo_handler import ServoHandler
 
-from models import Config
 if platform.machine() == "aarch":  # Raspberry 32 bits
     import picamera
     from picamera.array import PiRGBArray
@@ -33,10 +35,6 @@ alpha = np.arctan([d / H for d in reference['distances']])
 poly_coefficients = np.polyfit(reference['y_pos'], alpha, 3)
 max_y_pos = 42
 
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-lower_body_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_lowerbody.xml')
-
 
 def get_camera_index():
     # checks the first 10 indexes.
@@ -49,13 +47,11 @@ def get_camera_index():
 
 
 class CaptureDevice(object):
-    target = None
     available_device = None
 
     def __init__(self, resolution, capturing_device, angle):
         self.capturing_device = capturing_device
         self.frame_counter = 0
-        self.face = None
         self.res_x, self.res_y = resolution.split('x')
         self.res_x, self.res_y = int(self.res_x), int(self.res_y)
         self.angle = angle
@@ -124,38 +120,6 @@ class CaptureDevice(object):
         if right_us_distance is not None:
             add_circle(right_us_distance, 45)
 
-    def detect_face(self, frame):
-        # Run face detection every second
-        if self.frame_counter % Camera.frame_rate == 0:
-            self.face = None
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-            # Look for faces with 2 eyes or more
-            for (x, y, w, h) in faces:
-                size_percent = 100 * w / self.res_x
-                if size_percent < 5 or size_percent > 40:
-                    continue
-                if self.face is None:
-                    self.face = (x, y, w, h)
-                roi_gray = gray[y:y + h, x:x + w]
-                eyes = eye_cascade.detectMultiScale(roi_gray)
-                if len(eyes) >= 2:  # At least 2 eyes :-) Third one could be the mouth
-                    self.face = (x, y, w, h)
-                    break
-
-            if self.face is not None:
-                x, y, w, h = self.face
-                timeout = 3
-                x_pos = (x + w//2) * 100 / self.res_x
-                y_pos = (y + h // 2) * 100 / self.res_y
-                Camera.set_position(y)
-                x_pos, y_pos = Camera.get_target_position(x_pos, y_pos)
-                Motor.move_to_target(x_pos, y_pos, Camera.follow_face_speed, timeout)
-
-        if self.face is not None:
-            x, y, w, h = self.face
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
-
     def add_navigation_lines(self, frame):
         color = (0, 255, 0)
         thickness = 2
@@ -186,13 +150,10 @@ class CaptureDevice(object):
         cv2.putText(frame, f"ODO: {motor_status['abs_distance'] / 1000:.2f} m", (5, 5 + text_h), font, fontScale, color, thickness)
 
         # Mode
-        mode = "REM"
-        if Camera.face_detection:
-            mode = "FD"
-        elif Motor.is_patrolling():
-            mode = "PAT"
-        text_w, text_h = cv2.getTextSize(text=mode, fontFace=font, fontScale=fontScale, thickness=thickness)[0]
-        cv2.putText(frame, mode, (self.res_x - text_w - 5, 5 + text_h), font, fontScale, color, thickness)
+        if BaseHandler.state is not None:
+            state = BaseHandler.state.upper().replace("_", " ")
+            text_w, text_h = cv2.getTextSize(text=state, fontFace=font, fontScale=fontScale, thickness=thickness)[0]
+            cv2.putText(frame, state, (self.res_x - text_w - 5, 5 + text_h), font, fontScale, color, thickness)
 
         # Left
         cv2.putText(frame, f"{motor_status['left']['speed_rpm']} RPM", (5, self.res_y - 15), font, fontScale, color, thickness)
@@ -239,22 +200,20 @@ class Camera(object):
     frame_rate = 5
     overlay = True
     selected_camera = "front"
-    face_detection = False
     front_capture_device = None
-    arm_capture_device = None
+    back_capture_device = None
     has_camera_servo = False
     servo_id = 1
     servo_center_position = 60
     servo_position = 0
-    new_frame_callback = None
+    new_streaming_frame_callback = None
 
     @staticmethod
-    def add_new_frame_callback(callback):
-        Camera.new_frame_callback = callback
+    def add_new_streamin_frame_callback(callback):
+        Camera.new_streaming_frame_callback = callback
 
     @staticmethod
     def setup():
-        Camera.follow_face_speed = Config.get("follow_face_speed")
         Camera.has_camera_servo = Config.get("robot_has_camera_servo")
         Camera.servo_center_position = Config.get("camera_center_position")
         Camera.servo_id = Config.get("camera_servo_id")
@@ -282,24 +241,28 @@ class Camera(object):
         front_resolution = Config.get('front_capturing_resolution')
         front_angle = Config.get('front_capturing_angle')
         if platform.machine() not in ["aarch", "aarch64"]:
-            arm_capturing_device = None
+            back_capturing_device = None
         else:
-            arm_capturing_device = Config.get('back_capturing_device')
-        arm_resolution = Config.get('back_capturing_resolution')
-        arm_angle = Config.get('back_capturing_angle')
+            back_capturing_device = Config.get('back_capturing_device')
+        back_resolution = Config.get('back_capturing_resolution')
+        back_angle = Config.get('back_capturing_angle')
 
-        Camera.front_capture_device = CaptureDevice(resolution=front_resolution,
-                                                    capturing_device=front_capturing_device,
-                                                    angle=front_angle)
-        if arm_capturing_device is None or arm_capturing_device == "none":
+        Camera.front_capture_device = CaptureDevice(
+            resolution=front_resolution,
+            capturing_device=front_capturing_device,
+            angle=front_angle
+        )
+        if back_capturing_device is None or back_capturing_device == "none":
             if platform.machine() not in ["aarch", "aarch64"] and Config.get('robot_has_back_camera'):
-                Camera.arm_capture_device = Camera.front_capture_device
+                Camera.back_capture_device = Camera.front_capture_device
             else:
-                Camera.arm_capture_device = None
+                Camera.back_capture_device = None
         else:
-            Camera.arm_capture_device = CaptureDevice(resolution=arm_resolution,
-                                                      capturing_device=arm_capturing_device,
-                                                      angle=arm_angle)
+            Camera.back_capture_device = CaptureDevice(
+                resolution=back_resolution,
+                capturing_device=back_capturing_device,
+                angle=back_angle
+            )
 
         Camera.capturing = True
         frame_delay = 1.0 / Camera.frame_rate
@@ -307,42 +270,50 @@ class Camera(object):
         while Camera.capturing:
             try:
                 Camera.front_capture_device.grab()
-                if Camera.arm_capture_device is not None:
-                    Camera.arm_capture_device.grab()
+                if Camera.back_capture_device is not None:
+                    Camera.back_capture_device.grab()
                 now = time.time()
                 if now > last_frame_ts + frame_delay:
                     frame_delay = 1.0 / Camera.frame_rate
                     last_frame_ts = now
-                    if Camera.arm_capture_device is None or Camera.selected_camera == "front":
+                    if Camera.back_capture_device is None or Camera.selected_camera == "front":
                         frame = Camera.front_capture_device.retrieve()
-                        # Detect face
-                        if Camera.face_detection:
-                            Camera.front_capture_device.detect_face(frame)
+                        BaseHandler.emit_event(
+                            topic="camera",
+                            event_type="new_frame",
+                            data=dict(
+                                frame=frame,
+                                frame_counter=Camera.front_capture_device.frame_counter,
+                                frame_rate=Camera.frame_rate,
+                                res_x=Camera.front_capture_device.res_x,
+                                res_y=Camera.front_capture_device.res_y,
+                            )
+                        )
                         # Navigation
                         Camera.front_capture_device.add_navigation_lines(frame)
                     else:
-                        frame = Camera.arm_capture_device.retrieve()
+                        frame = Camera.back_capture_device.retrieve()
                     Camera.front_capture_device.add_radar(frame, [50, 0], [25, 25])
-                    if Camera.arm_capture_device is not None and Camera.overlay:
+                    if Camera.back_capture_device is not None and Camera.overlay:
                         if Camera.selected_camera == "front":
-                            overlay_frame = Camera.arm_capture_device.retrieve()
+                            overlay_frame = Camera.back_capture_device.retrieve()
                             Camera.front_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
                         else:
                             overlay_frame = Camera.front_capture_device.retrieve()
-                            Camera.arm_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
+                            Camera.back_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
 
                     if Camera.streaming:
                         frame = cv2.imencode('.jpg', frame)[1].tostring()
-                        if Camera.new_frame_callback is not None:
-                            Camera.new_frame_callback(frame)
+                        if Camera.new_streaming_frame_callback is not None:
+                            Camera.new_streaming_frame_callback(frame)
             except Exception:
                 logger.error("Unexpected exception in continuous capture", exc_info=True)
                 continue
         Camera.front_capture_device.close()
         Camera.front_capture_device = None
-        if Camera.arm_capture_device is not None:
-            Camera.arm_capture_device.close()
-            Camera.arm_capture_device = None
+        if Camera.back_capture_device is not None:
+            Camera.back_capture_device.close()
+            Camera.back_capture_device = None
         Camera.capturing = False
         logger.info("Stop Capture")
 
@@ -369,36 +340,9 @@ class Camera(object):
             Camera.capturing = False
 
     @staticmethod
-    def stream_setup(selected_camera, overlay, face_detection):
+    def stream_setup(selected_camera, overlay):
         Camera.selected_camera = selected_camera
         Camera.overlay = overlay
-        if face_detection:
-            Camera.start_face_detection()
-        else:
-            Camera.stop_face_detection()
-
-    @staticmethod
-    def start_face_detection():
-        Camera.face_detection = True
-        Camera.start_continuous_capture()
-        Camera.set_position(100)
-
-    @staticmethod
-    def stop_face_detection():
-        Camera.stop_continuous_capture()
-        Camera.center_position()
-        Camera.face_detection = False
-
-    @staticmethod
-    def toggle_face_detection():
-        if Camera.face_detection:
-            Camera.stop_face_detection()
-        else:
-            Camera.start_face_detection()
-
-    @staticmethod
-    def select_target(x, y):
-        CaptureDevice.target = [x, y]
 
     @staticmethod
     def get_target_position(x, y):
@@ -417,7 +361,6 @@ class Camera(object):
             'status': Camera.status,
             'streaming': Camera.streaming,
             'overlay': Camera.overlay,
-            'face_detection': Camera.face_detection,
             'selected_camera': Camera.selected_camera,
             'position': Camera.servo_position,
             'center_position': Camera.servo_center_position

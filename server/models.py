@@ -158,6 +158,7 @@ class Config(Base):
             session.commit()
             return True
         else:
+            print(key, value)
             return False
 
     @staticmethod

@@ -210,10 +210,6 @@ class DFRobotMotor(object):
         pass  # Not implemented
 
     @staticmethod
-    def is_patrolling():
-        return False
-
-    @staticmethod
     def get_motor_status():
         return DFRobotMotor.left_speed_controller.serialize(), DFRobotMotor.left_speed_controller.serialize()
 

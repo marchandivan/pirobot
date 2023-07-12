@@ -36,7 +36,6 @@ class PicoMotor(object):
     robot_width = None
 
     obstacles = []
-    patrolling = False
 
     last_init_ts = 0.0
 
@@ -97,7 +96,6 @@ class PicoMotor(object):
         UART.write("M:S")
         # Stop patroller
         UART.write("P:0")
-        PicoMotor.patrolling = False
 
     @staticmethod
     def move(left_orientation, left_speed, right_orientation, right_speed, duration, distance, rotation, auto_stop):
@@ -133,11 +131,7 @@ class PicoMotor(object):
 
     @staticmethod
     def patrol():
-        PicoMotor.patrolling = True
         timeout = 300
         speed = Config.get("motor_patrol_speed")
         UART.write(f"P:{speed}:{timeout}:false")
 
-    @staticmethod
-    def is_patrolling():
-        return PicoMotor.patrolling

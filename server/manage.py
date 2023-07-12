@@ -56,7 +56,7 @@ class VideoServerProtocol(asyncio.Protocol):
         self.transport = transport
         peername = transport.get_extra_info("peername")
         logger.info(f"Connection to video server from {peername}")
-        Camera.add_new_frame_callback(self.send_new_frame)
+        Camera.add_new_streamin_frame_callback(self.send_new_frame)
         Camera.start_streaming()
 
     def connection_lost(self, exc):
@@ -81,15 +81,16 @@ async def run_video_server():
 
 class ServerProtocol(asyncio.Protocol):
 
-    def __init__(self):
+    def __init__(self, server):
         self.buffer = ""
         self.transport = None
+        self.server = server
 
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
         logger.info('Connection to server from {}'.format(peername))
         self.transport = transport
-        Server.send_status(self)
+        self.server.send_status(self)
 
     def data_received(self, data):
         self.buffer += data.decode()
@@ -102,7 +103,7 @@ class ServerProtocol(asyncio.Protocol):
                 try:
                     message = json.loads(message)
                     if "type" in message:
-                        Server.process(message, self)
+                        self.server.process(message, self)
                 except:
                     logger.error(f"Unable to process message {message}", exc_info=True)
             else:
@@ -110,7 +111,7 @@ class ServerProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         logger.info("The client closed the connection to server")
-        Server.connection_lost()
+        self.server.connection_lost()
         self.transport = None
 
     def send_message(self, message):
@@ -120,10 +121,11 @@ class ServerProtocol(asyncio.Protocol):
             self.transport.write(message_str.encode() + b"\n")
 
 
-async def run_server():
+async def run_server(server):
+
     loop = asyncio.get_running_loop()
     server_socket = await loop.create_server(
-        lambda: ServerProtocol(),
+        lambda: ServerProtocol(server),
         port=Config.get_server_port(),
         reuse_address=True,
         family=socket.AF_INET,
@@ -135,12 +137,13 @@ async def run_server():
 
 
 async def start_server():
-    # Setup server
-    await Server.setup()
-
     try:
+        # Setup server
+        server = Server()
+        await server.setup()
+
         # Start video streaming
-        await asyncio.gather(run_video_server(), run_server(), return_exceptions=True)
+        await asyncio.gather(run_video_server(), run_server(server), return_exceptions=True)
     except KeyboardInterrupt:
         logger.info("Stopping...")
         sys.exit(0)
