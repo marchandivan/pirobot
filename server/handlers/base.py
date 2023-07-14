@@ -24,7 +24,7 @@ class BaseHandler(object):
 
     @staticmethod
     def load_handlers():
-        for file in os.listdir("handlers"):
+        for file in os.listdir(os.path.dirname(__file__)):
             if file.endswith(".py"):
                 module = f"handlers.{file[:-3]}"
                 if module != __name__:
