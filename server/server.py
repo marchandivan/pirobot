@@ -1,5 +1,6 @@
 from camera import Camera
 from handlers.base import BaseHandler
+from handlers import *
 from light import Light
 from models import Config
 from motor.motor import Motor
@@ -27,9 +28,6 @@ class Server(object):
         self.robot_has_speaker = Config.get("robot_has_speaker")
         self.robot_has_screen = Config.get("robot_has_screen")
         self.robot_has_light = Config.get("robot_has_light")
-
-        # Load handlers
-        BaseHandler.load_handlers()
 
     async def setup(self):
         # Open UART Port

@@ -14,7 +14,7 @@ class FaceDetectionHandler(BaseHandler):
 
     def __init__(self):
         super().__init__()
-        self.follow_face_speed = Config.get("follow_face_speed")
+        self.follow_face_speed = 50
         self.register_for_message("face_detection")
         self.register_for_event("camera", "new_front_camera_frame")
         self.face_position = None
@@ -33,6 +33,7 @@ class FaceDetectionHandler(BaseHandler):
         if BaseHandler.state is None:
             BaseHandler.set_state("face_detection")
             self.running = True
+            self.follow_face_speed = Config.get("follow_face_speed")
 
     def stop(self):
         if BaseHandler.state == "face_detection":

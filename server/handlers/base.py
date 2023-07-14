@@ -23,14 +23,6 @@ class BaseHandler(object):
             handler.receive_event(topic, event_type, data)
 
     @staticmethod
-    def load_handlers():
-        for file in os.listdir(os.path.dirname(__file__)):
-            if file.endswith(".py"):
-                module = f"handlers.{file[:-3]}"
-                if module != __name__:
-                    importlib.import_module(module)
-
-    @staticmethod
     def set_state(state):
         BaseHandler.state = state
 
