@@ -17,6 +17,7 @@ class CameraHandler(BaseHandler):
         self.frame_counter = 0
         self.video_source = "streaming"
         self.picture_source = "streaming"
+        self.picture_format = "png"
         self.capture_video = False
         self.capture_picture = False
         self.register_for_message("camera")
@@ -26,6 +27,9 @@ class CameraHandler(BaseHandler):
         self.video_dir = os.path.join(os.environ["HOME"], "Videos")
         if not os.path.isdir(self.video_dir):
             os.mkdir(self.video_dir)
+        self.picture_dir = os.path.join(os.environ["HOME"], "Pictures")
+        if not os.path.isdir(self.picture_dir):
+            os.mkdir(self.picture_dir)
 
     def process(self, message, protocol):
         if message["action"] == "set_position":
@@ -45,11 +49,18 @@ class CameraHandler(BaseHandler):
             if self.video_writer is not None:
                 self.video_writer.release()
                 self.video_writer = None
+        elif message["action"] == "capture_picture":
+            self.capture_picture = True
+            self.picture_source = message["args"].get("source", "streaming")
+            self.picture_format = message["args"].get("format", "png")
 
-    def start_video(self, frame):
+    def get_filename(self):
         robot_name = Config.get("robot_name")
         creation_time = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-        filename = f"{robot_name}_{self.video_source}_{creation_time}.avi"
+        return f"{robot_name}_{self.video_source}_{creation_time}"
+
+    def start_video(self, frame):
+        filename = f"{self.get_filename()}.avi"
         self.frame_rate = Camera.frame_rate
         self.video_writer = cv2.VideoWriter(
             filename=os.path.join(self.video_dir, filename),
@@ -68,9 +79,18 @@ class CameraHandler(BaseHandler):
                 video_source = "front"
 
             if video_source is not None:
+                # Capturing Video?
                 if self.capture_video and self.video_source == video_source:
                     self.record_video_frame(data["frame"])
 
+                # Capturing Picture?
+                if self.capture_picture and self.picture_source == video_source:
+                    cv2.imwrite(
+                        os.path.join(self.picture_dir, f"{self.get_filename()}.{self.picture_format}"), data["frame"]
+                    )
+                    self.capture_picture = False
+
+                # Add REC indicator
                 if video_source == "streaming" and self.capture_video:
                     self.add_rec_indicator(data["frame"])
 
