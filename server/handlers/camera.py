@@ -16,8 +16,12 @@ class CameraHandler(BaseHandler):
         self.video_start_ts = None
         self.frame_counter = 0
         self.video_source = "streaming"
+        self.picture_source = "streaming"
+        self.capture_video = False
+        self.capture_picture = False
         self.register_for_message("camera")
         self.register_for_event("camera", "new_streaming_frame")
+        self.register_for_event("camera", "new_front_camera_frame")
         self.video_writer = None
         self.video_dir = os.path.join(os.environ["HOME"], "Videos")
         if not os.path.isdir(self.video_dir):
@@ -31,36 +35,71 @@ class CameraHandler(BaseHandler):
         elif message["action"] == "start_video":
             if self.video_writer is not None:
                 self.video_writer.release()
+                self.video_writer = None
             self.video_source = message["args"].get("source", "streaming")
-            robot_name = Config.get("robot_name")
-            creation_time = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-            filename = f"{robot_name}_{self.video_source}_{creation_time}.avi"
-            self.frame_rate = Camera.frame_rate
-            self.video_writer = cv2.VideoWriter(
-                filename=os.path.join(self.video_dir, filename),
-                fourcc=cv2.VideoWriter_fourcc(*Config.get("video_codec")),
-                fps=self.frame_rate,
-                frameSize=(1280, 720),
-                isColor=True,
-            )
+            self.capture_video = True
         elif message["action"] == "stop_video":
+            self.capture_video = False
             self.video_start_ts = None
             self.frame_counter = 0
             if self.video_writer is not None:
                 self.video_writer.release()
                 self.video_writer = None
 
+    def start_video(self, frame):
+        robot_name = Config.get("robot_name")
+        creation_time = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+        filename = f"{robot_name}_{self.video_source}_{creation_time}.avi"
+        self.frame_rate = Camera.frame_rate
+        self.video_writer = cv2.VideoWriter(
+            filename=os.path.join(self.video_dir, filename),
+            fourcc=cv2.VideoWriter_fourcc(*Config.get("video_codec")),
+            fps=self.frame_rate,
+            frameSize=(frame.shape[1], frame.shape[0]),
+            isColor=True,
+        )
+
     def receive_event(self, topic, event_type, data):
-        if topic == "camera" and event_type == "new_streaming_frame":
-            if self.video_writer is not None:
-                self.video_writer.write(data["frame"])
-                self.frame_counter += 1
-                if self.video_start_ts is None:
-                    self.video_start_ts = time.time()
-                else:
-                    expect_nb_of_frames = int((time.time() - self.video_start_ts) * self.frame_rate)
-                    nb_of_missing_frames = expect_nb_of_frames - self.frame_counter
-                    if nb_of_missing_frames > 1:
-                        for i in range(nb_of_missing_frames):
-                            self.video_writer.write(data["frame"])
-                            self.frame_counter += 1
+        if topic == "camera":
+            video_source = None
+            if event_type == "new_streaming_frame":
+                video_source = "streaming"
+            elif event_type == "new_front_camera_frame":
+                video_source = "front"
+
+            if video_source is not None:
+                if self.capture_video and self.video_source == video_source:
+                    self.record_video_frame(data["frame"])
+
+                if video_source == "streaming" and self.capture_video:
+                    self.add_rec_indicator(data["frame"])
+
+    def add_rec_indicator(self, frame):
+        # Add REC indicator
+        res_x = len(frame[0])
+        text = "REC"
+        thickness = 2
+        color = (0, 255, 0)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 0.8
+        text_w, text_h = cv2.getTextSize(
+            text=text, fontFace=font, fontScale=fontScale, thickness=thickness
+        )[0]
+        cv2.putText(
+            frame, text, (int(res_x / 2 - text_w / 2), 5 + text_h), font, fontScale, color, thickness
+        )
+
+    def record_video_frame(self, frame):
+        if self.video_writer is None:
+            self.start_video(frame)
+        self.video_writer.write(frame)
+        self.frame_counter += 1
+        if self.video_start_ts is None:
+            self.video_start_ts = time.time()
+        else:
+            expect_nb_of_frames = int((time.time() - self.video_start_ts) * self.frame_rate)
+            nb_of_missing_frames = expect_nb_of_frames - self.frame_counter
+            if nb_of_missing_frames > 1:
+                for i in range(nb_of_missing_frames):
+                    self.video_writer.write(frame)
+                    self.frame_counter += 1
