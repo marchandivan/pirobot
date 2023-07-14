@@ -57,9 +57,8 @@ class CaptureDevice(object):
         self.angle = angle
         if self.capturing_device == "usb":  # USB Camera?
             self.device = cv2.VideoCapture(Camera.available_device)
-            self.device.set(cv2.CAP_PROP_BUFFERSIZE, 2)
-            self.device.set(3, self.res_x)
-            self.device.set(4, self.res_y)
+            self.device.set(cv2.CAP_PROP_FRAME_WIDTH, self.res_x)
+            self.device.set(cv2.CAP_PROP_FRAME_HEIGHT, self.res_y)
         else:
             if platform.machine() == "aarch64":
                 self.device = picamera2.Picamera2()
@@ -175,16 +174,16 @@ class CaptureDevice(object):
         self.frame_counter += 1
         if self.capturing_device == "usb":
             ret, frame = self.device.retrieve()
-            return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+            return frame
         else:  # picamera
             if platform.machine() == "aarch64":
                 frame = self.device.capture_array()
-                return cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
+                return frame
             else:
                 output = PiRGBArray(self.device)
                 self.device.capture(output, format="bgr", use_video_port=True)
-                return cv2.cvtColor(output.array, cv2.COLOR_BGR2BGRA)
- 
+                return frame
+
     def close(self):
         if self.capturing_device == "usb":
             self.device.release()
@@ -209,7 +208,7 @@ class Camera(object):
     new_streaming_frame_callback = None
 
     @staticmethod
-    def add_new_streamin_frame_callback(callback):
+    def add_new_streaming_frame_callback(callback):
         Camera.new_streaming_frame_callback = callback
 
     @staticmethod
@@ -279,15 +278,7 @@ class Camera(object):
                     if Camera.back_capture_device is None or Camera.selected_camera == "front":
                         frame = Camera.front_capture_device.retrieve()
                         BaseHandler.emit_event(
-                            topic="camera",
-                            event_type="new_frame",
-                            data=dict(
-                                frame=frame,
-                                frame_counter=Camera.front_capture_device.frame_counter,
-                                frame_rate=Camera.frame_rate,
-                                res_x=Camera.front_capture_device.res_x,
-                                res_y=Camera.front_capture_device.res_y,
-                            )
+                            topic="camera", event_type="new_front_camera_frame", data=dict(frame=frame),
                         )
                         # Navigation
                         Camera.front_capture_device.add_navigation_lines(frame)
@@ -301,6 +292,10 @@ class Camera(object):
                         else:
                             overlay_frame = Camera.front_capture_device.retrieve()
                             Camera.back_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
+
+                    BaseHandler.emit_event(
+                        topic="camera", event_type="new_streaming_frame", data=dict(frame=frame),
+                    )
 
                     if Camera.streaming:
                         frame = cv2.imencode('.jpg', frame)[1].tostring()

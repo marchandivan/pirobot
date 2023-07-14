@@ -102,6 +102,11 @@
       "need_setup": true,
       "category": "camera"
     },
+    "video_codec": {
+      "type": "str",
+      "default": "XVID",
+      "category": "camera"
+    },
     "robot_has_light": {
       "type": "bool",
       "default": false,

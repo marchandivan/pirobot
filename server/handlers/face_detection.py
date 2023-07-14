@@ -16,9 +16,10 @@ class FaceDetectionHandler(BaseHandler):
         super().__init__()
         self.follow_face_speed = Config.get("follow_face_speed")
         self.register_for_message("face_detection")
-        self.register_for_event("camera", "new_frame")
+        self.register_for_event("camera", "new_front_camera_frame")
         self.face_position = None
         self.running = False
+        self.frame_counter = 0
 
     def process(self, message, protocol):
         if message["action"] == "toggle":
@@ -46,18 +47,15 @@ class FaceDetectionHandler(BaseHandler):
             self.start()
 
     def receive_event(self, topic, event_type, data):
-        if self.running and topic == "camera" and event_type == "new_frame":
-            self.detect_face(
-                frame=data["frame"],
-                frame_counter=data["frame_counter"],
-                frame_rate=data["frame_rate"],
-                res_x=data["res_x"],
-                res_y=data["res_y"],
-            )
+        if self.running and topic == "camera" and event_type == "new_front_camera_frame" and len(data["frame"]) > 0:
+            self.detect_face(frame=data["frame"])
+            self.frame_counter += 1
 
-    def detect_face(self, frame, frame_counter, frame_rate, res_x, res_y):
+    def detect_face(self, frame):
+        res_y = len(frame)
+        res_x = len(frame[0])
         # Run face detection every second
-        if frame_counter % frame_rate == 0:
+        if self.frame_counter % Camera.frame_rate == 0:
             self.face_position = None
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = face_cascade.detectMultiScale(gray, 1.1, 4)

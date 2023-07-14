@@ -56,7 +56,7 @@ class VideoServerProtocol(asyncio.Protocol):
         self.transport = transport
         peername = transport.get_extra_info("peername")
         logger.info(f"Connection to video server from {peername}")
-        Camera.add_new_streamin_frame_callback(self.send_new_frame)
+        Camera.add_new_streaming_frame_callback(self.send_new_frame)
         Camera.start_streaming()
 
     def connection_lost(self, exc):
