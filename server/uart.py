@@ -66,7 +66,7 @@ class UART:
     consumers = {}
 
     @staticmethod
-    def e(name, consumer, originator=None, message_type=None):
+    def register_consumer(name, consumer, originator=None, message_type=None):
         UART.consumers[name] = UART.ConsumerConfig(name=name, consumer=consumer, originator=originator, message_type=message_type)
 
     @staticmethod
