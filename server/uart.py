@@ -66,7 +66,7 @@ class UART:
     consumers = {}
 
     @staticmethod
-    def register_consumer(name, consumer, originator=None, message_type=None):
+    def e(name, consumer, originator=None, message_type=None):
         UART.consumers[name] = UART.ConsumerConfig(name=name, consumer=consumer, originator=originator, message_type=message_type)
 
     @staticmethod
@@ -118,10 +118,20 @@ class UART:
         try:
             message = data + "\n"
             if UART.serial_port is not None:
-                UART.serial_port.write(message.encode())
+                UART._write(UART.serial_port, message.encode())
                 RobotLogger.log_message("UART", "S", data)
             else:
                 logger.warning("Unable to send serial message")
         except:
             logger.error("Unable to send serial message", exc_info=True)
 
+    @staticmethod
+    def _write(port, data):
+        if port._closing:
+            return
+
+        if not port._has_writer:
+            port._write_buffer.append(data)
+            port._ensure_writer()
+        else:
+            port._write_buffer.append(data)

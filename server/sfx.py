@@ -6,11 +6,11 @@ logger = logging.getLogger(__name__)
 
 
 class SFX(object):
+    sfx_path = os.path.join(os.path.dirname(__file__), 'assets/SFX')
 
     @staticmethod
     def setup():
         mixer.init()
-        SFX.sfx_path = os.path.join(os.path.dirname(__file__), 'assets/SFX')
         if not os.path.isdir(SFX.sfx_path):
             SFX.sfx_path = "/etc/pirobot/assets/SFX"
 
