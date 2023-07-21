@@ -110,7 +110,12 @@ class UART(object):
 
     @staticmethod
     def register_consumer(name, consumer, originator=None, message_type=None):
-        UART.consumers[name] = UART.ConsumerConfig(name=name, consumer=consumer, originator=originator, message_type=message_type)
+        if UART.uart_handler is not None:
+            UART.uart_handler.consumers[name] = UART.ConsumerConfig(
+                name=name, consumer=consumer, originator=originator, message_type=message_type
+            )
+        else:
+            logger.warning("Unable to register consumer: UART port close")
 
     @staticmethod
     def unregister_consumer(name):
