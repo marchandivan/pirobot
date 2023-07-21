@@ -29,12 +29,10 @@ class Server(object):
         self.robot_has_screen = Config.get("robot_has_screen")
         self.robot_has_light = Config.get("robot_has_light")
 
-    async def setup(self):
+    def setup(self):
         # Open UART Port
-        await UART.open()
-        self._setup()
+        UART.open()
 
-    def _setup(self):
         if self.robot_has_speaker:
             # Voice
             self.voice_engine = pyttsx3.init()

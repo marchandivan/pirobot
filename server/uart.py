@@ -2,47 +2,12 @@ from enum import Enum
 import asyncio
 import logging
 import serial
-import serial_asyncio
+import threading
 
 from models import Config
 from logger import RobotLogger
 
 logger = logging.getLogger(__name__)
-
-
-class OutputProtocol(asyncio.Protocol):
-    def __init__(self):
-        self.buffer = ""
-
-    def connection_made(self, transport):
-        self.transport = transport
-        logger.info(f"UART port opened {transport}")
-        transport.serial.rts = False  # You can manipulate Serial object via transport
-
-    def data_received(self, data):
-        self.buffer += data.decode()
-        while len(self.buffer) > 0:
-            i = self.buffer.find("\n")
-            if i >= 0:
-                line = self.buffer[:i + 1]
-                self.buffer = self.buffer[i + 1:]
-                message = line[:-1]
-                UART.dispatch_uart_message(message)
-                RobotLogger.log_message("UART", "R", message)
-            else:
-                break
-
-    def connection_lost(self, exc):
-        logger.info("UART port closed")
-        self.transport.loop.stop()
-
-    def pause_writing(self):
-        logger.info("UART pause writing")
-        logger.info(self.transport.get_write_buffer_size())
-
-    def resume_writing(self):
-        logger.info(self.transport.get_write_buffer_size())
-        logger.info("UART resume writing")
 
 
 class MessageOriginator(Enum):
@@ -54,7 +19,10 @@ class MessageType(Enum):
     status = "S"
 
 
-class UART:
+class UART(object):
+    consumers = {}
+    uart_handler = None
+
     class ConsumerConfig(object):
         def __init__(self, name, consumer, originator, message_type):
             self.name = name
@@ -62,8 +30,83 @@ class UART:
             self.originator = originator
             self.message_type = message_type
 
-    serial_port = None
-    consumers = {}
+    def __init__(self, port, baudrate):
+        self.consumers = {}
+        self.read_buffer = ""
+        self.write_buffer = ""
+        self.write_buffer_lock = threading.Lock()
+        self.has_writer = threading.Event()
+        self.loop = asyncio.get_event_loop()
+        self.serial = serial.Serial(
+                port=port,
+                baudrate=baudrate,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                timeout=0,
+        )
+        self.loop.add_reader(self.serial.fileno(), self.data_received)
+
+    def data_received(self):
+        self.read_buffer += self.serial.read(1024).decode()
+        while len(self.read_buffer) > 0:
+            i = self.read_buffer.find("\n")
+            if i >= 0:
+                line = self.read_buffer[:i + 1]
+                self.read_buffer = self.read_buffer[i + 1:]
+                message = line[:-1]
+                self.dispatch_uart_message(message)
+                RobotLogger.log_message("UART", "R", message)
+            elif self.serial.in_waiting == 0:
+                break
+            else:
+                self.read_buffer += self.serial.read(1024).decode()
+
+    def write_data(self):
+        self.write_buffer_lock.acquire()
+        self.has_writer.set()
+        data = self.write_buffer
+        self.write_buffer = ""
+        self.write_buffer_lock.release()
+
+        # Write data to serial port
+        bytes_writen = self.serial.write(data.encode())
+
+        # All data writen?
+        if bytes_writen < len(data):
+            data = data[:bytes_writen]
+        else:
+            data = ""
+
+        self.write_buffer_lock.acquire()
+        self.write_buffer = data + self.write_buffer
+        # Any data left to write?
+        if len(self.write_buffer) == 0:
+            self.loop.remove_writer(self.serial.fileno())
+            self.has_writer.clear()
+        self.write_buffer_lock.release()
+
+    def _write(self, data):
+        self.write_buffer_lock.acquire()
+        self.write_buffer += data
+
+        if not self.has_writer.is_set():
+            self.loop.add_writer(self.serial.fileno(), self.write_data)
+        self.write_buffer_lock.release()
+
+    def dispatch_uart_message(self, message):
+        message_parts = message.split(':')
+        originator = message_parts[0]
+        message_type = message_parts[1]
+        # Received keepalive message?
+        if originator == "K":
+            UART.write("K:OK")
+        for consumer_config in self.consumers.values():
+            if consumer_config.originator is not None and consumer_config.originator.value != originator:
+                continue
+            if consumer_config.message_type is not None and consumer_config.message_type.value != message_type:
+                continue
+            consumer_config.consumer.receive_uart_message(message_parts[2:], originator, message_type)
 
     @staticmethod
     def register_consumer(name, consumer, originator=None, message_type=None):
@@ -74,64 +117,27 @@ class UART:
         del UART.consumers[name]
 
     @staticmethod
-    def dispatch_uart_message(message):
-        message_parts = message.split(':')
-        originator = message_parts[0]
-        message_type = message_parts[1]
-        # Received keepalive message?
-        if originator == "K":
-            UART.write("K:OK")
-        for consumer_config in UART.consumers.values():
-            if consumer_config.originator is not None and consumer_config.originator.value != originator:
-                continue
-            if consumer_config.message_type is not None and consumer_config.message_type.value != message_type:
-                continue
-            consumer_config.consumer.receive_uart_message(message_parts[2:], originator, message_type)
-
-    @staticmethod
     def ready():
-        return UART.serial_port is not None
+        return UART.uart_handler is not None
 
     @staticmethod
-    async def open():
-        if UART.serial_port is None:
-            await UART.open_serial_port()
+    def open():
+        if UART.uart_handler is None:
+            try:
+                UART.uart_handler = UART(port=Config.get("uart_port"), baudrate=Config.get("uart_baudrate"))
+            except:
+                logger.error("Unable to open serial port", exc_info=True)
 
-    @staticmethod
-    async def open_serial_port():
-        try:
-            loop = asyncio.get_event_loop()
-            UART.serial_port, protocol = await serial_asyncio.create_serial_connection(
-                loop=loop,
-                protocol_factory=OutputProtocol,
-                url=Config.get("uart_port"),
-                baudrate=Config.get("uart_baudrate"),
-                bytesize=serial.EIGHTBITS,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE
-            )
-        except:
-            logger.error(f"Unable to open serial port {Config.get('uart_port')}", exc_info=True)
 
     @staticmethod
     def write(data):
         try:
             message = data + "\n"
-            if UART.serial_port is not None:
-                UART._write(UART.serial_port, message.encode())
+            if UART.uart_handler is not None:
+                UART.uart_handler._write(data=message)
                 RobotLogger.log_message("UART", "S", data)
             else:
-                logger.warning("Unable to send serial message")
+                logger.warning("Unable to send serial message, the port is not opened")
         except:
             logger.error("Unable to send serial message", exc_info=True)
 
-    @staticmethod
-    def _write(port, data):
-        if port._closing:
-            return
-
-        if not port._has_writer:
-            port._write_buffer.append(data)
-            port._ensure_writer()
-        else:
-            port._write_buffer.append(data)

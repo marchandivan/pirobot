@@ -140,7 +140,7 @@ async def start_server():
     try:
         # Setup server
         server = Server()
-        await server.setup()
+        server.setup()
 
         # Start video streaming
         await asyncio.gather(run_video_server(), run_server(server), return_exceptions=True)
