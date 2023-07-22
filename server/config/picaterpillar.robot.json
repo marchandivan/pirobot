@@ -19,6 +19,9 @@
     "robot_has_speaker": {
       "default": true
     },
+    "robot_has_battery_tester": {
+      "default": true,
+    },
     "voice_rate": {
       "default": 120
     },

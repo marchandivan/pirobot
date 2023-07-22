@@ -76,6 +76,10 @@ class Server(object):
         if self.robot_has_screen:
             self.terminal.text("Ready!")
 
+        # Initialize handlers
+        for handler in BaseHandler.handlers.values():
+            handler.setup(self)
+
     @staticmethod
     def process(message, protocol):
         for handler in BaseHandler.get_handler_for_message_type(message["type"]):

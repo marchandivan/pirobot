@@ -3,7 +3,8 @@
     "uart_port": {
       "type": "str",
       "default": "/dev/ttyAMA0",
-      "category": "uart"
+      "category": "uart",
+      "need_setup": true
     },
     "uart_baudrate": {
       "type": "int",
@@ -113,22 +114,62 @@
       "export": true,
       "category": "capability"
     },
+    "robot_has_battery_tester": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "category": "capability"
+    },
+    "battery_tester_r1": {
+      "type": "float",
+      "default": 84500,
+      "need_setup": true,
+      "category": "battery"
+    },
+    "battery_tester_r2": {
+      "type": "float",
+      "default": 20000,
+      "need_setup": true,
+      "category": "battery"
+    },
+    "battery_min_volt": {
+      "type": "float",
+      "default": 11.5,
+      "need_setup": true,
+      "category": "battery"
+    },
+    "battery_max_volt": {
+      "type": "float",
+      "default": 13.0,
+      "need_setup": true,
+      "category": "battery"
+    },
     "robot_has_screen": {
       "type": "bool",
       "default": false,
       "export": true,
+      "need_setup": true,
       "category": "capability"
     },
     "robot_has_speaker": {
       "type": "bool",
       "default": false,
       "export": true,
+      "need_setup": true,
       "category": "capability"
     },
     "robot_has_back_camera": {
       "type": "bool",
       "default": false,
       "export": true,
+      "need_setup": true,
+      "category": "capability"
+    },
+    "robot_has_camera_servo": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "need_setup": true,
       "category": "capability"
     },
     "camera_center_position": {
@@ -142,13 +183,6 @@
       "default": 1,
       "need_setup": true,
       "category": "camera"
-    },
-    "robot_has_camera_servo": {
-      "type": "bool",
-      "default": false,
-      "export": true,
-      "need_setup": true,
-      "category": "capability"
     },
     "voice_id": {
       "type": "str",

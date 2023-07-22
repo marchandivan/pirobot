@@ -65,18 +65,32 @@ class ServoHandler(object):
 
 
 class BatteryHandler(object):
-    MAX_BATTERY = 65536
-    MIN_BATTERY = 40000
 
     def __init__(self, pin_adc):
         self.converter = ADC(pin_adc)
-        
+        self.u16_to_v = 3.3 * 104.5 / (20 * 65536)
+
     def get_battery_level(self):
-        value = self.converter.read_u16()
-        return int(value * 100 / BatteryHandler.MAX_BATTERY)
-    
+        return self.converter.read_u16() * self.u16_to_v
+
     def get_status(self):
         return f"B:S:{self.get_battery_level()}"
+
+    def process_command(self, args):
+        try:
+            command = args[0]
+            if command == "C":
+                r1 = float(args[1])
+                r2 = float(args[2])
+                self.u16_to_v = 3.3 * (r1 + r2) / (r2 * 65536)
+            elif command == "S":
+                uart.write(self.get_status() + "\n")
+            else:
+                return False, f"[Battery] Unknonw command {command}"
+        except Exception as e:
+            print(e)
+            return False, f"[Battery] Unable to decode arguments {args}"
+        return True, "OK"
 
 
 class UltraSonicSensor(object):
@@ -715,6 +729,8 @@ def process_command(cmd):
         sucess, data = status_handler.process_command(args)
     elif sensor == "U":
         sucess, data = ultrasonic_handler.process_command(args)
+    elif sensor == "B":
+        sucess, data = battery_handler.process_command(args)
     else:
         sucess, data = False, "Unknown sensor"
     return sensor, sucess, data

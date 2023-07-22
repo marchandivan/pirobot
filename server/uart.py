@@ -32,7 +32,6 @@ class UART(object):
             self.message_type = message_type
 
     def __init__(self, port, baudrate):
-        self.consumers = {}
         self.read_buffer = ""
         self.write_buffer = ""
         self.port = port
@@ -130,7 +129,7 @@ class UART(object):
         # Received keepalive message?
         if originator == "K":
             UART.write("K:OK")
-        for consumer_config in self.consumers.values():
+        for consumer_config in UART.consumers.values():
             if consumer_config.originator is not None and consumer_config.originator.value != originator:
                 continue
             if consumer_config.message_type is not None and consumer_config.message_type.value != message_type:
@@ -139,12 +138,9 @@ class UART(object):
 
     @staticmethod
     def register_consumer(name, consumer, originator=None, message_type=None):
-        if UART.uart_handler is not None:
-            UART.uart_handler.consumers[name] = UART.ConsumerConfig(
-                name=name, consumer=consumer, originator=originator, message_type=message_type
-            )
-        else:
-            logger.warning("Unable to register consumer: UART port close")
+        UART.consumers[name] = UART.ConsumerConfig(
+            name=name, consumer=consumer, originator=originator, message_type=message_type
+        )
 
     @staticmethod
     def unregister_consumer(name):

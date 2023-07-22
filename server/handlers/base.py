@@ -9,13 +9,13 @@ class BaseHandler(object):
 
     @staticmethod
     def get_handler_for_message_type(message_type):
-        return [h for h in BaseHandler.message_listener.get(message_type, []) if h.is_eligible()]
+        return [h for h in BaseHandler.message_listener.get(message_type, []) if h.eligible]
 
     @staticmethod
     def get_handler_for_event(topic, event_type):
         handlers = BaseHandler.event_listener.get(f"{topic}-*", [])
         handlers += BaseHandler.event_listener.get(f"{topic}-{event_type}", [])
-        return [h for h in handlers if h.is_eligible()]
+        return [h for h in handlers if h.eligible]
 
     @staticmethod
     def emit_event(topic, event_type, data):
@@ -33,6 +33,14 @@ class BaseHandler(object):
     def __init__(self):
         self.needs = []
         self.name = None
+        self.eligible = False
+
+    def setup(self, server):
+        self.eligible = True
+        for need in self.needs:
+            if not Config.get(f"robot_has_{need}"):
+                self.eligible = False
+                break
 
     def register_for_event(self, topic, event_type):
         key = topic
@@ -48,14 +56,6 @@ class BaseHandler(object):
         if message_type not in BaseHandler.message_listener:
             BaseHandler.message_listener[message_type] = []
         BaseHandler.message_listener[message_type].append(self)
-
-    def is_eligible(self):
-        is_eligible = True
-        for need in self.needs:
-            if not Config.get(f"robot_has_{need}"):
-                is_eligible = False
-                break
-        return is_eligible
 
 
 def register_handler(name, needs=[]):
