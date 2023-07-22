@@ -7,7 +7,8 @@ from camera import Camera
 from handlers.base import BaseHandler, register_handler
 from models import Config
 
-@register_handler("drive")
+
+@register_handler("camera")
 class CameraHandler(BaseHandler):
 
     def __init__(self):

@@ -712,7 +712,7 @@ patroller_handler = PatrollerHandler(motor_handler, ultrasonic_handler)
 
 status_handler = StatusHandler()
 status_handler.add_handler(motor_handler, 200)
-status_handler.add_handler(battery_handler, 60000)
+status_handler.add_handler(battery_handler, 10000)
 
 
 def process_command(cmd):
