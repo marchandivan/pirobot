@@ -22,6 +22,7 @@ class MessageType(Enum):
 class UART(object):
     consumers = {}
     uart_handler = None
+    refresh_interval = 1
 
     class ConsumerConfig(object):
         def __init__(self, name, consumer, originator, message_type):
@@ -34,33 +35,61 @@ class UART(object):
         self.consumers = {}
         self.read_buffer = ""
         self.write_buffer = ""
+        self.port = port
+        self.baudrate = baudrate
         self.write_buffer_lock = threading.Lock()
         self.has_writer = threading.Event()
         self.loop = asyncio.get_event_loop()
-        self.serial = serial.Serial(
-                port=port,
-                baudrate=baudrate,
-                bytesize=serial.EIGHTBITS,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                timeout=0,
-        )
-        self.loop.add_reader(self.serial.fileno(), self.data_received)
+        self.serial = None
+        self.connect()
+        self.loop.call_soon(self.monitor_connection)
+
+    def monitor_connection(self):
+        if self.serial is None or not self.serial.is_open:
+            logger.info("Connection lost, reconnecting...")
+            self.connect()
+        self.loop.call_later(UART.refresh_interval, self.monitor_connection)
+
+    def connect(self):
+        try:
+            self.serial = serial.Serial(
+                    port=self.port,
+                    baudrate=self.baudrate,
+                    bytesize=serial.EIGHTBITS,
+                    parity=serial.PARITY_NONE,
+                    stopbits=serial.STOPBITS_ONE,
+                    timeout=0,
+            )
+        except:
+            logger.error("Unable to open serial port", exc_info=True)
+            if self.serial is not None:
+                self.serial.close()
+                self.serial = None
+        else:
+            self.loop.add_reader(self.serial.fileno(), self.data_received)
 
     def data_received(self):
-        self.read_buffer += self.serial.read(1024).decode()
-        while len(self.read_buffer) > 0:
-            i = self.read_buffer.find("\n")
-            if i >= 0:
-                line = self.read_buffer[:i + 1]
-                self.read_buffer = self.read_buffer[i + 1:]
-                message = line[:-1]
-                self.dispatch_uart_message(message)
-                RobotLogger.log_message("UART", "R", message)
-            elif self.serial.in_waiting == 0:
-                break
+        try:
+            if not self.serial.is_open:
+                self.loop.remove_reader(self.serial.fileno())
             else:
                 self.read_buffer += self.serial.read(1024).decode()
+                while len(self.read_buffer) > 0:
+                    i = self.read_buffer.find("\n")
+                    if i >= 0:
+                        line = self.read_buffer[:i + 1]
+                        self.read_buffer = self.read_buffer[i + 1:]
+                        message = line[:-1]
+                        self.dispatch_uart_message(message)
+                        RobotLogger.log_message("UART", "R", message)
+                    elif self.serial.in_waiting == 0:
+                        break
+                    else:
+                        self.read_buffer += self.serial.read(1024).decode()
+        except:
+            logger.error("Unable to read data sent on serial port", exc_info=True)
+            self.loop.remove_reader(self.serial.fileno())
+            self.serial.close()
 
     def write_data(self):
         self.write_buffer_lock.acquire()
@@ -133,16 +162,14 @@ class UART(object):
             except:
                 logger.error("Unable to open serial port", exc_info=True)
 
-
     @staticmethod
     def write(data):
         try:
             message = data + "\n"
-            if UART.uart_handler is not None:
+            if UART.uart_handler is not None and UART.uart_handler.serial is not None:
                 UART.uart_handler._write(data=message)
                 RobotLogger.log_message("UART", "S", data)
             else:
                 logger.warning("Unable to send serial message, the port is not opened")
         except:
             logger.error("Unable to send serial message", exc_info=True)
-
