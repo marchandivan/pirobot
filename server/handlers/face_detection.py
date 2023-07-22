@@ -34,6 +34,7 @@ class FaceDetectionHandler(BaseHandler):
             BaseHandler.set_state("face_detection")
             self.running = True
             self.follow_face_speed = Config.get("follow_face_speed")
+            Camera.set_position(100)
 
     def stop(self):
         if BaseHandler.state == "face_detection":
