@@ -21,8 +21,8 @@ class TalkHandler(BaseHandler):
             if len(cmd) > 1:
                 command = cmd[0]
                 args = cmd[1:]
-                if command == "img":
-                    Server.set_lcd_picture(args[0])
+                if command == "img" and server.robot_has_screen:
+                    server.set_lcd_picture(args[0])
                     message = None
                 elif command == "play":
                     message = Games.play(args[0], args[1:])

@@ -2,7 +2,7 @@ from handlers.base import BaseHandler, register_handler
 from light import Light
 
 
-@register_handler("light")
+@register_handler(name="light", needs=["light"])
 class LightHandler(BaseHandler):
 
     def __init__(self):

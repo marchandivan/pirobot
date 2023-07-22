@@ -4,7 +4,7 @@ from handlers.base import BaseHandler, register_handler
 from sfx import SFX
 
 
-@register_handler("sfx")
+@register_handler(name="sfx", needs=["speaker"])
 class SfxHandler(BaseHandler):
 
     def __init__(self):

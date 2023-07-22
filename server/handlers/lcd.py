@@ -7,7 +7,7 @@ from handlers.base import BaseHandler, register_handler
 logger = logging.getLogger(__name__)
 
 
-@register_handler("lcd")
+@register_handler(name="lcd", needs=["screen"])
 class DriveHandler(BaseHandler):
 
     def __init__(self):
