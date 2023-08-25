@@ -13,7 +13,7 @@ class Terminal(object):
         if not os.path.isfile(font_filepath):
             font_filepath = os.path.join(asset_dir, "Courier.ttf")
         self._font = ImageFont.truetype(font_filepath, font_size)
-        _, font_h = self._font.getsize("A")
+        _, font_h = self._font.getmetrics()
         self._line_h = font_h + interline
         self._nb_line = (self._lcd.width // self._line_h) - 1
         self._background = background
@@ -27,7 +27,7 @@ class Terminal(object):
             self.stdout()
 
     def text(self, text, stdout=True):
-        w, _ = self._font.getsize(text)
+        w = self._font.getlength(text)
         overflow = ""
         while w > self._lcd.height:
             overflow = text[-1] + overflow
