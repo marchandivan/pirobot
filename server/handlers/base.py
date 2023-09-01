@@ -18,6 +18,10 @@ class BaseHandler(object):
         return [h for h in handlers if h.eligible]
 
     @staticmethod
+    def get_handler(name):
+        return BaseHandler.handlers.get(name)
+
+    @staticmethod
     def emit_event(topic, event_type, data):
         for handler in BaseHandler.get_handler_for_event(topic, event_type):
             handler.receive_event(topic, event_type, data)
@@ -34,9 +38,11 @@ class BaseHandler(object):
         self.needs = []
         self.name = None
         self.eligible = False
+        self.server = None
 
     def setup(self, server):
         self.eligible = True
+        self.server = server
         for need in self.needs:
             if not Config.get(f"robot_has_{need}"):
                 self.eligible = False

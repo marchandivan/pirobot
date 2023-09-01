@@ -13,7 +13,7 @@ class Terminal(object):
         if not os.path.isfile(font_filepath):
             font_filepath = os.path.join(asset_dir, "Courier.ttf")
         self._font = ImageFont.truetype(font_filepath, font_size)
-        _, font_h = self._font.getmetrics()
+        _, _, _, font_h = self._font.getbbox("A")
         self._line_h = font_h + interline
         self._nb_line = (self._lcd.width // self._line_h) - 1
         self._background = background

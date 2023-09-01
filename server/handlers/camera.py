@@ -3,6 +3,8 @@ import datetime
 import time
 import os
 
+from PIL import Image
+
 from camera import Camera
 from handlers.base import BaseHandler, register_handler
 from models import Config
@@ -18,6 +20,7 @@ class CameraHandler(BaseHandler):
         self.frame_counter = 0
         self.video_source = "streaming"
         self.picture_source = "streaming"
+        self.picture_destination = "file"
         self.picture_format = "png"
         self.capture_video = False
         self.capture_picture = False
@@ -54,6 +57,7 @@ class CameraHandler(BaseHandler):
             self.capture_picture = True
             self.picture_source = message["args"].get("source", "streaming")
             self.picture_format = message["args"].get("format", "png")
+            self.picture_destination = message["args"].get("destination", "file")
 
     def get_filename(self):
         robot_name = Config.get("robot_name")
@@ -86,9 +90,15 @@ class CameraHandler(BaseHandler):
 
                 # Capturing Picture?
                 if self.capture_picture and self.picture_source == video_source:
-                    cv2.imwrite(
-                        os.path.join(self.picture_dir, f"{self.get_filename()}.{self.picture_format}"), data["frame"]
-                    )
+                    if self.picture_destination == "lcd":
+                        if self.server.robot_has_screen:
+                            image = Image.fromarray(data["frame"])
+                            image = image.resize((self.server.lcd.height, self.server.lcd.width))
+                            self.server.lcd.ShowImage(image)
+                    else:
+                        cv2.imwrite(
+                            os.path.join(self.picture_dir, f"{self.get_filename()}.{self.picture_format}"), data["frame"]
+                        )
                     self.capture_picture = False
 
                 # Add REC indicator
