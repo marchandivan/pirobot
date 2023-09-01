@@ -41,6 +41,7 @@ class FaceDetectionHandler(BaseHandler):
             BaseHandler.reset_state()
         self.running = False
         self.face_position = None
+        Camera.center_position()
 
     def toggle(self):
         if self.running:

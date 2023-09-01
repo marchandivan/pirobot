@@ -174,7 +174,7 @@
     },
     "camera_center_position": {
       "type": "int",
-      "default": 60,
+      "default": 75,
       "need_setup": true,
       "category": "camera"
     },

@@ -36,6 +36,7 @@ class CameraHandler(BaseHandler):
             os.mkdir(self.picture_dir)
 
     def process(self, message, protocol):
+        print(message)
         if message["action"] == "set_position":
             Camera.set_position(message["args"]["position"])
         elif message["action"] == "center_position":

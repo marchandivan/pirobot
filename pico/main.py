@@ -102,7 +102,7 @@ class UltraSonicSensor(object):
         self.trigger = Pin(pin_trigger, Pin.OUT)
         self.echo = Pin(pin_echo, Pin.IN)
         self.timer = None
-
+        
     def pulse(self, t=None):
         if self.start is not None and self.stop > 0:
             self.distance = 0.000343 * (self.stop - self.start) / 2

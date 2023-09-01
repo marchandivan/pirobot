@@ -205,11 +205,16 @@ class Camera(object):
     servo_id = 1
     servo_center_position = 60
     servo_position = 0
-    new_streaming_frame_callback = None
+    new_streaming_frame_callbacks = {}
 
     @staticmethod
-    def add_new_streaming_frame_callback(callback):
-        Camera.new_streaming_frame_callback = callback
+    def add_new_streaming_frame_callback(name, callback):
+        Camera.new_streaming_frame_callbacks[name] = callback
+
+    @staticmethod
+    def remove_new_streaming_frame_callback(name):
+        if name in Camera.new_streaming_frame_callbacks:
+            del Camera.new_streaming_frame_callbacks[name]
 
     @staticmethod
     def setup():
@@ -293,14 +298,15 @@ class Camera(object):
                             overlay_frame = Camera.front_capture_device.retrieve()
                             Camera.back_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
 
-                    BaseHandler.emit_event(
-                        topic="camera", event_type="new_streaming_frame", data=dict(frame=frame),
-                    )
+                    if frame is not None:
+                        BaseHandler.emit_event(
+                            topic="camera", event_type="new_streaming_frame", data=dict(frame=frame),
+                        )
 
-                    if Camera.streaming:
-                        frame = cv2.imencode('.jpg', frame)[1].tostring()
-                        if Camera.new_streaming_frame_callback is not None:
-                            Camera.new_streaming_frame_callback(frame)
+                        if Camera.streaming:
+                            frame = cv2.imencode('.jpg', frame)[1].tostring()
+                            for callback in Camera.new_streaming_frame_callbacks.values():
+                                callback(frame)
             except Exception:
                 logger.error("Unexpected exception in continuous capture", exc_info=True)
                 continue

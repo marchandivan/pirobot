@@ -13,6 +13,7 @@ from logger import RobotLogger
 from models import Config
 from prettytable import PrettyTable
 from server import Server
+from webserver.app import run_webserver
 
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ class VideoServerProtocol(asyncio.Protocol):
         self.transport = transport
         peername = transport.get_extra_info("peername")
         logger.info(f"Connection to video server from {peername}")
-        Camera.add_new_streaming_frame_callback(self.send_new_frame)
+        Camera.add_new_streaming_frame_callback("socket", self.send_new_frame)
         Camera.start_streaming()
 
     def connection_lost(self, exc):
@@ -136,14 +137,15 @@ async def run_server(server):
         await server_socket.serve_forever()
 
 
-async def start_server():
+def start_server():
     try:
         # Setup server
         server = Server()
         server.setup()
 
         # Start video streaming
-        await asyncio.gather(run_video_server(), run_server(server), return_exceptions=True)
+        #await asyncio.gather(run_video_server(), run_server(server), return_exceptions=True)
+        run_webserver()
     except KeyboardInterrupt:
         logger.info("Stopping...")
         sys.exit(0)
@@ -200,7 +202,7 @@ if __name__ == "__main__":
     Config.setup(args.config)
 
     if args.command == "runserver":
-        asyncio.run(start_server())
+        start_server()
     elif args.command == "configuration":
         if args.action == "update" and not args.value:
             print(f"Missing value for update")
