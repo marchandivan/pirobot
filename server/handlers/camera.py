@@ -92,7 +92,8 @@ class CameraHandler(BaseHandler):
                 if self.capture_picture and self.picture_source == video_source:
                     if self.picture_destination == "lcd":
                         if self.server.robot_has_screen:
-                            image = Image.fromarray(data["frame"])
+                            frame = cv2.cvtColor(data["frame"], cv2.COLOR_BGR2RGB)
+                            image = Image.fromarray(frame)
                             image = image.resize((self.server.lcd.height, self.server.lcd.width))
                             self.server.lcd.ShowImage(image)
                     else:
