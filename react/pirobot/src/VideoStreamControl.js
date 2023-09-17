@@ -12,6 +12,8 @@ import PictureInPictureIcon from '@mui/icons-material/PictureInPicture';
 import SwitchCameraIcon from '@mui/icons-material/SwitchCamera';
 import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
 import RadarIcon from '@mui/icons-material/Radar';
+import {Joystick} from "react-joystick-component";
+import {View} from "react-native";
 import React from "react";
 
 const FPS_UPDATE_INTERVAL = 1;
@@ -52,43 +54,59 @@ class VideoStreamControl extends React.Component {
         this.socket.emit("video_stream", "ready");
     }
 
+    handleMoveRobot = (e) => {
+        console.log(e);
+    }
+
+    handleStopRobot = (e) => {
+        console.log(e);
+    }
+
     render() {
         const base64String = btoa(String.fromCharCode(...new Uint8Array(this.state.frame)));
         return (
             <Grid container justifyContent="center" alignItems="center">
                 <Grid item xl={12} md={12} sm={12} xs={12}>
-                    <Stack
-                        spacing={0}
-                        justifyContent="center"
-                        alignItems="center"
-                        direction="row">
                     <img
                         src={`data:image/jpeg;base64,${base64String}`}
-                        style={{maxHeight: window.outerHeight * 0.7}}
-                        width={window.outerWidth > window.outerHeight ? window.outerWidth * 0.63 : window.outerWidth * 0.9}
+                        //style={{maxHeight: window.outerHeight * 0.7}}
+                        width={window.outerWidth}
+                        height={window.outerHeight*.7}
                         alt="Camera Feed"
                         onMouseMove={this.props.onMouseMove}
                         onClick={this.props.onClick}
                     />
-                    <Stack
-                        sx={{ height: 500 }}
-                        justifyContent="center"
-                        alignItems="center"
-                        direction="column">
-                        <Slider
-                            min={0}
-                            max={100}
-                            step={1}
-                            aria-label="Camera position"
-                            orientation="vertical"
-                            valueLabelDisplay="auto"
-                            value={this.props.camera_position}
-                            onChange={this.props.set_camera_position}
-                            marks={[{value: this.props.center_position}]}
-                        />
-                        <IconButton onClick={this.props.centerCameraPosition}><VerticalAlignCenterIcon/></IconButton>
-                    </Stack>
-                    </Stack>
+                    <View style={{position: 'absolute', top: -window.outerHeight * 0.6, left: window.outerWidth * 0.6, width: 300, height: 300, justifyContent: 'center', alignItems: 'center'}}>
+                        <Joystick
+                            size={200}
+                            stickSize={100}
+                            sticky={false}
+                            baseColor="grey"
+                            stickColor="#00FF00"
+                            move={this.handleMoveRobot}
+                            stop={this.handleStopRobot}>
+                        </Joystick>
+                    </View>
+                    <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center'}}>
+                        <Stack
+                            sx={{ height: 500 }}
+                            justifyContent="center"
+                            alignItems="center"
+                            direction="column">
+                            <Slider
+                                min={0}
+                                max={100}
+                                step={1}
+                                aria-label="Camera position"
+                                orientation="vertical"
+                                valueLabelDisplay="auto"
+                                value={this.props.camera_position}
+                                onChange={this.props.set_camera_position}
+                                marks={[{value: this.props.center_position}]}
+                            />
+                            <IconButton onClick={this.props.centerCameraPosition}><VerticalAlignCenterIcon/></IconButton>
+                        </Stack>
+                    </View>
                 </Grid>
                 <Grid item xl={12} md={12} sm={12} xs={12}>
                   <Stack spacing={0} direction="row" alignItems="center" justifyContent="center">
