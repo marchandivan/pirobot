@@ -1,5 +1,6 @@
 from camera import Camera
 from handlers.base import BaseHandler
+# noinspection PyUnresolvedReferences
 from handlers import *
 from light import Light
 from models import Config
@@ -29,6 +30,10 @@ class Server(object):
         self.robot_has_screen = Config.get("robot_has_screen")
         self.robot_has_light = Config.get("robot_has_light")
 
+        self.lcd = None
+        self.terminal = None
+        self.voice_engine = None
+
     def setup(self):
         # Open UART Port
         UART.open()
@@ -39,8 +44,6 @@ class Server(object):
 
             # SFX
             SFX.setup()
-        else:
-            self.voice_engine = None
 
         if self.robot_has_screen:
             # LCD & terminal Initialization
@@ -53,9 +56,6 @@ class Server(object):
             self.terminal = Terminal("Courier", self.lcd)
             self.terminal.header("PiRobot v1.0")
             self.terminal.text("Starting...")
-        else:
-            self.lcd = None
-            self.terminal = None
 
         # Motor Initialization
         Motor.setup()
