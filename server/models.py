@@ -19,7 +19,8 @@ DEFAULT_CONFIG = {
     "message_log_file": None,
     "log_level": "INFO",
     "video_server_port": 8001,
-    "server_port": 8000
+    "server_port": 8000,
+    "webserver_port": 8080,
 }
 
 
@@ -133,6 +134,10 @@ class Config(Base):
     @staticmethod
     def get_video_server_port():
         return int(Config.user_config.get("pirobot", "video_server_port"))
+
+    @staticmethod
+    def get_webserver_port():
+        return int(Config.user_config.get("pirobot", "webserver_port"))
 
     @staticmethod
     def get_server_port():

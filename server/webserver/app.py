@@ -5,13 +5,13 @@ import logging
 import os
 import uuid
 
+from models import Config
 from webserver.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
-if os.path.isdir("/var/www")
 ROOT_DIR_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 STATIC_DIR_PATH = os.path.join(ROOT_DIR_PATH, "react/pirobot/build/static")
 if not os.path.isdir(STATIC_DIR_PATH):
@@ -61,4 +61,4 @@ app.add_routes([web.static('/static', STATIC_DIR_PATH)])
 
 
 async def run_webserver():
-    await web._run_app(app)
+    await web._run_app(app, port=Config.get_webserver_port())
