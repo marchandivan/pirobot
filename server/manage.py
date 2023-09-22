@@ -186,6 +186,9 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--config', type=str, help='Robot config name or config file path')
     subparsers = parser.add_subparsers(dest="command")
 
+    # Run server parameters
+    parser_runserver = subparsers.add_parser('runserver')
+
     # Configuration parameters
     parser_configure = subparsers.add_parser('configuration')
     parser_configure.add_argument('action', choices=["get", "update", "delete"])
