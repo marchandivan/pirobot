@@ -18,7 +18,7 @@ if not os.path.isdir(STATIC_DIR_PATH):
     STATIC_DIR_PATH = "/var/www/static"
 INDEX_FILE_PATH = os.path.join(ROOT_DIR_PATH, "react/pirobot/build/index.html")
 if not os.path.isfile(INDEX_FILE_PATH):
-    STATIC_DIR_PATH = "/var/www/index.html"
+    INDEX_FILE_PATH = "/var/www/index.html"
 
 @routes.get("/")
 async def index(request):
