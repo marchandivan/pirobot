@@ -73,7 +73,6 @@ class VideoStreamControl extends React.Component {
     }
 
     handleMoveRobot = (e) => {
-        console.log(e);
         let x_pos = e.x * 100;
         let y_pos = -e.y * 100;
         if (Math.abs(x_pos) < 2 && Math.abs(y_pos < 2)) {
@@ -121,7 +120,6 @@ class VideoStreamControl extends React.Component {
     }
 
     handleStopRobot = (e) => {
-        console.log(e);
         this.props.send_json({"topic": "robot", "message": {"type": "drive", "action": "stop"}});
     }
 
@@ -133,7 +131,8 @@ class VideoStreamControl extends React.Component {
             var len = bytes.byteLength;
             for (var i = 0; i < len; i++) {
                 binary += String.fromCharCode( bytes[ i ] );
-}            base64String = btoa(binary);
+            }
+            base64String = btoa(binary);
         }
         return (
             <Grid container direction="row" justifyContent="center" alignItems="center" style={{margin: 0, padding: 0}}>
@@ -144,20 +143,13 @@ class VideoStreamControl extends React.Component {
                         sticky={false}
                         baseColor="grey"
                         stickColor="black"
+                        minDistance={2}
                         move={this.handleMoveRobot}
                         stop={this.handleStopRobot}>
                     </Joystick>
                 </Grid>
                 <Grid container xl={8} md={8} sm={8} xs={8} justifyContent="center" alignItems="center">
                     <Stack direction="column" alignItems="center" justifyContent="center">
-                        <img
-                            src={`data:image/jpg;base64,${base64String}`}
-                            style={{maxHeight: window.innerHeight * 0.8}}
-                            width={window.outerWidth*0.7}
-                            alt="Camera Feed"
-                            onMouseMove={this.props.onMouseMove}
-                            onClick={this.props.onClick}
-                        />
                         <Stack spacing={0} direction="row" alignItems="center" justifyContent="center">
                             {this.props.robot_has_screen && (<IconButton onClick={this.props.capture_image_callback.bind(this, "lcd", this.props.selected_camera)}><CameraAltIcon/></IconButton>)}
                             <Tooltip title="Snapshot"><IconButton onClick={this.props.send_action.bind(this, "camera", "capture_picture", {})}><DownloadIcon/></IconButton></Tooltip>
@@ -167,6 +159,14 @@ class VideoStreamControl extends React.Component {
                             <Tooltip title="Start Patrolling"><IconButton onClick={this.props.send_action.bind(this, "drive", "patrol", {})}><RadarIcon/></IconButton></Tooltip>
                             <Tooltip title="Stop Robot"><IconButton alt="Stop Robot" onClick={this.props.send_action.bind(this, "drive", "stop", {})}><DangerousIcon alt="Stop Robot"/></IconButton></Tooltip>
                         </Stack>
+                        <img
+                            src={`data:image/jpg;base64,${base64String}`}
+                            style={{maxHeight: window.innerHeight * 0.8}}
+                            width={window.outerWidth*0.7}
+                            alt="Camera Feed"
+                            onMouseMove={this.props.onMouseMove}
+                            onClick={this.props.onClick}
+                        />
                     </Stack>
                 </Grid>
                 <Grid container xl={2} md={2} sm={2} xs={2} justifyContent="center" alignItems="center">

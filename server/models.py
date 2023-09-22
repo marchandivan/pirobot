@@ -59,7 +59,7 @@ class Config(Base):
     def setup(robot_config):
 
         Config.user_config = configparser.ConfigParser(defaults=DEFAULT_CONFIG, default_section="pirobot", allow_no_value=True)
-        Config.user_config.read(["/etc/config/pirobot.config", os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")])
+        Config.user_config.read(["/etc/pirobot/pirobot.config", os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")])
 
         # Setup logger
         RobotLogger.setup_logger(
