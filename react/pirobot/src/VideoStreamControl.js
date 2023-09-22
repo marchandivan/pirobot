@@ -150,6 +150,14 @@ class VideoStreamControl extends React.Component {
                 </Grid>
                 <Grid container xl={8} md={8} sm={8} xs={8} justifyContent="center" alignItems="center">
                     <Stack direction="column" alignItems="center" justifyContent="center">
+                        <img
+                            src={`data:image/jpg;base64,${base64String}`}
+                            style={{maxHeight: window.innerHeight * 0.8}}
+                            width={window.outerWidth*0.7}
+                            alt="Camera Feed"
+                            onMouseMove={this.props.onMouseMove}
+                            onClick={this.props.onClick}
+                        />
                         <Stack spacing={0} direction="row" alignItems="center" justifyContent="center">
                             {this.props.robot_has_screen && (<IconButton onClick={this.props.capture_image_callback.bind(this, "lcd", this.props.selected_camera)}><CameraAltIcon/></IconButton>)}
                             <Tooltip title="Snapshot"><IconButton onClick={this.props.send_action.bind(this, "camera", "capture_picture", {})}><DownloadIcon/></IconButton></Tooltip>
@@ -159,14 +167,6 @@ class VideoStreamControl extends React.Component {
                             <Tooltip title="Start Patrolling"><IconButton onClick={this.props.send_action.bind(this, "drive", "patrol", {})}><RadarIcon/></IconButton></Tooltip>
                             <Tooltip title="Stop Robot"><IconButton alt="Stop Robot" onClick={this.props.send_action.bind(this, "drive", "stop", {})}><DangerousIcon alt="Stop Robot"/></IconButton></Tooltip>
                         </Stack>
-                        <img
-                            src={`data:image/jpg;base64,${base64String}`}
-                            style={{maxHeight: window.innerHeight * 0.8}}
-                            width={window.outerWidth*0.7}
-                            alt="Camera Feed"
-                            onMouseMove={this.props.onMouseMove}
-                            onClick={this.props.onClick}
-                        />
                     </Stack>
                 </Grid>
                 <Grid container xl={2} md={2} sm={2} xs={2} justifyContent="center" alignItems="center">
