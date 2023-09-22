@@ -137,15 +137,14 @@ async def run_server(server):
         await server_socket.serve_forever()
 
 
-def start_server():
+async def start_server():
     try:
         # Setup server
         server = Server()
         server.setup()
 
         # Start video streaming
-        #await asyncio.gather(run_video_server(), run_server(server), return_exceptions=True)
-        run_webserver()
+        await asyncio.gather(run_webserver(), run_video_server(), run_server(server), return_exceptions=True)
     except KeyboardInterrupt:
         logger.info("Stopping...")
         sys.exit(0)
@@ -202,7 +201,7 @@ if __name__ == "__main__":
     Config.setup(args.config)
 
     if args.command == "runserver":
-        start_server()
+        asyncio.run(start_server())
     elif args.command == "configuration":
         if args.action == "update" and not args.value:
             print(f"Missing value for update")

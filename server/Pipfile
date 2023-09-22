@@ -14,8 +14,7 @@ pygame = "*"
 sqlalchemy = "*"
 prettytable = "*"
 pyinstaller = "*"
-flask = {extras = ["async"], version = "*"}
-flask-socketio = "*"
+aiohttp = "*"
 
 [dev-packages]
 
