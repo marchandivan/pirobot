@@ -1,3 +1,4 @@
+import copy
 import cv2
 import logging
 import numpy as np
@@ -305,7 +306,8 @@ class Camera(object):
 
                         if Camera.streaming:
                             frame = cv2.imencode('.jpg', frame)[1].tostring()
-                            for callback in Camera.new_streaming_frame_callbacks.values():
+                            callbacks = Camera.new_streaming_frame_callbacks.values()
+                            for callback in callbacks:
                                 callback(frame)
             except Exception:
                 logger.error("Unexpected exception in continuous capture", exc_info=True)

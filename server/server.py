@@ -81,20 +81,23 @@ class Server(object):
             handler.setup(self)
 
     @staticmethod
-    def process(message, protocol):
+    async def process(message, protocol):
         for handler in BaseHandler.get_handler_for_message_type(message["type"]):
-            handler.process(message, protocol)
+            await handler.process(message, protocol)
 
     def connection_lost(self):
         # Stop the robot in case of lost connection
         logger.warning("Client connection lost, stopping robot")
         Motor.stop()
 
-    def send_status(self, protocol):
+    async def send_status(self, protocol):
         status = {
             "type": "status",
             "robot_name": Config.get("robot_name"),
             "config": Config.export_config(),
+            "status": {
+                "camera": Camera.serialize()
+            }
         }
-        protocol.send_message(status)
+        await protocol.send_message("status", status)
 

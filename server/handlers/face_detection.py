@@ -21,7 +21,7 @@ class FaceDetectionHandler(BaseHandler):
         self.running = False
         self.frame_counter = 0
 
-    def process(self, message, protocol):
+    async def process(self, message, protocol):
         if message["action"] == "toggle":
             self.toggle()
         elif message["action"] == "start":

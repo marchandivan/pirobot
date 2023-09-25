@@ -9,7 +9,7 @@ class DriveHandler(BaseHandler):
         super().__init__()
         self.register_for_message("drive")
 
-    def process(self, message, protocol):
+    async def process(self, message, protocol):
         if message["action"] == "move":
             Motor.move(**message["args"])
         elif message["action"] == "stop":

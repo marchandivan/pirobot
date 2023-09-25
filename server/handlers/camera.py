@@ -35,12 +35,13 @@ class CameraHandler(BaseHandler):
         if not os.path.isdir(self.picture_dir):
             os.mkdir(self.picture_dir)
 
-    def process(self, message, protocol):
-        print(message)
+    async def process(self, message, protocol):
         if message["action"] == "set_position":
             Camera.set_position(message["args"]["position"])
+            await self.server.send_status(protocol)
         elif message["action"] == "center_position":
             Camera.center_position()
+            await self.server.send_status(protocol)
         elif message["action"] == "start_video":
             if self.video_writer is not None:
                 self.video_writer.release()

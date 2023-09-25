@@ -9,10 +9,10 @@ class ConfigurationHandler(BaseHandler):
         super().__init__()
         self.register_for_message("configuration")
 
-    def process(self, message, protocol):
+    async def process(self, message, protocol):
         success, need_setup = Config.process(message, protocol)
         if success:
             if need_setup:
                 protocol.server.setup()
             # Update status
-            protocol.server.send_status(protocol)
+            self.server.send_status(protocol)

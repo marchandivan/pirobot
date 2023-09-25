@@ -9,7 +9,10 @@ class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            ws: null
+            ws: null,
+            robot_config: {},
+            robot_name: null,
+            robot_status: {}
         };
     }
 
@@ -23,16 +26,16 @@ class App extends React.Component {
      * This function establishes the connect with the websocket and also ensures constant reconnection if connection closes
      */
     connect = () => {
-        console.log("Connecting to websocket");
-        let ws_url = "ws://" + (window.location.port === "3000" ? "localhost:8080" : window.location.host) + "/ws";
-        console.log(ws_url)
+        console.log("Connecting to robot websocket");
+        let ws_url = "ws://" + (window.location.port === "3000" ? "localhost:8080" : window.location.host) + "/ws/robot";
+
         var ws = new WebSocket(ws_url);
         let that = this; // cache the this
         var connectInterval;
 
         // websocket onopen event listener
         ws.onopen = () => {
-            console.log("Connected to websocket");
+            console.log("Connected to robot websocket");
 
             this.setState({ ws: ws });
 
@@ -54,6 +57,16 @@ class App extends React.Component {
             connectInterval = setTimeout(this.check, Math.min(10000, that.timeout)); //call check function after timeout
         };
 
+        ws.onmessage = evt => {
+            // listen to data sent from the websocket server
+            var message = JSON.parse(evt.data);
+            if (message.topic === "status") {
+                this.updateStatus(message.message)
+            } else {
+                console.log("Unknown message topic " + message.topic)
+            }
+        }
+
         // websocket onerror event listener
         ws.onerror = err => {
             console.error(
@@ -74,6 +87,10 @@ class App extends React.Component {
         if (!ws || ws.readyState === WebSocket.CLOSED) this.connect(); //check if websocket instance is closed, if so call `connect` function.
     };
 
+    updateStatus = (status) => {
+        this.setState({robot_config: status.config, robot_name: status.robot_name, robot_status: status.status});
+    }
+
     send_action = (type, action, args={}) => {
         this.send_json({topic: "robot", message: {type: type, action: action, args: args}});
     }
@@ -85,21 +102,20 @@ class App extends React.Component {
     }
 
     render() {
-
-      document.body.style.overflow = "hidden";
-      if (document.body.fullscreenEnabled) {
-          document.body.requestFullscreen();
-      }
-      return (
+        document.body.style.overflow = "hidden";
+        if (document.body.fullscreenEnabled) {
+            document.body.requestFullscreen();
+        }
+        return (
         <div className="App">
             <VideoStreamControl
-                  ws={this.state.ws}
                   send_action={this.send_action}
-                  send_json={this.send_json}
                   center_position={50}
+                  config={this.state.robot_config}
+                  status={this.state.robot_status}
               />
         </div>
-      );
+        );
     }
 }
 

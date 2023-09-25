@@ -10,7 +10,7 @@ class TalkHandler(BaseHandler):
         super().__init__()
         self.register_for_message("talk")
 
-    def process(self, message, protocol):
+    async def process(self, message, protocol):
         if message["action"] == "play":
             self.play_message(message["args"].get("destination", "lcd"), message["args"]["message"])
 
@@ -22,7 +22,6 @@ class TalkHandler(BaseHandler):
                 args = cmd[1:]
                 if command == "img" and self.server.robot_has_screen:
                     lcd_handler = BaseHandler.get_handler("lcd")
-                    print(lcd_handler)
                     if lcd_handler is not None:
                         lcd_handler.set_lcd_picture(args[0])
                     message = None

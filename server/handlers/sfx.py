@@ -11,6 +11,6 @@ class SfxHandler(BaseHandler):
         super().__init__()
         self.register_for_message("sfx")
 
-    def process(self, message, protocol):
+    async def process(self, message, protocol):
         if message["action"] == "play":
             threading.Thread(target=SFX.play, args=(message["args"]["name"],)).start()

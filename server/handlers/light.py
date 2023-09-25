@@ -9,7 +9,7 @@ class LightHandler(BaseHandler):
         super().__init__()
         self.register_for_message("light")
 
-    def process(self, message, protocol):
+    async def process(self, message, protocol):
         if message["action"] == "toggle":
             Light.toggle_front_light()
         elif message["action"] == "blink":

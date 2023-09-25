@@ -144,7 +144,7 @@ async def start_server():
         server.setup()
 
         # Start video streaming
-        await asyncio.gather(run_webserver(), run_video_server(), run_server(server), return_exceptions=True)
+        await asyncio.gather(run_webserver(server), run_video_server(), run_server(server), return_exceptions=True)
     except KeyboardInterrupt:
         logger.info("Stopping...")
         sys.exit(0)

@@ -17,7 +17,7 @@ class LcdHandler(BaseHandler):
         if not os.path.isdir(self.pics_path):
             self.pics_path = "/etc/pirobot/assets/Pics"
 
-    def process(self, message, protocol):
+    async def process(self, message, protocol):
         if message["action"] == "display_picture":
             self.set_lcd_picture(message["args"]["name"])
 

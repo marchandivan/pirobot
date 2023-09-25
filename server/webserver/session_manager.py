@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod
 import asyncio
-import base64
+import json
 import logging
 import threading
 import time
@@ -10,29 +11,51 @@ from server import Server
 logger = logging.getLogger(__name__)
 
 
-class SessionManager(object):
-    sessions = {}
-    # Used for video streaming
-    NEW_FRAME_TIMEOUT = 2
+class SessionManager(ABC):
 
-    def __init__(self, ws, sid, loop):
-        self.ws = ws
+    def __init__(self, sid):
         self.sid = sid
         self.last_frame_ts = 0
-        self.client_ready = threading.Event()
-        self.loop = loop
 
     def __del__(self):
         self.close()
 
     def close(self):
+        pass
+
+    @abstractmethod
+    def process_message(self, message):
+        pass
+
+
+class RobotSessionManager(SessionManager):
+
+    def __init__(self, sid, protocol):
+        super().__init__(sid)
+        self.protocol = protocol
+
+    async def process_message(self, message):
+        message_dict = json.loads(message)
+        topic = message_dict.get("topic")
+        if topic == "robot":
+            await Server.process(message_dict.get("message"), self.protocol)
+        else:
+            logger.warning(f"Unknown topic {topic}")
+
+
+class VideoSessionManager(SessionManager):
+    # Used for video streaming
+    NEW_FRAME_TIMEOUT = 2
+
+    def __init__(self, sid, ws):
+        super().__init__(sid)
+        self.ws = ws
+        self.client_ready = threading.Event()
+
+    def close(self):
         Camera.remove_new_streaming_frame_callback(f"session_{self.sid}")
 
-    async def send(self, topic, message):
-        data = dict(topic=topic, message=message)
-        await self.ws.send_json(data)
-
-    def process_video_stream_request(self, message):
+    def process_message(self, message):
         if message == "start":
             Camera.add_new_streaming_frame_callback(f"session_{self.sid}", self.send_new_frame)
             Camera.start_streaming()
@@ -41,17 +64,8 @@ class SessionManager(object):
 
     def send_new_frame(self, frame):
         now = time.time()
-        if self.client_ready.is_set() or (now - self.last_frame_ts) > SessionManager.NEW_FRAME_TIMEOUT:
+        if self.client_ready.is_set() or (now - self.last_frame_ts) > VideoSessionManager.NEW_FRAME_TIMEOUT:
             self.last_frame_ts = now
             asyncio.run(self.ws.send_bytes(frame))
             self.client_ready.clear()
-
-    def process_message(self, message):
-        topic = message.get("topic")
-        if topic == "robot":
-            Server.process(message.get("message"), self.ws)
-        elif topic == "video_stream":
-            self.process_video_stream_request(message.get("message"))
-        else:
-            logger.warning(f"Unknown topic {topic}")
 

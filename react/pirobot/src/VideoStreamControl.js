@@ -23,7 +23,9 @@ class VideoStreamControl extends React.Component {
         super(props);
         this.state = {
             frame: null,
-            fps: 0
+            fps: 0,
+            ws: null,
+            selected_camera: "front"
         };
         this.frame_counter = 0
         this.last_frame_ts = 0
@@ -31,34 +33,77 @@ class VideoStreamControl extends React.Component {
         this.slow_mode = false
     }
 
-    start_streaming = () => {
+    start_streaming = (ws) => {
         console.log("Start streaming")
-        this.props.send_json({"topic": "video_stream", "message": "start"});
+        ws.send("start")
     }
 
     componentDidMount() {
-        //this.socket.on("video_frame", this.new_frame);
-        //this.socket.on("connect", this.start_streaming)
-        if (this.props.ws !== null) {
-            this.start_streaming();
-            this.props.ws.onmessage = evt => {
-                // listen to data sent from the websocket server
-                //const message = JSON.parse(evt.data)
-                this.new_frame(evt.data);
-            }
-        }
+        this.connect();
     }
+    timeout = 250; // Initial timeout duration as a class variable
 
-    componentDidUpdate() {
-        if (this.props.ws !== null) {
-            this.start_streaming();
-            this.props.ws.onmessage = evt => {
+    /**
+     * @function connect
+     * This function establishes the connect with the websocket and also ensures constant reconnection if connection closes
+     */
+    connect = () => {
+        console.log("Connecting to video websocket");
+        let ws_url = "ws://" + (window.location.port === "3000" ? "localhost:8080" : window.location.host) + "/ws/video_stream";
+
+        var ws = new WebSocket(ws_url);
+        let that = this; // cache the this
+        var connectInterval;
+
+        // websocket onopen event listener
+        ws.onopen = () => {
+            console.log("Connected to video websocket");
+
+            this.start_streaming(ws);
+            ws.onmessage = evt => {
                 // listen to data sent from the websocket server
-                //const message = JSON.parse(evt.data)
                 this.new_frame(evt.data);
             }
-        }
-    }
+
+            this.setState({ ws: ws });
+
+            that.timeout = 250; // reset timer to 250 on open of websocket connection
+            clearTimeout(connectInterval); // clear Interval on on open of websocket connection
+        };
+
+        // websocket onclose event listener
+        ws.onclose = e => {
+            console.log(
+                `Socket is closed. Reconnect will be attempted in ${Math.min(
+                    10000 / 1000,
+                    (that.timeout + that.timeout) / 1000
+                )} second.`,
+                e.reason
+            );
+
+            that.timeout = that.timeout + that.timeout; //increment retry interval
+            connectInterval = setTimeout(this.check, Math.min(10000, that.timeout)); //call check function after timeout
+        };
+
+        // websocket onerror event listener
+        ws.onerror = err => {
+            console.error(
+                "Socket encountered error: ",
+                err.message,
+                "Closing socket"
+            );
+
+            ws.close();
+        };
+    };
+
+    /**
+     * utilited by the @function connect to check if the connection is close, if so attempts to reconnect
+     */
+    check = () => {
+        const { ws } = this.state;
+        if (!ws || ws.readyState === WebSocket.CLOSED) this.connect(); //check if websocket instance is closed, if so call `connect` function.
+    };
 
     new_frame = async (frame) => {
         this.frame_counter += 1;
@@ -69,14 +114,14 @@ class VideoStreamControl extends React.Component {
             this.last_frame_ts = now;
         }
         this.setState({frame: await frame.arrayBuffer(), fps: this.fps});
-        this.props.send_json({"topic": "video_stream", "message": "ready"});
+        this.state.ws.send("ready");
     }
 
     handleMoveRobot = (e) => {
         let x_pos = e.x * 100;
         let y_pos = -e.y * 100;
         if (Math.abs(x_pos) < 2 && Math.abs(y_pos < 2)) {
-            this.props.send_json({"topic": "robot", "message": {"type": "drive", "action": "stop"}});
+            this.props.send_action("drive", "stop");
         }
         else {
 
@@ -97,30 +142,33 @@ class VideoStreamControl extends React.Component {
             if (right_speed < 0)
                 right_orientation = 'B'
 
-            this.props.send_json(
+            this.props.send_action(
+                "drive",
+                "move",
                 {
-                    topic: "robot",
-                     message: {
-                        type: "drive",
-                        action: "move",
-                        args: {
-                            left_orientation: left_orientation,
-                            left_speed: Math.abs(left_speed),
-                            right_orientation: right_orientation,
-                            right_speed: Math.abs(right_speed),
-                            duration: 30,
-                            distance: null,
-                            rotation: null,
-                            auto_stop: false,
-                        }
-                     }
-                 }
+                    left_orientation: left_orientation,
+                    left_speed: Math.abs(left_speed),
+                    right_orientation: right_orientation,
+                    right_speed: Math.abs(right_speed),
+                    duration: 30,
+                    distance: null,
+                    rotation: null,
+                    auto_stop: false,
+                }
              );
         }
     }
 
     handleStopRobot = (e) => {
-        this.props.send_json({"topic": "robot", "message": {"type": "drive", "action": "stop"}});
+        this.props.send_action("drive", "stop");
+    }
+
+    set_camera_position = (e) => {
+        this.props.send_action("camera", "set_position", {"position": e.target.value});
+    }
+
+    center_camera_position = (e) => {
+        this.props.send_action("camera", "center_position");
     }
 
     render() {
@@ -136,41 +184,41 @@ class VideoStreamControl extends React.Component {
         }
         return (
             <Grid container direction="row" justifyContent="center" alignItems="center" style={{margin: 0, padding: 0}}>
-                <Grid container xl={2} md={2} sm={2} xs={2} justifyContent="center" alignItems="center">
-                    <Joystick
-                        size={window.outerWidth * 0.1}
-                        stickSize={window.outerWidth * 0.05}
-                        sticky={false}
-                        baseColor="grey"
-                        stickColor="black"
-                        minDistance={2}
-                        move={this.handleMoveRobot}
-                        stop={this.handleStopRobot}>
-                    </Joystick>
-                </Grid>
-                <Grid container xl={8} md={8} sm={8} xs={8} justifyContent="center" alignItems="center">
-                    <Stack direction="column" alignItems="center" justifyContent="center">
-                        <img
-                            src={`data:image/jpg;base64,${base64String}`}
-                            style={{maxHeight: window.innerHeight * 0.8}}
-                            width={window.outerWidth*0.7}
-                            alt="Camera Feed"
-                            onMouseMove={this.props.onMouseMove}
-                            onClick={this.props.onClick}
-                        />
+                <Grid item xl={2} md={2} sm={2} xs={2} justifyContent="center" alignItems="center">
+                    <Stack spacing={5} direction="column" alignItems="center" justifyContent="center">
+                        <Joystick
+                            size={window.outerWidth * 0.1}
+                            stickSize={window.outerWidth * 0.05}
+                            sticky={false}
+                            baseColor="grey"
+                            stickColor="black"
+                            minDistance={2}
+                            move={this.handleMoveRobot}
+                            stop={this.handleStopRobot}>
+                        </Joystick>
                         <Stack spacing={0} direction="row" alignItems="center" justifyContent="center">
-                            {this.props.robot_has_screen && (<IconButton onClick={this.props.capture_image_callback.bind(this, "lcd", this.props.selected_camera)}><CameraAltIcon/></IconButton>)}
+                            {this.props.config.robot_has_screen && (<IconButton onClick={this.props.send_action.bind(this, "camera", "capture_picture", {destination: "lcd"})}><CameraAltIcon/></IconButton>)}
                             <Tooltip title="Snapshot"><IconButton onClick={this.props.send_action.bind(this, "camera", "capture_picture", {})}><DownloadIcon/></IconButton></Tooltip>
-                            {this.props.robot_has_back_camera && (<IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera === "front" ? "arm" : "front", this.props.overlay, this.props.face_detection)}><SwitchCameraIcon/></IconButton>)}
-                            {this.props.robot_has_back_camera && (<IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera, !this.props.overlay, this.props.face_detection)}><PictureInPictureIcon/></IconButton>)}
+                            {this.props.config.robot_has_back_camera && (<IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera === "front" ? "arm" : "front", this.props.overlay, this.props.face_detection)}><SwitchCameraIcon/></IconButton>)}
+                            {this.props.config.robot_has_back_camera && (<IconButton onClick={this.props.stream_setup_callback.bind(this, this.props.selected_camera, !this.props.overlay, this.props.face_detection)}><PictureInPictureIcon/></IconButton>)}
                             <Tooltip title="Face Recognition"><IconButton onClick={this.props.send_action.bind(this, "face_detection", "toggle", {})}>{this.props.face_detection ? (<FaceRetouchingOffIcon/>):(<FaceIcon/>)}</IconButton></Tooltip>
                             <Tooltip title="Start Patrolling"><IconButton onClick={this.props.send_action.bind(this, "drive", "patrol", {})}><RadarIcon/></IconButton></Tooltip>
                             <Tooltip title="Stop Robot"><IconButton alt="Stop Robot" onClick={this.props.send_action.bind(this, "drive", "stop", {})}><DangerousIcon alt="Stop Robot"/></IconButton></Tooltip>
                         </Stack>
                     </Stack>
                 </Grid>
-                <Grid container xl={2} md={2} sm={2} xs={2} justifyContent="center" alignItems="center">
-                    <Stack
+                <Grid item xl={8} md={8} sm={8} xs={8} justifyContent="center" alignItems="center">
+                    <img
+                        src={`data:image/jpg;base64,${base64String}`}
+                        style={{maxHeight: window.innerHeight * 0.8}}
+                        width={window.outerWidth*0.7}
+                        alt="Camera Feed"
+                        onMouseMove={this.props.onMouseMove}
+                        onClick={this.props.onClick}
+                    />
+                </Grid>
+                <Grid item xl={2} md={2} sm={2} xs={2} justifyContent="center" alignItems="center">
+                    { this.props.config.robot_has_camera_servo && (<Stack
                         spacing={5}
                         justifyContent="center"
                         alignItems="center"
@@ -183,12 +231,12 @@ class VideoStreamControl extends React.Component {
                             aria-label="Camera position"
                             orientation="vertical"
                             valueLabelDisplay="auto"
-                            value={this.props.camera_position}
-                            onChange={this.props.set_camera_position}
-                            marks={[{value: this.props.center_position}]}
+                            value={this.props.status.camera.position}
+                            onChange={this.set_camera_position}
+                            marks={[{value: this.props.status.camera.center_position}]}
                         />
-                        <IconButton onClick={this.props.centerCameraPosition}><VerticalAlignCenterIcon/></IconButton>
-                    </Stack>
+                        <IconButton onClick={this.center_camera_position}><VerticalAlignCenterIcon/></IconButton>
+                    </Stack>)}
                 </Grid>
             </Grid>
         )

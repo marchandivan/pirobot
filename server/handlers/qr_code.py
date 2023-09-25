@@ -15,7 +15,7 @@ class QRCodeHandler(BaseHandler):
         self.register_for_event("camera", "new_front_camera_frame")
         self.detector = cv2.QRCodeDetector()
 
-    def process(self, message, protocol):
+    async def process(self, message, protocol):
         if message["action"] == "toggle":
             self.running = not self.running
         elif message["action"] == "start":
