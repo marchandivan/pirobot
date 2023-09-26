@@ -24,7 +24,7 @@ class SessionManager(ABC):
         pass
 
     @abstractmethod
-    def process_message(self, message):
+    async def process_message(self, message):
         pass
 
 
@@ -51,11 +51,14 @@ class VideoSessionManager(SessionManager):
         super().__init__(sid)
         self.ws = ws
         self.client_ready = threading.Event()
+        self.connection_opened = True
 
     def close(self):
-        Camera.remove_new_streaming_frame_callback(f"session_{self.sid}")
+        if self.connection_opened:
+            Camera.remove_new_streaming_frame_callback(f"session_{self.sid}")
+            self.connection_opened = False
 
-    def process_message(self, message):
+    async def process_message(self, message):
         if message == "start":
             Camera.add_new_streaming_frame_callback(f"session_{self.sid}", self.send_new_frame)
             Camera.start_streaming()
@@ -63,9 +66,10 @@ class VideoSessionManager(SessionManager):
             self.client_ready.set()
 
     def send_new_frame(self, frame):
-        now = time.time()
-        if self.client_ready.is_set() or (now - self.last_frame_ts) > VideoSessionManager.NEW_FRAME_TIMEOUT:
-            self.last_frame_ts = now
-            asyncio.run(self.ws.send_bytes(frame))
-            self.client_ready.clear()
+        if self.connection_opened:
+            now = time.time()
+            if self.client_ready.is_set() or (now - self.last_frame_ts) > VideoSessionManager.NEW_FRAME_TIMEOUT:
+                self.last_frame_ts = now
+                asyncio.run(self.ws.send_bytes(frame))
+                self.client_ready.clear()
 

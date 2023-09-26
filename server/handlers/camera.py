@@ -28,10 +28,11 @@ class CameraHandler(BaseHandler):
         self.register_for_event("camera", "new_streaming_frame")
         self.register_for_event("camera", "new_front_camera_frame")
         self.video_writer = None
-        self.video_dir = os.path.join(os.environ["HOME"], "Videos")
+        self.video_dir = os.path.join(os.environ["HOME"], "Videos/PiRobot")
+        self.video_filename = None
         if not os.path.isdir(self.video_dir):
             os.mkdir(self.video_dir)
-        self.picture_dir = os.path.join(os.environ["HOME"], "Pictures")
+        self.picture_dir = os.path.join(os.environ["HOME"], "Pictures/PiRobot")
         if not os.path.isdir(self.picture_dir):
             os.mkdir(self.picture_dir)
 
@@ -48,6 +49,7 @@ class CameraHandler(BaseHandler):
                 self.video_writer = None
             self.video_source = message["args"].get("source", "streaming")
             self.capture_video = True
+            await protocol.send_message("video", dict(status="recording"))
         elif message["action"] == "stop_video":
             self.capture_video = False
             self.video_start_ts = None
@@ -55,6 +57,8 @@ class CameraHandler(BaseHandler):
             if self.video_writer is not None:
                 self.video_writer.release()
                 self.video_writer = None
+                self.video_filename = None
+                await protocol.send_message("video", dict(status="new_file", filename=self.video_filename))
         elif message["action"] == "capture_picture":
             self.capture_picture = True
             self.picture_source = message["args"].get("source", "streaming")
@@ -67,10 +71,10 @@ class CameraHandler(BaseHandler):
         return f"{robot_name}_{self.video_source}_{creation_time}"
 
     def start_video(self, frame):
-        filename = f"{self.get_filename()}.avi"
+        self.video_filename = f"{self.get_filename()}.avi"
         self.frame_rate = Camera.frame_rate
         self.video_writer = cv2.VideoWriter(
-            filename=os.path.join(self.video_dir, filename),
+            filename=os.path.join(self.video_dir, self.video_filename),
             fourcc=cv2.VideoWriter_fourcc(*Config.get("video_codec")),
             fps=self.frame_rate,
             frameSize=(frame.shape[1], frame.shape[0]),
@@ -99,8 +103,9 @@ class CameraHandler(BaseHandler):
                             image = image.resize((self.server.lcd.height, self.server.lcd.width))
                             self.server.lcd.ShowImage(image)
                     else:
+                        filename=self.get_filename()
                         cv2.imwrite(
-                            os.path.join(self.picture_dir, f"{self.get_filename()}.{self.picture_format}"), data["frame"]
+                            os.path.join(self.picture_dir, f"{filename}.{self.picture_format}"), data["frame"]
                         )
                     self.capture_picture = False
 

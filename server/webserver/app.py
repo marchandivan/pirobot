@@ -29,7 +29,7 @@ class Context:
 context = Context()
 
 
-class WebSocketProtocol(asyncio.BaseTransport):
+class WebSocketProtocol(object):
 
     def __init__(self, ws: web.WebSocketResponse):
         super().__init__()
@@ -37,6 +37,13 @@ class WebSocketProtocol(asyncio.BaseTransport):
 
     async def send_message(self, topic, message):
         await self.ws.send_json(dict(topic=topic, message=message))
+
+    async def connection_made(self):
+        # Send robot status
+        await context.robot_server.send_status(self)
+
+    async def connection_lost(self):
+        context.robot_server.connection_lost()
 
 
 @routes.get("/")
@@ -56,17 +63,21 @@ async def handle_message(request):
     await ws.prepare(request)
     sid = uuid.uuid4()
     protocol = WebSocketProtocol(ws=ws)
+    await protocol.connection_made()
     session = RobotSessionManager(sid=sid, protocol=protocol)
     logger.info(f"New connection to robot socket [{sid}]")
 
-    # Send robot status
-    await context.robot_server.send_status(protocol)
-
-    async for msg in ws:
-        await session.process_message(msg.data)
-
-    session.close()
-    logger.info(f"Connection closed to robot socket [{sid}]")
+    try:
+        async for msg in ws:
+            await session.process_message(msg.data)
+    except Exception:
+        await protocol.connection_lost()
+        logger.error(f"Connection closed to robot socket [{sid}]", exc_info=True)
+    else:
+        await protocol.connection_lost()
+        logger.info(f"Connection closed to robot socket [{sid}]")
+    finally:
+        session.close()
 
 
 @routes.get("/ws/video_stream")
@@ -78,14 +89,20 @@ async def video_stream(request):
     logger.info(f"New connection to video socket [{sid}]")
 
     async for msg in ws:
-        session.process_message(msg.data)
+        await session.process_message(msg.data)
 
     session.close()
     logger.info(f"Connection closed to video socket [{sid}]")
 
 app = web.Application()
 app.add_routes(routes)
-app.add_routes([web.static('/static', STATIC_DIR_PATH)])
+app.add_routes(
+    [
+        web.static("/static", STATIC_DIR_PATH),
+        web.static("/pictures", os.path.join(os.environ["HOME"], "Pictures/PiRobot"), show_index=True),
+        web.static("/videos", os.path.join(os.environ["HOME"], "Videos/PiRobot"), show_index=True),
+    ]
+)
 
 
 async def run_webserver(server):

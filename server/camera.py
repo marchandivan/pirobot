@@ -1,4 +1,3 @@
-import copy
 import cv2
 import logging
 import numpy as np
@@ -207,15 +206,21 @@ class Camera(object):
     servo_center_position = 60
     servo_position = 0
     new_streaming_frame_callbacks = {}
+    streaming_frame_callbacks = threading.Lock()
+
 
     @staticmethod
     def add_new_streaming_frame_callback(name, callback):
+        Camera.streaming_frame_callbacks.acquire()
         Camera.new_streaming_frame_callbacks[name] = callback
+        Camera.streaming_frame_callbacks.release()
 
     @staticmethod
     def remove_new_streaming_frame_callback(name):
+        Camera.streaming_frame_callbacks.acquire()
         if name in Camera.new_streaming_frame_callbacks:
             del Camera.new_streaming_frame_callbacks[name]
+        Camera.streaming_frame_callbacks.release()
 
     @staticmethod
     def setup():
@@ -306,11 +311,14 @@ class Camera(object):
 
                         if Camera.streaming:
                             frame = cv2.imencode('.jpg', frame)[1].tostring()
-                            callbacks = Camera.new_streaming_frame_callbacks.values()
-                            for callback in callbacks:
+                            Camera.streaming_frame_callbacks.acquire()
+                            for callback in Camera.new_streaming_frame_callbacks.values():
                                 callback(frame)
+                            Camera.streaming_frame_callbacks.release()
             except Exception:
                 logger.error("Unexpected exception in continuous capture", exc_info=True)
+                if Camera.streaming_frame_callbacks.locked():
+                    Camera.streaming_frame_callbacks.release()
                 continue
         Camera.front_capture_device.close()
         Camera.front_capture_device = None
