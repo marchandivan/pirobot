@@ -37,7 +37,6 @@ class App extends React.Component {
             selected_camera: "front",
             window_height: window.innerHeight,
             window_width: window.innerWidth,
-            recording_video: false
         };
     }
 
@@ -94,7 +93,6 @@ class App extends React.Component {
                 this.updateStatus(message.message)
             } else if (message.topic === "video") {
                 console.log(message)
-                this.setState({recording_video: message.message.status === "recording"})
             } else {
                 console.log("Unknown message topic " + message.topic)
             }
@@ -205,8 +203,8 @@ class App extends React.Component {
                             {this.state.robot_config.robot_has_back_camera && (<Divider orientation="vertical" flexItem/>)}
                             {this.state.robot_config.robot_has_back_camera && (<IconButton onClick={this.stream_setup_callback.bind(this, this.selected_camera === "front" ? "arm" : "front", this.overlay, this.face_detection)}><SwitchCameraIcon/></IconButton>)}
                             {this.state.robot_config.robot_has_back_camera && (<IconButton onClick={this.stream_setup_callback.bind(this, this.selected_camera, !this.overlay, this.face_detection)}><PictureInPictureIcon/></IconButton>)}
-                            {!this.state.recording_video && (<Tooltip title="Record a Video"><IconButton onClick={this.send_action.bind(this, "camera", "start_video", {})}><FiberManualRecordIcon/></IconButton></Tooltip>)}
-                            {this.state.recording_video && (<Tooltip title="Stop Video Recording"><IconButton onClick={this.send_action.bind(this, "camera", "stop_video", {})}><StopIcon/></IconButton></Tooltip>)}
+                            <Tooltip title="Record a Video"><IconButton onClick={this.send_action.bind(this, "camera", "start_video", {})}><FiberManualRecordIcon/></IconButton></Tooltip>
+                            <Tooltip title="Stop Video Recording"><IconButton onClick={this.send_action.bind(this, "camera", "stop_video", {})}><StopIcon/></IconButton></Tooltip>
                             <Tooltip title="Take a Photo"><IconButton onClick={this.send_action.bind(this, "camera", "capture_picture", {})}><CameraAltIcon/></IconButton></Tooltip>
                             <Divider orientation="vertical" flexItem/>
                             <Tooltip title="Open photo library"><IconButton onClick={window.open.bind(window, '/pictures', '_blank')}><PhotoLibraryIcon/></IconButton></Tooltip>
@@ -264,7 +262,7 @@ class App extends React.Component {
                         </Grid>
                     </Grid>
                     <Grid item xs={2} alignItems="top">
-                        <p style={{margin: 0, padding: 0, fontSize: "20px"}}>Connected to {this.state.robot_name} - {this.state.fps} FPS</p>
+                        <p style={{margin: 0, padding: 0, fontSize: "15px"}}>Connected to {this.state.robot_name} - {this.state.fps} FPS</p>
                     </Grid>
                 </Grid>
             </div>

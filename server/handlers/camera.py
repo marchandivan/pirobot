@@ -49,7 +49,6 @@ class CameraHandler(BaseHandler):
                 self.video_writer = None
             self.video_source = message["args"].get("source", "streaming")
             self.capture_video = True
-            await protocol.send_message("video", dict(status="recording"))
         elif message["action"] == "stop_video":
             self.capture_video = False
             self.video_start_ts = None
