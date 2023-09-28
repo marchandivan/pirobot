@@ -1,0 +1,53 @@
+{
+  "include": "default.robot.json",
+  "config": {
+    "robot_width": {
+      "default": 170
+    },
+    "front_capturing_device": {
+      "default": "usb"
+    },
+    "robot_has_camera_servo": {
+      "default": true
+    },
+    "robot_has_light": {
+      "default": true
+    },
+    "robot_has_screen": {
+      "default": true
+    },
+    "robot_has_speaker": {
+      "default": true
+    },
+    "robot_has_battery_tester": {
+      "default": true
+    },
+    "voice_rate": {
+      "default": 120
+    },
+    "follow_face_speed": {
+      "default": 90
+    },
+    "motor_patrol_speed": {
+      "default": 90
+    },
+    "motor_steps_per_rotation": {
+      "default": 1650
+    },
+    "motor_min_distance": {
+      "default": 0.1
+    },
+    "motor_max_rpm": {
+      "default": 42
+    },
+    "motor_kp": {
+      "default": 2.38
+    },
+    "motor_kd": {
+      "default": 0.05
+    },
+    "robot_us_sensors": {
+      "default": "front_and_side"
+    }
+  }
+}

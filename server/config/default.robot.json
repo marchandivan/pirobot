@@ -1,0 +1,250 @@
+{
+  "config": {
+    "uart_port": {
+      "type": "str",
+      "default": "/dev/ttyAMA0",
+      "category": "uart",
+      "need_setup": true
+    },
+    "uart_baudrate": {
+      "type": "int",
+      "default": 115200,
+      "category": "uart"
+    },
+    "motor_controller": {
+      "type": "str",
+      "default": "pico",
+      "choices": [
+        "pico",
+        "dfrobot"
+      ],
+      "category": "motor"
+    },
+    "use_speed_control": {
+      "type": "bool",
+      "default": true,
+      "category": "motor"
+    },
+    "robot_width": {
+      "type": "int",
+      "default": 137,
+      "category": "motor"
+    },
+    "robot_name": {
+      "type": "str",
+      "default": "PiRobot",
+      "category": "robot"
+    },
+    "robot_us_sensors": {
+      "type": "str",
+      "default": "front",
+      "choices": ["front", "front_and_side", "none"],
+      "category": "robot"
+    },
+    "wheel_d": {
+      "type": "int",
+      "default": 66,
+      "need_setup": true,
+      "category": "robot"
+    },
+    "show_mock_screen": {
+      "type": "bool",
+      "default": false,
+      "category": "debug"
+    },
+    "lense_coeff_x_pos": {
+      "type": "float",
+      "default": 0.8,
+      "category": "camera"
+    },
+    "front_capturing_device": {
+      "type": "str",
+      "default": "picamera",
+      "choices": [
+        "picamera",
+        "usb",
+        "none"
+      ],
+      "category": "camera"
+    },
+    "front_capturing_resolution": {
+      "type": "str",
+      "default": "1280x720",
+      "category": "camera"
+    },
+    "front_capturing_angle": {
+      "type": "int",
+      "default": 160,
+      "category": "camera"
+    },
+    "back_capturing_device": {
+      "type": "str",
+      "default": "none",
+      "choices": [
+        "picamera",
+        "usb",
+        "none"
+      ],
+      "category": "camera"
+    },
+    "back_capturing_resolution": {
+      "type": "str",
+      "default": "640x480",
+      "category": "camera"
+    },
+    "back_capturing_angle": {
+      "type": "int",
+      "default": 160,
+      "category": "camera"
+    },
+    "capturing_framerate": {
+      "type": "int",
+      "default": 20,
+      "need_setup": true,
+      "category": "camera"
+    },
+    "video_codec": {
+      "type": "str",
+      "default": "XVID",
+      "category": "camera"
+    },
+    "robot_has_light": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "category": "capability"
+    },
+    "robot_has_battery_tester": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "category": "capability"
+    },
+    "battery_tester_r1": {
+      "type": "float",
+      "default": 84500,
+      "need_setup": true,
+      "category": "battery"
+    },
+    "battery_tester_r2": {
+      "type": "float",
+      "default": 20000,
+      "need_setup": true,
+      "category": "battery"
+    },
+    "battery_min_volt": {
+      "type": "float",
+      "default": 11.5,
+      "need_setup": true,
+      "category": "battery"
+    },
+    "battery_max_volt": {
+      "type": "float",
+      "default": 13.0,
+      "need_setup": true,
+      "category": "battery"
+    },
+    "robot_has_screen": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "need_setup": true,
+      "category": "capability"
+    },
+    "robot_has_speaker": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "need_setup": true,
+      "category": "capability"
+    },
+    "robot_has_back_camera": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "need_setup": true,
+      "category": "capability"
+    },
+    "robot_has_camera_servo": {
+      "type": "bool",
+      "default": false,
+      "export": true,
+      "need_setup": true,
+      "category": "capability"
+    },
+    "camera_center_position": {
+      "type": "int",
+      "default": 75,
+      "need_setup": true,
+      "category": "camera"
+    },
+    "camera_servo_id": {
+      "type": "int",
+      "default": 1,
+      "need_setup": true,
+      "category": "camera"
+    },
+    "voice_id": {
+      "type": "str",
+      "default": "mb-en1",
+      "category": "audio"
+    },
+    "voice_rate": {
+      "type": "int",
+      "default": 150,
+      "category": "audio"
+    },
+    "voice_volume": {
+      "type": "float",
+      "default": 1.0,
+      "category": "audio"
+    },
+    "follow_face_speed": {
+      "type": "int",
+      "default": 50,
+      "need_setup": true,
+      "category": "robot"
+    },
+    "motor_patrol_speed": {
+      "type": "int",
+      "default": 50,
+      "category": "motor"
+    },
+    "motor_steps_per_rotation": {
+      "type": "int",
+      "default": 660,
+      "need_setup": true,
+      "category": "motor"
+    },
+    "motor_min_distance": {
+      "type": "float",
+      "default": 0.1,
+      "need_setup": true,
+      "category": "motor"
+    },
+    "motor_max_rpm": {
+      "type": "int",
+      "default": 90,
+      "need_setup": true,
+      "category": "motor"
+    },
+    "motor_kp": {
+      "type": "float",
+      "default": 0.5,
+      "need_setup": true,
+      "category": "motor"
+    },
+    "motor_ki": {
+      "type": "float",
+      "default": 1.0,
+      "need_setup": true,
+      "category": "motor"
+    },
+    "motor_kd": {
+      "type": "float",
+      "default": 0.003,
+      "need_setup": true,
+      "category": "motor"
+    }
+  }
+}

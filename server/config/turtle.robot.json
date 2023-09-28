@@ -1,0 +1,26 @@
+{
+  "include": "default.robot.json",
+  "config": {
+    "robot_width": {
+      "default": 175
+    },
+    "wheel_d": {
+      "default": 84
+    },
+    "motor_steps_per_rotation": {
+      "default": 230
+    },
+    "motor_max_rpm": {
+      "default": 200
+    },
+    "robot_has_camera_servo": {
+      "default": true
+    },
+    "robot_has_screen": {
+      "default": true
+    },
+    "robot_has_speaker": {
+      "default": true
+    }
+  }
+}

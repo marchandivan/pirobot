@@ -1,0 +1,11 @@
+[Unit]
+Description=PiRobot Daemon
+
+[Service]
+Restart=always
+Type=simple
+User=www-data
+ExecStart=/usr/local/bin/pirobotd runserver
+
+[Install]
+WantedBy=multi-user.target
