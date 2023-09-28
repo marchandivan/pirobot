@@ -41,7 +41,7 @@ class UART(object):
         self.loop = asyncio.get_event_loop()
         self.serial = None
         self.connect()
-        #self.loop.call_soon(self.monitor_connection)
+        self.loop.call_soon(self.monitor_connection)
 
     def monitor_connection(self):
         if self.serial is None or not self.serial.is_open:
