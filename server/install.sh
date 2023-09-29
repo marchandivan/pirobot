@@ -15,6 +15,8 @@ sudo adduser www-data dialout
 sudo adduser www-data video
 sudo adduser www-data audio
 sudo mkdir -p /var/www/static
+sudo mkdir -p /var/www/Pictures/PiRobot
+sudo mkdir -p /var/www/Videos/PiRobot
 sudo chown www-data /var/www/
 sudo chgrp www-data /var/www/
 sudo cp -rf ../react/pirobot/build/static/* /var/www/static

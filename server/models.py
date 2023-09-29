@@ -57,6 +57,8 @@ class Config(Base):
 
     @staticmethod
     def setup(robot_config):
+        if not os.path.isdir(Config.USER_CONFIG_DIR):
+            os.makedirs(Config.USER_CONFIG_DIR)
 
         Config.user_config = configparser.ConfigParser(defaults=DEFAULT_CONFIG, default_section="pirobot", allow_no_value=True)
         Config.user_config.read(["/etc/pirobot/pirobot.config", os.path.join(Config.USER_CONFIG_DIR, "pirobot.config")])
