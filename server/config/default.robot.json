@@ -52,6 +52,11 @@
       "default": false,
       "category": "debug"
     },
+    "auto_uart_reconnect": {
+      "type": "bool",
+      "default": true,
+      "category": "debug"
+    },
     "lense_coeff_x_pos": {
       "type": "float",
       "default": 0.8,
@@ -99,7 +104,7 @@
     },
     "capturing_framerate": {
       "type": "int",
-      "default": 20,
+      "default": 10,
       "need_setup": true,
       "category": "camera"
     },

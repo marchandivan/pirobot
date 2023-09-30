@@ -220,12 +220,13 @@ class Config(Base):
         return config
 
     @staticmethod
-    def process(message, protocol):
+    async def process(message, protocol):
         success = False
         need_setup = []
         if message["action"] == "get":
             success = True
-            protocol.send_message(
+            await protocol.send_message(
+                "configuration",
                 {
                     "type": "configuration",
                     "action": "get",
@@ -237,6 +238,7 @@ class Config(Base):
             success = Config.save(message["args"]["key"], message["args"]["value"])
             need_setup = Config.need_setup(message["args"]["key"])
             protocol.send_message(
+                "configuration",
                 {
                     "type": "configuration",
                     "action": "update",
@@ -248,6 +250,7 @@ class Config(Base):
             success = Config.delete(message["args"]["key"])
             need_setup = Config.need_setup(message["args"]["key"])
             protocol.send_message(
+                "configuration",
                 {
                     "type": "configuration",
                     "action": "delete",
