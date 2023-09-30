@@ -135,7 +135,8 @@ class App extends React.Component {
     handleMoveRobot = (e) => {
         let x_pos = e.x * 100;
         let y_pos = -e.y * 100;
-        if (Math.abs(x_pos) < 2 && Math.abs(y_pos < 2)) {
+        if (Math.abs(x_pos) < 2 && Math.abs(y_pos) < 2) {
+            console.log("Force stop!")
             this.send_action("drive", "stop");
         }
         else {
