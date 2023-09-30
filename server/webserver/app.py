@@ -19,6 +19,7 @@ if not os.path.isdir(STATIC_DIR_PATH):
 INDEX_FILE_PATH = os.path.join(ROOT_DIR_PATH, "react/pirobot/build/index.html")
 if not os.path.isfile(INDEX_FILE_PATH):
     INDEX_FILE_PATH = "/var/www/index.html"
+PICTURES_DIR = os.path.join(os.environ["HOME"], "Pictures/PiRobot")
 
 
 @dataclass
@@ -52,9 +53,19 @@ async def index(request):
         return web.Response(text=index_file.read(), content_type="text/html")
 
 
-@routes.get("/video/<path:path>")
-async def get_video(path):
-    return send_from_directory(os.path.join(os.environ["HOME"], "Videos"), path)
+@routes.get("/api/v1/pictures")
+async def pictures(request):
+    pictures_list = []
+    if os.path.isdir(PICTURES_DIR):
+        for picture_file in os.listdir(PICTURES_DIR):
+            pictures_list.append(picture_file)
+    return web.json_response(pictures_list)
+
+
+@routes.get("/api/v1/picture/{file_name}")
+async def pictures(request):
+    file_path = os.path.join(PICTURES_DIR, request.match_info['file_name'])
+    return web.FileResponse(file_path)
 
 
 @routes.get("/ws/robot")
@@ -99,8 +110,9 @@ app.add_routes(routes)
 app.add_routes(
     [
         web.static("/static", STATIC_DIR_PATH),
-        web.static("/pictures", os.path.join(os.environ["HOME"], "Pictures/PiRobot"), show_index=True),
-        web.static("/videos", os.path.join(os.environ["HOME"], "Videos/PiRobot"), show_index=True),
+        web.get(r"/pictures", index),
+        web.get(r"/videos", index),
+        web.get(r"/settings", index),
     ]
 )
 
