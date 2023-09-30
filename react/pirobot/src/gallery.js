@@ -13,8 +13,19 @@ class PictureGallery extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            pictures: ["PiRobot_streaming_230926_001015.png", "PiRobot_streaming_230926_001015.png", "PiRobot_streaming_230926_001015.png"]
+            pictures: []
         }
+    }
+
+    componentDidMount() {
+        let url_prefix = (window.location.port === "3000") ? "http://localhost:8080" : "";
+        let url = url_prefix + '/api/v1/pictures';
+        fetch(url)
+            .then(response => response.json())
+            .then(data => this.setState({pictures: data}))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
     }
 
     get_picture_page = () => {
