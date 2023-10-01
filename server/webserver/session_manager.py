@@ -53,6 +53,10 @@ class VideoSessionManager(SessionManager):
         self.client_ready = threading.Event()
         self.connection_opened = True
 
+    def __del__(self):
+        if self.connection_opened:
+            self.close()
+
     def close(self):
         if self.connection_opened:
             Camera.remove_new_streaming_frame_callback(f"session_{self.sid}")
