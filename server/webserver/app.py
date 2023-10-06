@@ -1,8 +1,11 @@
 from aiohttp import web
-import asyncio
+import cv2
 from dataclasses import dataclass
+import io
 import logging
 import os
+from PIL import Image
+import re
 import uuid
 
 from models import Config
@@ -20,7 +23,9 @@ INDEX_FILE_PATH = os.path.join(ROOT_DIR_PATH, "react/pirobot/build/index.html")
 if not os.path.isfile(INDEX_FILE_PATH):
     INDEX_FILE_PATH = "/var/www/index.html"
 PICTURES_DIR = os.path.join(os.environ["HOME"], "Pictures/PiRobot")
+VIDEOS_DIR = os.path.join(os.environ["HOME"], "Videos/PiRobot")
 
+MEDIA_FILE_RE = re.compile(r"(?P<robot_name>\w+)_(?P<source>[A-Za-z]+)_(?P<date>\d\d\d\d\d\d)_(?P<time>\d\d\d\d\d\d)\.(?P<format>\w+)")
 
 @dataclass
 class Context:
@@ -53,19 +58,95 @@ async def index(request):
         return web.Response(text=index_file.read(), content_type="text/html")
 
 
+def medias(media_dir):
+    media_list = []
+    if os.path.isdir(media_dir):
+        for media_file in os.listdir(media_dir):
+            m = re.match(MEDIA_FILE_RE, media_file)
+            if m:
+                media_list.append(
+                    dict(
+                        filename=media_file,
+                        robot_name=m.group("robot_name"),
+                        source=m.group("source"),
+                        format=m.group("format"),
+                        timestamp=f"{m.group('date')}_{m.group('time')}",
+                        date=m.group("date"),
+                        time=m.group("time"),
+                    )
+                )
+
+    return web.json_response(sorted(media_list, key=lambda p: p["timestamp"], reverse=True))
+
+
 @routes.get("/api/v1/pictures")
 async def pictures(request):
-    pictures_list = []
-    if os.path.isdir(PICTURES_DIR):
-        for picture_file in os.listdir(PICTURES_DIR):
-            pictures_list.append(picture_file)
-    return web.json_response(pictures_list)
+    return medias(PICTURES_DIR)
 
 
-@routes.get("/api/v1/picture/{file_name}")
-async def pictures(request):
+@routes.get("/api/v1/videos")
+async def videos(request):
+    return medias(VIDEOS_DIR)
+
+
+@routes.get("/gallery/picture/{file_name}")
+async def picture(request):
     file_path = os.path.join(PICTURES_DIR, request.match_info['file_name'])
-    return web.FileResponse(file_path)
+    if os.path.isfile(file_path):
+        if request.rel_url.query.get("full", "n").lower() == "y":
+            return web.FileResponse(file_path)
+        image = Image.open(file_path)
+        width = int(request.rel_url.query.get("w", 0))
+        height = int(request.rel_url.query.get("h", 0))
+        if width == 0 and height ==0:
+            width = image.width
+            height = image.height
+        elif width == 0:
+            width = int(image.width * height / image.height)
+        elif height == 0:
+            height = int(image.height * width / image.width)
+
+        img_format = request.rel_url.query.get("format", "jpeg")
+
+        image = image.resize([width, height])
+        stream = io.BytesIO()
+        image.save(stream, img_format)
+        return web.Response(body=stream.getvalue(), content_type=f"image/{img_format}")
+    else:
+        return web.HTTPNotFound()
+
+
+@routes.get("/gallery/video/{file_name}")
+async def video(request):
+    file_path = os.path.join(VIDEOS_DIR, request.match_info['file_name'])
+    if os.path.isfile(file_path):
+        if request.rel_url.query.get("full", "n").lower() == "y":
+            return web.FileResponse(file_path)
+        cap = cv2.VideoCapture(file_path)
+        if not cap.isOpened():
+            logger.warning(f"Unable to open video file {file_path}")
+            return web.HTTPNotFound()
+        else:
+            _, frame = cap.read()
+        width = int(request.rel_url.query.get("w", 0))
+        height = int(request.rel_url.query.get("h", 0))
+        video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        if width == 0 and height == 0:
+            width = video_width
+            height = video_height
+        elif width == 0 and height != 0:
+            width = int(video_width * height / video_height)
+        elif height == 0:
+            height = int(video_height * width / video_width)
+        frame = cv2.resize(frame, (width, height))
+
+        img_format = request.rel_url.query.get("format", "jpeg")
+
+        return web.Response(body=cv2.imencode(f".{img_format}", frame)[1].tobytes(), content_type=f"image/{img_format}")
+    else:
+        logger.warning(f"Video file not found {file_path}")
+        return web.HTTPNotFound()
 
 
 @routes.get("/ws/robot")

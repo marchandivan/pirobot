@@ -9,20 +9,29 @@ import Tooltip from "@mui/material/Tooltip";
 import { Link } from 'react-router-dom'
 import HomeIcon from '@mui/icons-material/Home';
 
-class PictureGallery extends React.Component {
+class Gallery extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            pictures: []
+            medias: [],
+            nb_col: 2
         }
     }
 
     componentDidMount() {
         let url_prefix = (window.location.port === "3000") ? "http://localhost:8080" : "";
-        let url = url_prefix + '/api/v1/pictures';
+        let url = url_prefix + this.props.type === "video" ? '/api/v1/videos' : '/api/v1/pictures'
         fetch(url)
             .then(response => response.json())
-            .then(data => this.setState({pictures: data}))
+            .then(data => {
+                let nb_col = 2;
+                if (data.length > 9) {
+                    nb_col = 4;
+                } else if (data.length > 4) {
+                    nb_col = 3;
+                }
+                this.setState({medias: data, nb_col: nb_col})
+            })
             .catch((error) => {
                 console.error('Error:', error);
             });
@@ -30,24 +39,27 @@ class PictureGallery extends React.Component {
 
     get_picture_page = () => {
         let url_prefix = (window.location.port === "3000") ? "http://localhost:8080" : "";
+        let url = url_prefix + this.props.type === "video" ? '/gallery/video' : '/gallery/picture'
+        let image_width = Math.round(window.innerWidth / this.state.nb_col)
         return (
-            <ImageList cols={2} margin={10}>
-              {this.state.pictures.map((picture_filename) => (
-                <ImageListItem key={picture_filename}>
+            <ImageList cols={this.state.nb_col} margin={20}>
+              {this.state.medias.map((media) => (
+                <ImageListItem key={media.filename}>
                   <img
-                    srcSet={`${url_prefix}/api/v1/picture/${picture_filename}`}
-                    src={`${url_prefix}/api/v1/picture/${picture_filename}`}
-                    alt={picture_filename}
+                    srcSet={`${url}/${media.filename}?w=${image_width}`}
+                    src={`${url}/${media.filename}?w=${image_width}`}
+                    alt={media.filename}
+                    fit="true"
                     loading="lazy"
                   />
                   <ImageListItemBar
-                    title={picture_filename}
+                    title={`${media.robot_name} ${media.source} ${media.date} ${media.time}`}
                     position="top"
                     actionIcon={
                       <IconButton
                         sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                        aria-label={`info about ${picture_filename}`}
-                        component="a" href={`${url_prefix}/api/v1/picture/${picture_filename}`} download
+                        aria-label={`info about ${media.filename}`}
+                        component="a" href={`${url}/${media.filename}?full=y`} download
                       >
                        <DownloadIcon/>
                       </IconButton>
@@ -66,11 +78,11 @@ class PictureGallery extends React.Component {
                 <Box sx={{display: 'flex', width: 'fit-content', bgcolor: 'grey', margin: 1, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1}}>
                     <Tooltip title="Home"><IconButton component={Link} to="/" ><HomeIcon/></IconButton></Tooltip>
                 </Box>
-                <p>Photo Gallery</p>
+                <p>{(this.props.type === "video" ? "Video" : "Photo")} Gallery</p>
                     {this.get_picture_page()}
             </div>
         );
     }
 }
 
-export default PictureGallery;
+export default Gallery;

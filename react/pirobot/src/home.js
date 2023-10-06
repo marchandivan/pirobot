@@ -13,7 +13,6 @@ import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import StopIcon from '@mui/icons-material/Stop';
 import IconButton from "@mui/material/IconButton";
 import FaceRetouchingOffIcon from '@mui/icons-material/FaceRetouchingOff';
-import HomeIcon from '@mui/icons-material/Home';
 import SettingsIcon from '@mui/icons-material/Settings';
 import Tooltip from "@mui/material/Tooltip";
 import PictureInPictureIcon from '@mui/icons-material/PictureInPicture';
@@ -200,7 +199,6 @@ class Home extends React.Component {
                 <Grid container direction="column" alignItems="center" justifyContent="space-evently">
                     <Grid item xs={2}>
                         <Box sx={{display: 'flex', width: 'fit-content', bgcolor: 'grey', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1}}>
-                            <Tooltip title="Home"><IconButton component={Link} to="/" ><HomeIcon/></IconButton></Tooltip>
                             <Tooltip title="Open photo gallery"><IconButton component={Link} to="/pictures" ><PhotoLibraryIcon/></IconButton></Tooltip>
                             <Tooltip title="Open video gallery"><IconButton component={Link} to="/videos"><VideoLibraryIcon/></IconButton></Tooltip>
                             <Tooltip title="Robot Settings"><IconButton component={Link} to="/settings" ><SettingsIcon/></IconButton></Tooltip>

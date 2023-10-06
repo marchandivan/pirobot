@@ -102,7 +102,7 @@ class CameraHandler(BaseHandler):
                             image = image.resize((self.server.lcd.height, self.server.lcd.width))
                             self.server.lcd.ShowImage(image)
                     else:
-                        filename=self.get_filename()
+                        filename = self.get_filename()
                         cv2.imwrite(
                             os.path.join(self.picture_dir, f"{filename}.{self.picture_format}"), data["frame"]
                         )

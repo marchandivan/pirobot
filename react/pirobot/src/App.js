@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import './App.css';
 import Home from "./home";
-import PictureGallery from "./gallery"
+import Gallery from "./gallery"
 class App extends React.Component {
 
     nextPath = (path) => {
@@ -16,7 +16,8 @@ class App extends React.Component {
           <Routes>
             <Route path="/">
                 <Route index element={<Home nextPath={this.nextPath}/>} />
-                <Route path="pictures" element={<PictureGallery />} />
+                <Route path="pictures" element={<Gallery type="picture"/>} />
+                <Route path="videos" element={<Gallery type="video"/>} />
             </Route>
           </Routes>
         </BrowserRouter>
