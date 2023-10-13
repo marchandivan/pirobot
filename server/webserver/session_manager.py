@@ -45,7 +45,7 @@ class RobotSessionManager(SessionManager):
 
 class VideoSessionManager(SessionManager):
     # Used for video streaming
-    NEW_FRAME_TIMEOUT = 2
+    NEW_FRAME_TIMEOUT = 10
 
     def __init__(self, sid, ws):
         super().__init__(sid)

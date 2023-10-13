@@ -237,7 +237,7 @@ class Config(Base):
         elif message["action"] == "update":
             success = Config.save(message["args"]["key"], message["args"]["value"])
             need_setup = Config.need_setup(message["args"]["key"])
-            protocol.send_message(
+            await protocol.send_message(
                 "configuration",
                 {
                     "type": "configuration",
@@ -249,7 +249,7 @@ class Config(Base):
         elif message["action"] == "delete":
             success = Config.delete(message["args"]["key"])
             need_setup = Config.need_setup(message["args"]["key"])
-            protocol.send_message(
+            await protocol.send_message(
                 "configuration",
                 {
                     "type": "configuration",

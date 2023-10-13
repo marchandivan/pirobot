@@ -13,6 +13,6 @@ class ConfigurationHandler(BaseHandler):
         success, need_setup = await Config.process(message, protocol)
         if success:
             if need_setup:
-                protocol.server.setup()
+                self.server.setup()
             # Update status
             await self.server.send_status(protocol)
