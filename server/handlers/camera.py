@@ -1,7 +1,8 @@
 import cv2
 import datetime
-import time
+import logging
 import os
+import time
 
 from PIL import Image
 
@@ -9,6 +10,7 @@ from camera import Camera
 from handlers.base import BaseHandler, register_handler
 from models import Config
 
+logger = logging.getLogger(__name__)
 
 @register_handler("camera")
 class CameraHandler(BaseHandler):
@@ -63,6 +65,16 @@ class CameraHandler(BaseHandler):
             self.picture_source = message["args"].get("source", "streaming")
             self.picture_format = message["args"].get("format", "png")
             self.picture_destination = message["args"].get("destination", "file")
+        elif message["action"] == "toggle_overlay":
+            Camera.overlay = not Camera.overlay
+        elif message["action"] == "select_camera":
+            selected_camera = message["args"].get("camera")
+            if selected_camera in ["front", "back"]:
+                Camera.selected_camera = selected_camera
+            else:
+                logger.warning(f"Invalid camera: {selected_camera}")
+        else:
+            logger.warning(f"Unknown message action {message.get('action')}")
 
     def get_filename(self):
         robot_name = Config.get("robot_name")

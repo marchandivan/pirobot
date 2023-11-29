@@ -47,7 +47,6 @@ def get_camera_index():
 
 
 class CaptureDevice(object):
-    available_device = None
 
     def __init__(self, resolution, capturing_device, angle):
         self.capturing_device = capturing_device
@@ -207,6 +206,7 @@ class Camera(object):
     servo_position = 0
     new_streaming_frame_callbacks = {}
     streaming_frame_callbacks = threading.Lock()
+    available_device = None
 
 
     @staticmethod
@@ -229,7 +229,7 @@ class Camera(object):
         Camera.servo_id = Config.get("camera_servo_id")
         Camera.center_position()
         Camera.frame_rate = Config.get("capturing_framerate")
-        if Config.get('front_capturing_device') == "usb":
+        if Config.get('front_capturing_device') == "usb" or Config.get('back_capturing_device') == "usb":
             Camera.available_device = get_camera_index()
             Camera.status = "KO" if Camera.available_device is None else "OK"
         else:
@@ -250,10 +250,7 @@ class Camera(object):
         front_capturing_device = Config.get('front_capturing_device')
         front_resolution = Config.get('front_capturing_resolution')
         front_angle = Config.get('front_capturing_angle')
-        if platform.machine() not in ["aarch", "aarch64"]:
-            back_capturing_device = None
-        else:
-            back_capturing_device = Config.get('back_capturing_device')
+        back_capturing_device = Config.get('back_capturing_device')
         back_resolution = Config.get('back_capturing_resolution')
         back_angle = Config.get('back_capturing_angle')
 
@@ -262,17 +259,18 @@ class Camera(object):
             capturing_device=front_capturing_device,
             angle=front_angle
         )
-        if back_capturing_device is None or back_capturing_device == "none":
-            if platform.machine() not in ["aarch", "aarch64"] and Config.get('robot_has_back_camera'):
-                Camera.back_capture_device = Camera.front_capture_device
+        # Back camera?
+        if Config.get("robot_has_back_camera") and back_capturing_device not in [None, "none"]:
+            if platform.machine() in ["aarch", "aarch64"]:
+                Camera.back_capture_device = CaptureDevice(
+                    resolution=back_resolution,
+                    capturing_device=back_capturing_device,
+                    angle=back_angle
+                )
             else:
-                Camera.back_capture_device = None
+                Camera.back_capture_device = Camera.front_capture_device
         else:
-            Camera.back_capture_device = CaptureDevice(
-                resolution=back_resolution,
-                capturing_device=back_capturing_device,
-                angle=back_angle
-            )
+            Camera.back_capture_device = None
 
         Camera.capturing = True
         frame_delay = 1.0 / Camera.frame_rate
@@ -293,15 +291,28 @@ class Camera(object):
                         )
                         # Navigation
                         Camera.front_capture_device.add_navigation_lines(frame)
+                        Camera.front_capture_device.add_radar(frame, [50, 0], [25, 25])
                     else:
                         frame = Camera.back_capture_device.retrieve()
-                    Camera.front_capture_device.add_radar(frame, [50, 0], [25, 25])
+                        BaseHandler.emit_event(
+                            topic="camera", event_type="new_back_camera_frame", data=dict(frame=frame),
+                        )
                     if Camera.back_capture_device is not None and Camera.overlay:
                         if Camera.selected_camera == "front":
                             overlay_frame = Camera.back_capture_device.retrieve()
+                            BaseHandler.emit_event(
+                                topic="camera",
+                                event_type="new_back_camera_frame",
+                                data=dict(frame=overlay_frame, overlay=True),
+                            )
                             Camera.front_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
                         else:
                             overlay_frame = Camera.front_capture_device.retrieve()
+                            BaseHandler.emit_event(
+                                topic="camera",
+                                event_type="new_front_camera_frame",
+                                data=dict(frame=overlay_frame, overlay=True),
+                            )
                             Camera.back_capture_device.add_overlay(frame, overlay_frame, [75, 0], [25, 25])
 
                     if frame is not None:

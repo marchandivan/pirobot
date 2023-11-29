@@ -35,10 +35,10 @@ class Home extends React.Component {
             robot_config: {},
             robot_name: null,
             robot_status: {},
-            selected_camera: "front",
             window_height: window.innerHeight,
             window_width: window.innerWidth,
         };
+        this.selected_camera = "front"
     }
 
     handleWindowResize = () => {
@@ -92,8 +92,6 @@ class Home extends React.Component {
             var message = JSON.parse(evt.data);
             if (message.topic === "status") {
                 this.updateStatus(message.message)
-            } else if (message.topic === "video") {
-                console.log(message)
             } else {
                 console.log("Unknown message topic " + message.topic)
             }
@@ -192,6 +190,11 @@ class Home extends React.Component {
         this.setState({fps: fps})
     }
 
+    toogleCamera = () => {
+        this.selected_camera = this.selected_camera === "front" ? "back" : "front"
+        this.send_action("camera", "select_camera", {"camera": this.selected_camera})
+    }
+
     render() {
         document.body.style.overflow = "hidden";
         return (
@@ -204,8 +207,8 @@ class Home extends React.Component {
                             <Tooltip title="Robot Settings"><IconButton component={Link} to="/settings" ><SettingsIcon/></IconButton></Tooltip>
                             <Divider orientation="vertical" flexItem/>
                             {this.state.robot_config.robot_has_back_camera && (<Divider orientation="vertical" flexItem/>)}
-                            {this.state.robot_config.robot_has_back_camera && (<IconButton onClick={this.stream_setup_callback.bind(this, this.selected_camera === "front" ? "arm" : "front", this.overlay, this.face_detection)}><SwitchCameraIcon/></IconButton>)}
-                            {this.state.robot_config.robot_has_back_camera && (<IconButton onClick={this.stream_setup_callback.bind(this, this.selected_camera, !this.overlay, this.face_detection)}><PictureInPictureIcon/></IconButton>)}
+                            {this.state.robot_config.robot_has_back_camera && (<IconButton onClick={this.toogleCamera}><SwitchCameraIcon/></IconButton>)}
+                            {this.state.robot_config.robot_has_back_camera && (<IconButton onClick={this.send_action.bind(this, "camera", "toggle_overlay", {})}><PictureInPictureIcon/></IconButton>)}
                             <Tooltip title="Record a Video"><IconButton onClick={this.send_action.bind(this, "camera", "start_video", {})}><FiberManualRecordIcon/></IconButton></Tooltip>
                             <Tooltip title="Stop Video Recording"><IconButton onClick={this.send_action.bind(this, "camera", "stop_video", {})}><StopIcon/></IconButton></Tooltip>
                             <Tooltip title="Take a Photo"><IconButton onClick={this.send_action.bind(this, "camera", "capture_picture", {})}><CameraAltIcon/></IconButton></Tooltip>

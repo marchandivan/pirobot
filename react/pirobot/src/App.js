@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import './App.css';
 import Home from "./home";
 import Gallery from "./gallery"
+import Settings from "./settings"
 class App extends React.Component {
 
     nextPath = (path) => {
@@ -18,6 +19,7 @@ class App extends React.Component {
                 <Route index element={<Home nextPath={this.nextPath}/>} />
                 <Route path="pictures" element={<Gallery type="picture"/>} />
                 <Route path="videos" element={<Gallery type="video"/>} />
+                <Route path="settings" element={<Settings/>} />
             </Route>
           </Routes>
         </BrowserRouter>
