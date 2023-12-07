@@ -4,19 +4,24 @@ import Box from '@mui/material/Box';
 import Tooltip from "@mui/material/Tooltip";
 import { Link } from 'react-router-dom'
 import HomeIcon from '@mui/icons-material/Home';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import SaveIcon from '@mui/icons-material/Save';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 
 class Settings extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            robot_config: {}
+            robot_config: {},
+            form_values: {}
         }
         this.ws = null
     }
@@ -99,8 +104,15 @@ class Settings extends React.Component {
     }
 
     updateConfiguration = (configuration) => {
-        this.setState({robot_config: configuration.config})
-        console.log(configuration.config)
+        console.log("Config", configuration)
+        let robot_config = {}
+        for (let config_name in configuration.config) {
+            if (!robot_config.hasOwnProperty(configuration.config[config_name].category)) {
+                robot_config[configuration.config[config_name].category] = {}
+            }
+            robot_config[configuration.config[config_name].category][config_name] = configuration.config[config_name]
+        }
+        this.setState({robot_config: robot_config, form_values: {}})
     }
 
     send_action = (type, action, args={}) => {
@@ -117,36 +129,101 @@ class Settings extends React.Component {
         this.send_action("configuration", "get");
     }
 
+    update_form_value = (config_name, e) => {
+        let form_values = this.state.form_values
+        form_values[config_name] = e.target.value
+        this.setState({form_values: form_values})
+    }
+
+    get_robot_config_input = (config_name, config) => {
+        let value = config.value;
+        if (this.state.form_values.hasOwnProperty(config_name)) {
+            value = this.state.form_values[config_name]
+        }
+        if (config.type === "bool") {
+            return (
+                <Select value={value} variant="standard" size="small" onChange={this.update_form_value.bind(this, config_name)}>
+                    <MenuItem value={true}>Yes</MenuItem>
+                    <MenuItem value={false}>No</MenuItem>
+                </Select>
+           )
+        } else if (config.type === "str" && config.hasOwnProperty("choices")) {
+            return (
+                <Select value={value} variant="standard" size="small" onChange={this.update_form_value.bind(this, config_name)}>
+                {Object.keys(config.choices).map((index) => (
+                    <MenuItem value={config.choices[index]}>{config.choices[index]}</MenuItem>
+                ))}
+                </Select>
+           )
+        } else {
+            return (
+                <TextField sx={{width: 150}} value={value} variant="standard" size="small" onChange={this.update_form_value.bind(this, config_name)}/>
+            )
+        }
+    }
+
+    update_robot_config = (config_name) => {
+        if (this.state.form_values.hasOwnProperty(config_name)) {
+            let value = this.state.form_values[config_name]
+            this.send_json({topic: "robot", message: {type: "configuration", action: "update", args: {key: config_name, value: value}}});
+        }
+    }
+
+    reset_robot_config = (config_name) => {
+        this.send_json({topic: "robot", message: {type: "configuration", action: "delete", args: {key: config_name}}});
+    }
+
+    display_robot_config(category) {
+        if (category !== "debug") {
+            return [
+                <TableHead>
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{'font-weight': 'bold', 'font-size': '20px' }}>{category.toUpperCase()}</TableCell>
+                  </TableRow>
+                </TableHead>,
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{'font-weight': 'bold', 'font-size': '20px' }}>Name</TableCell>
+                    <TableCell sx={{'font-weight': 'bold', 'font-size': '20px' }} align="right">Type</TableCell>
+                    <TableCell sx={{'font-weight': 'bold', 'font-size': '20px' }}>Value</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableHead>,
+                <TableBody>
+                  {Object.keys(this.state.robot_config[category]).map((config_name) => (
+                    <TableRow
+                      key={config_name}
+                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                    >
+                      <TableCell sx={{'font-size': '20px'}} component="th" scope="config_name">
+                        {config_name}
+                      </TableCell>
+                      <TableCell sx={{'font-size': '20px'}} align="right">{this.state.robot_config[category][config_name].type}</TableCell>
+                      <TableCell sx={{'font-size': '20px'}} align="left">{this.get_robot_config_input(config_name, this.state.robot_config[category][config_name])}</TableCell>
+                      <TableCell sx={{'font-size': '20px'}} align="right">
+                          <Tooltip title="Update"><IconButton size="small" onClick={this.update_robot_config.bind(this, config_name)}><SaveIcon/></IconButton></Tooltip>
+                          <Tooltip title={'Reset (' + this.state.robot_config[category][config_name].default + ')'} onClick={this.reset_robot_config.bind(this, config_name)}><IconButton size="small"><RestartAltIcon/></IconButton></Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+            ]
+        }
+    }
+
     render() {
+        document.body.style.overflow = "";
         return (
-            <div className="App">
+            <div className="App ">
                 <Box sx={{display: 'flex', width: 'fit-content', bgcolor: 'grey', margin: 1, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1}}>
                     <Tooltip title="Home"><IconButton component={Link} to="/" ><HomeIcon/></IconButton></Tooltip>
                 </Box>
                 <p>Robot Settings</p>
-                <TableContainer component={Paper}>
-                  <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell align="right">Type</TableCell>
-                        <TableCell align="right">Value</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {Object.keys(this.state.robot_config).map((config_name) => (
-                        <TableRow
-                          key={config_name}
-                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                        >
-                          <TableCell component="th" scope="config_item">
-                            {config_name}
-                          </TableCell>
-                          <TableCell align="right">{this.state.robot_config[config_name].type}</TableCell>
-                          <TableCell align="right">{this.state.robot_config[config_name].value}</TableCell>
-                        </TableRow>
+                <TableContainer sx={{display: 'flex', width: 'fit-content', bgcolor: 'grey', margin: 1, border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1}}>
+                  <Table size='small' aria-label="simple table">
+                    {Object.keys(this.state.robot_config).map((category) => (
+                        this.display_robot_config(category)
                       ))}
-                    </TableBody>
                   </Table>
                 </TableContainer>
              </div>
