@@ -121,8 +121,12 @@ class CameraHandler(BaseHandler):
                     self.capture_picture = False
 
                 # Add REC indicator
-                if video_source == "streaming" and self.capture_video:
-                    self.add_rec_indicator(data["frame"])
+                if video_source == "streaming":
+                    if self.capture_video:
+                        self.add_rec_indicator(data["frame"])
+                    # Mode
+                    if BaseHandler.state is not None:
+                        self.add_mode_indicator(data["frame"])
 
     def add_rec_indicator(self, frame):
         # Add REC indicator
@@ -138,6 +142,18 @@ class CameraHandler(BaseHandler):
         cv2.putText(
             frame, text, (int(res_x / 2 - text_w / 2), 5 + text_h), font, fontScale, color, thickness
         )
+
+    def add_mode_indicator(self, frame):
+        # Add REC indicator
+        res_x = len(frame[0])
+        thickness = 2
+        color = (0, 255, 0)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 0.8
+
+        state = BaseHandler.state.upper().replace("_", " ")
+        text_w, text_h = cv2.getTextSize(text=state, fontFace=font, fontScale=fontScale, thickness=thickness)[0]
+        cv2.putText(frame, state, (res_x - text_w - 5, 5 + text_h), font, fontScale, color, thickness)
 
     def record_video_frame(self, frame):
         if self.video_writer is None:

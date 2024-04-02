@@ -157,9 +157,9 @@ class Config(Base):
             session = Config.get_session()
             c = Config.get_from_db(session, key)
             if c is not None:
-                c.value = value
+                c.value = str(value)
             else:
-                c = Config(key=key, value=value)
+                c = Config(key=key, value=str(value))
 
             session.add(c)
             session.commit()
@@ -222,7 +222,7 @@ class Config(Base):
     @staticmethod
     async def process(message, protocol):
         success = False
-        need_setup = []
+        need_setup = False
         if message["action"] == "get":
             success = True
             await protocol.send_message(
