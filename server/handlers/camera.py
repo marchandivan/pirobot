@@ -82,7 +82,7 @@ class CameraHandler(BaseHandler):
         return f"{robot_name}_{self.video_source}_{creation_time}"
 
     def start_video(self, frame):
-        self.video_filename = f"{self.get_filename()}.avi"
+        self.video_filename = f"{self.get_filename()}.{Config.get('video_format')}"
         self.frame_rate = Camera.frame_rate
         self.video_writer = cv2.VideoWriter(
             filename=os.path.join(self.video_dir, self.video_filename),

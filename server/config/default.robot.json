@@ -110,7 +110,12 @@
     },
     "video_codec": {
       "type": "str",
-      "default": "XVID",
+      "default": "mp4v",
+      "category": "camera"
+    },
+    "video_format": {
+      "type": "str",
+      "default": "mp4",
       "category": "camera"
     },
     "robot_has_light": {
