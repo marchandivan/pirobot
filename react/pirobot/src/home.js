@@ -19,9 +19,12 @@ import PictureInPictureIcon from '@mui/icons-material/PictureInPicture';
 import SwitchCameraIcon from '@mui/icons-material/SwitchCamera';
 import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
 import RadarIcon from '@mui/icons-material/Radar';
+import GamepadIcon from '@mui/icons-material/Gamepad';
+import ControlCameraIcon from '@mui/icons-material/ControlCamera';
 import {Joystick} from "react-joystick-component";
 import { Link } from 'react-router-dom'
 
+import DirectionCross from "./DirectionCross"
 import VideoStreamControl from "./VideoStreamControl";
 
 
@@ -37,6 +40,8 @@ class Home extends React.Component {
             robot_status: {},
             window_height: window.innerHeight,
             window_width: window.innerWidth,
+            control: "joystick",
+            drive_slow_mode: false,
         };
         this.selected_camera = "front"
     }
@@ -131,47 +136,51 @@ class Home extends React.Component {
         );
     }
 
-    handleMoveRobot = (e) => {
+    handleJoystickMove = (e) => {
         let x_pos = e.x * 100;
         let y_pos = -e.y * 100;
         if (Math.abs(x_pos) < 2 && Math.abs(y_pos) < 2) {
             console.log("Force stop!")
-            this.send_action("drive", "stop");
+            this.send_action("drive", "stop")
         }
         else {
 
             let right_speed = Math.min(Math.max(-y_pos - x_pos, -100), 100)
             let left_speed = Math.min(Math.max(-y_pos + x_pos, -100), 100)
-
-            if (this.motor_slow_mode) {
-                right_speed = Math.round(0.3 * right_speed)
-                left_speed = Math.round(0.3 * left_speed)
-            }
-
-            let left_orientation = 'F';
-            if (left_speed < 0)
-                left_orientation = 'B'
-
-
-            let right_orientation = 'F'
-            if (right_speed < 0)
-                right_orientation = 'B'
-
-            this.send_action(
-                "drive",
-                "move",
-                {
-                    left_orientation: left_orientation,
-                    left_speed: Math.abs(left_speed),
-                    right_orientation: right_orientation,
-                    right_speed: Math.abs(right_speed),
-                    duration: 30,
-                    distance: null,
-                    rotation: null,
-                    auto_stop: false,
-                }
-             );
+            this.handleMoveRobot(left_speed, right_speed)
         }
+    }
+
+    handleMoveRobot = (left_speed, right_speed) => {
+        if (this.state.drive_slow_mode) {
+            right_speed = Math.round(0.3 * right_speed)
+            left_speed = Math.round(0.3 * left_speed)
+        }
+
+        let left_orientation = 'F';
+        if (left_speed < 0) {
+            left_orientation = 'B'
+        }
+
+        let right_orientation = 'F'
+        if (right_speed < 0) {
+            right_orientation = 'B'
+        }
+
+        this.send_action(
+            "drive",
+            "move",
+            {
+                left_orientation: left_orientation,
+                left_speed: Math.abs(left_speed),
+                right_orientation: right_orientation,
+                right_speed: Math.abs(right_speed),
+                duration: 30,
+                distance: null,
+                rotation: null,
+                auto_stop: false,
+            }
+         );
     }
 
     handleStopRobot = (e) => {
@@ -195,6 +204,10 @@ class Home extends React.Component {
         this.send_action("camera", "select_camera", {"camera": this.selected_camera})
     }
 
+    toggleControl = () => {
+        this.setState({control: this.state.control === "joystick" ? "cross" : "joystick"});
+    }
+
     render() {
         document.body.style.overflow = "hidden";
         return (
@@ -213,6 +226,9 @@ class Home extends React.Component {
                             <Tooltip title="Stop Video Recording"><IconButton onClick={this.send_action.bind(this, "camera", "stop_video", {})}><StopIcon/></IconButton></Tooltip>
                             <Tooltip title="Take a Photo"><IconButton onClick={this.send_action.bind(this, "camera", "capture_picture", {})}><CameraAltIcon/></IconButton></Tooltip>
                             <Divider orientation="vertical" flexItem/>
+                            {this.state.control === "joystick" && (<Tooltip title="Use D-pad"><IconButton onClick={this.toggleControl}><GamepadIcon/></IconButton></Tooltip>)}
+                            {this.state.control === "cross"  && (<Tooltip title="Use Joystick"><IconButton onClick={this.toggleControl}><ControlCameraIcon/></IconButton></Tooltip>)}
+                            <Divider orientation="vertical" flexItem/>
                             <Tooltip title="Face Recognition"><IconButton onClick={this.send_action.bind(this, "face_detection", "toggle", {})}>{this.face_detection ? (<FaceRetouchingOffIcon/>):(<FaceIcon/>)}</IconButton></Tooltip>
                             <Tooltip title="Start Patrolling"><IconButton onClick={this.send_action.bind(this, "drive", "patrol", {})}><RadarIcon/></IconButton></Tooltip>
                             <Tooltip title="Stop Robot"><IconButton alt="Stop Robot" onClick={this.send_action.bind(this, "drive", "stop", {})}><DangerousIcon alt="Stop Robot"/></IconButton></Tooltip>
@@ -221,16 +237,24 @@ class Home extends React.Component {
                     <Grid container item xs={10} style={{margin: 0, padding: 0}}>
                         <Grid container item direction="row" justifyContent="center" alignItems="center" style={{margin: 0, padding: 0}}>
                             <Grid container item xs={2} justifyContent="center" alignItems="center">
-                                <Joystick
-                                    size={this.state.window_width * 1.5 / 12.0}
-                                    stickSize={this.state.window_width * 0.7 / 12.0}
-                                    sticky={false}
-                                    baseColor="grey"
-                                    stickColor="black"
-                                    minDistance={2}
-                                    move={this.handleMoveRobot}
-                                    stop={this.handleStopRobot}>
-                                </Joystick>
+                                <div style={{display: this.state.control === "joystick" ? "block" : "none"}}>
+                                    <Joystick
+                                        size={this.state.window_width * 1.5 / 12.0}
+                                        stickSize={this.state.window_width * 0.7 / 12.0}
+                                        sticky={false}
+                                        baseColor="grey"
+                                        stickColor="black"
+                                        minDistance={2}
+                                        move={this.handleJoystickMove}
+                                        stop={this.handleStopRobot}>
+                                    </Joystick>
+                                </div>
+                                <div style={{paddingLeft: 5, display: this.state.control === "cross" ? "block" : "none"}}>
+                                    <DirectionCross
+                                        move={this.handleMoveRobot}
+                                        stop={this.handleStopRobot}
+                                    />
+                                </div>
                             </Grid>
                             <Grid container item xs={8} justifyContent="center" alignItems="center">
                                 <VideoStreamControl
