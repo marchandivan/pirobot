@@ -22,7 +22,15 @@ class DirectionCross extends React.Component {
 
  button = (props) => {
     return (
-        <IconButton onMouseUp={this.props.stop} onMouseDown={this.props.move.bind(null, props.left_speed, props.right_speed)} style={{"background-color": "grey"}}>{props.children}</IconButton>
+        <IconButton
+         onMouseUp={this.props.stop}
+         onTouchEnd={this.props.stop}
+         onMouseDown={this.props.move.bind(null, props.left_speed, props.right_speed)}
+         onTouchStart={this.props.move.bind(null, props.left_speed, props.right_speed)}
+         style={{"background-color": "grey"}}
+         >
+            {props.children}
+         </IconButton>
     )
 }
 
