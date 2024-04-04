@@ -11,50 +11,57 @@ import SouthWestIcon from '@mui/icons-material/SouthWest'
 import SouthEastIcon from '@mui/icons-material/SouthEast'
 import React from 'react';
 
-class DirectionCross extends React.Component {
 
+
+class DirectionCross extends React.Component {
     send_json = (json_data) => {
         this.state.ws.send(
             JSON.stringify(json_data)
         );
     }
 
+ button = (props) => {
+    return (
+        <IconButton onMouseUp={this.props.stop} onMouseDown={this.props.move.bind(null, props.left_speed, props.right_speed)} style={{"background-color": "grey"}}>{props.children}</IconButton>
+    )
+}
+
     render() {
         return (
           <Grid container direction="column" spacing={2}>
             <Grid container item xs={4} spacing={2}>
                 <Grid item xs={4}>
-                  <IconButton onClick={this.props.move.bind(this.parent, 0, 100)} style={{"background-color": "grey"}}><NorthWestIcon/></IconButton>
+                  <this.button left_speed={0} right_speed={100}><NorthWestIcon/></this.button>
                 </Grid>
                 <Grid item xs={4}>
-                  <IconButton onClick={this.props.move.bind(this.parent, 100, 100)} style={{"background-color": "grey"}}><ArrowUpwardIcon/></IconButton>
+                  <this.button left_speed={100} right_speed={100}><ArrowUpwardIcon/></this.button>
                 </Grid>
                 <Grid item xs={4}>
-                  <IconButton onClick={this.props.move.bind(this.parent, 100, 0)} style={{"background-color": "grey"}}><NorthEastIcon/></IconButton>
-                </Grid>
-            </Grid>
-
-            <Grid container item xs={4} spacing={2}>
-                <Grid item xs={4}>
-                  <IconButton onClick={this.props.move.bind(this.parent, -100, 100)} style={{"background-color": "grey"}} ><ArrowBackIcon/></IconButton>
-                </Grid>
-                <Grid item xs={4}>
-                  <IconButton onClick={this.props.stop} style={{"background-color": "grey"}} ><DangerousIcon/></IconButton>
-                </Grid>
-                <Grid item xs={4}>
-                  <IconButton onClick={this.props.move.bind(this.parent, 100, -100)} style={{"background-color": "grey"}} ><ArrowForwardIcon/></IconButton>
+                  <this.button left_speed={100} right_speed={0}><NorthEastIcon/></this.button>
                 </Grid>
             </Grid>
 
             <Grid container item xs={4} spacing={2}>
                 <Grid item xs={4}>
-                  <IconButton onClick={this.props.move.bind(this.parent, -100, 0)} style={{"background-color": "grey"}} ><SouthWestIcon/></IconButton>
+                  <this.button left_speed={-100} right_speed={100}><ArrowBackIcon/></this.button>
                 </Grid>
                 <Grid item xs={4}>
-                  <IconButton onClick={this.props.move.bind(this.parent, -100, -100)} style={{"background-color": "grey"}} ><ArrowDownwardIcon/></IconButton>
+                  <this.button left_speed={0} right_speed={0}><DangerousIcon/></this.button>
                 </Grid>
                 <Grid item xs={4}>
-                  <IconButton onClick={this.props.move.bind(this.parent, 0, -100)} style={{"background-color": "grey"}} ><SouthEastIcon/></IconButton>
+                  <this.button left_speed={100} right_speed={-100}><ArrowForwardIcon/></this.button>
+                </Grid>
+            </Grid>
+
+            <Grid container item xs={4} spacing={2}>
+                <Grid item xs={4}>
+                  <this.button left_speed={-100} right_speed={0}><SouthWestIcon/></this.button>
+                </Grid>
+                <Grid item xs={4}>
+                  <this.button left_speed={-100} right_speed={-100}><ArrowDownwardIcon/></this.button>
+                </Grid>
+                <Grid item xs={4}>
+                  <this.button left_speed={0} right_speed={-100}><SouthEastIcon/></this.button>
                 </Grid>
             </Grid>
           </Grid>

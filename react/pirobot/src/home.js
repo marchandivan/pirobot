@@ -40,7 +40,7 @@ class Home extends React.Component {
             robot_status: {},
             window_height: window.innerHeight,
             window_width: window.innerWidth,
-            control: "joystick",
+            control: "cross",
             drive_slow_mode: false,
         };
         this.selected_camera = "front"
