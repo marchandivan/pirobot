@@ -124,6 +124,7 @@ class Home extends React.Component {
 
     updateStatus = (status) => {
         this.setState({robot_config: status.config, robot_name: status.robot_name, robot_status: status.status});
+        document.title = status.robot_name
     }
 
     send_action = (type, action, args={}) => {
