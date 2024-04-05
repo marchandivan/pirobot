@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 ROOT_DIR_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+PUBLIC_DIR_PATH = os.path.join(ROOT_DIR_PATH, "react/pirobot/public")
 STATIC_DIR_PATH = os.path.join(ROOT_DIR_PATH, "react/pirobot/build/static")
 if not os.path.isdir(STATIC_DIR_PATH):
     STATIC_DIR_PATH = "/var/www/static"
@@ -56,6 +57,13 @@ class WebSocketProtocol(object):
 async def index(request):
     with open(INDEX_FILE_PATH) as index_file:
         return web.Response(text=index_file.read(), content_type="text/html")
+
+
+@routes.get(r"/{file_name:(favicon.ico|logo192.png|logo512.png|manifest.jon)}")
+async def public(request):
+    file_name = request.match_info["file_name"]
+    return web.FileResponse(os.path.join(PUBLIC_DIR_PATH, file_name))
+
 
 
 def medias(media_dir):
@@ -185,6 +193,7 @@ async def video_stream(request):
 
     session.close()
     logger.info(f"Connection closed to video socket [{sid}]")
+
 
 app = web.Application()
 app.add_routes(routes)
