@@ -19,8 +19,8 @@ class Gallery extends React.Component {
     }
 
     componentDidMount() {
-        let url_prefix = (window.location.port === "3000") ? "http://localhost:8080" : "";
-        let url = url_prefix + this.props.type === "video" ? '/api/v1/videos' : '/api/v1/pictures'
+        let url_prefix = window.location.port === "3000" ? "http://localhost:8080" : "";
+        let url = url_prefix + (this.props.type === "video" ? '/api/v1/videos' : '/api/v1/pictures')
         fetch(url)
             .then(response => response.json())
             .then(data => {
@@ -38,8 +38,8 @@ class Gallery extends React.Component {
     }
 
     get_picture_page = () => {
-        let url_prefix = (window.location.port === "3000") ? "http://localhost:8080" : "";
-        let url = url_prefix + this.props.type === "video" ? '/gallery/video' : '/gallery/picture'
+        let url_prefix = window.location.port === "3000" ? "http://localhost:8080" : "";
+        let url = url_prefix + (this.props.type === "video" ? '/gallery/video' : '/gallery/picture')
         let image_width = Math.round(window.innerWidth / this.state.nb_col)
         return (
             <ImageList cols={this.state.nb_col} margin={20}>
