@@ -255,6 +255,24 @@
       "default": 0.003,
       "need_setup": true,
       "category": "motor"
+    },
+    "wifi_device": {
+      "type": "str",
+      "default": "wlan0",
+      "need_setup": true,
+      "category": "network"
+    },
+    "hotspot_ssid": {
+      "type": "str",
+      "default": "PiRobot",
+      "need_setup": true,
+      "category": "network"
+    },
+    "hotspot_password": {
+      "type": "str",
+      "default": "pirobot2024",
+      "need_setup": true,
+      "category": "network"
     }
   }
 }

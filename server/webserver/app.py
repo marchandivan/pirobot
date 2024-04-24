@@ -10,6 +10,7 @@ import uuid
 
 from models import Config
 from webserver.session_manager import RobotSessionManager, VideoSessionManager
+from wifi import Wifi
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,6 @@ async def index(request):
 async def public(request):
     file_name = request.match_info["file_name"]
     return web.FileResponse(os.path.join(PUBLIC_DIR_PATH, file_name))
-
 
 
 def medias(media_dir):
@@ -124,6 +124,33 @@ async def picture(request):
         return web.Response(body=stream.getvalue(), content_type=f"image/{img_format}")
     else:
         return web.HTTPNotFound()
+
+@routes.get("/api/v1/wifi")
+async def get_wifi(request):
+    response = dict(
+        status=Wifi.get_status(),
+        networks=Wifi.get_networks(),
+    )
+    return web.json_response(response)
+
+
+@routes.post("/api/v1/wifi")
+async def post_wifi(request):
+    data = await request.json()
+    if data.get("hotspot"):
+        Wifi.start_hotspot()
+    elif data.get("ssid"):
+        Wifi.connect_to_network(data["ssid"], data["password"])
+    else:
+        Wifi.start_wifi()
+    return web.json_response(dict(status="OK"))
+
+
+@routes.delete("/api/v1/wifi")
+async def del_wifi(request):
+    data = await request.json()
+    Wifi.forget_network(data["ssid"])
+    return web.json_response(dict(status="OK"))
 
 
 @routes.get("/gallery/video/{file_name}")
@@ -205,6 +232,7 @@ app.add_routes(
         web.get(r"/pictures", index),
         web.get(r"/videos", index),
         web.get(r"/settings", index),
+        web.get(r"/network", index),
     ]
 )
 

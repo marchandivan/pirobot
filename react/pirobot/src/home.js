@@ -21,6 +21,12 @@ import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
 import RadarIcon from '@mui/icons-material/Radar';
 import GamepadIcon from '@mui/icons-material/Gamepad';
 import ControlCameraIcon from '@mui/icons-material/ControlCamera';
+import SignalWifi1BarIcon from '@mui/icons-material/SignalWifi1Bar';
+import SignalWifi2BarIcon from '@mui/icons-material/SignalWifi2Bar';
+import SignalWifi3BarIcon from '@mui/icons-material/SignalWifi3Bar';
+import SignalWifi4BarIcon from '@mui/icons-material/SignalWifi4Bar';
+import SignalWifiOffIcon from '@mui/icons-material/SignalWifiOff';
+import WifiTetheringIcon from '@mui/icons-material/WifiTethering';
 import {Joystick} from "react-joystick-component";
 import { Link } from 'react-router-dom'
 
@@ -123,6 +129,7 @@ class Home extends React.Component {
     };
 
     updateStatus = (status) => {
+        console.log(status.status)
         this.setState({robot_config: status.config, robot_name: status.robot_name, robot_status: status.status});
         document.title = status.robot_name
     }
@@ -209,6 +216,26 @@ class Home extends React.Component {
         this.setState({control: this.state.control === "joystick" ? "cross" : "joystick"});
     }
 
+    getWifiIcon = () => {
+        if ("wifi" in this.state.robot_status) {
+            if (this.state.robot_status.wifi.hotspot) {
+                return (<WifiTetheringIcon/>)
+            } else {
+                let signal = this.state.robot_status.wifi.signal;
+                if (signal < 25) {
+                    return (<SignalWifi1BarIcon/>)
+                } else if (signal < 50) {
+                    return (<SignalWifi2BarIcon/>)
+                } else if (signal < 75) {
+                    return (<SignalWifi3BarIcon/>)
+                } else {
+                    return (<SignalWifi4BarIcon/>)
+                }
+            }
+        }
+        return (<SignalWifiOffIcon/>)
+    }
+
     render() {
         document.body.style.overflow = "hidden";
         return (
@@ -218,6 +245,8 @@ class Home extends React.Component {
                         <Box sx={{display: 'flex', width: 'fit-content', bgcolor: 'grey', border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1}}>
                             <Tooltip title="Open photo gallery"><IconButton component={Link} to="/pictures" ><PhotoLibraryIcon/></IconButton></Tooltip>
                             <Tooltip title="Open video gallery"><IconButton component={Link} to="/videos"><VideoLibraryIcon/></IconButton></Tooltip>
+                            <Divider orientation="vertical" flexItem/>
+                            <Tooltip title="Wifi Setup"><IconButton component={Link} to="/network" >{this.getWifiIcon()}</IconButton></Tooltip>
                             <Tooltip title="Robot Settings"><IconButton component={Link} to="/settings" ><SettingsIcon/></IconButton></Tooltip>
                             <Divider orientation="vertical" flexItem/>
                             {this.state.robot_config.robot_has_back_camera && (<Divider orientation="vertical" flexItem/>)}
@@ -290,7 +319,7 @@ class Home extends React.Component {
                         </Grid>
                     </Grid>
                     <Grid item xs={2} alignItems="top">
-                        <p style={{margin: 0, padding: 0, fontSize: "15px"}}>Connected to {this.state.robot_name} - {this.state.fps} FPS</p>
+                        <p style={{margin: 0, padding: 0, fontSize: "15px"}}>Connected to {this.state.robot_name} - {"wifi" in this.state.robot_status && (this.state.robot_status.wifi.connection)} - {this.state.fps} FPS</p>
                     </Grid>
                 </Grid>
             </div>

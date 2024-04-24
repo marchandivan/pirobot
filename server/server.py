@@ -8,6 +8,7 @@ from motor.motor import Motor
 from sfx import SFX
 from terminal import Terminal
 from uart import UART
+from wifi import Wifi
 
 import logging
 import platform
@@ -76,6 +77,9 @@ class Server(object):
         if self.robot_has_screen:
             self.terminal.text("Ready!")
 
+        # Setup wifi
+        Wifi.setup()
+
         # Initialize handlers
         for handler in BaseHandler.handlers.values():
             handler.setup(self)
@@ -96,7 +100,8 @@ class Server(object):
             "robot_name": Config.get("robot_name"),
             "config": Config.export_config(),
             "status": {
-                "camera": Camera.serialize()
+                "camera": Camera.serialize(),
+                "wifi": Wifi.get_status(),
             }
         }
         await protocol.send_message("status", status)

@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import './App.css';
 import Home from "./home";
 import Gallery from "./gallery"
+import Network from "./network"
 import Settings from "./settings"
 class App extends React.Component {
 
@@ -20,6 +21,7 @@ class App extends React.Component {
                 <Route path="pictures" element={<Gallery type="picture"/>} />
                 <Route path="videos" element={<Gallery type="video"/>} />
                 <Route path="settings" element={<Settings/>} />
+                <Route path="network" element={<Network/>} />
             </Route>
           </Routes>
         </BrowserRouter>

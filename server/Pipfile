@@ -15,6 +15,7 @@ sqlalchemy = "*"
 prettytable = "*"
 pyinstaller = "*"
 aiohttp = "*"
+nmcli = "*"
 
 [dev-packages]
 
