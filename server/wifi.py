@@ -86,7 +86,7 @@ class Wifi:
     @staticmethod
     def get_status():
         device = Wifi.get_device()
-        if device is not None:
+        if device is not None and device.connection is not None:
             hotspot = device.connection.lower() == "hotspot"
             if hotspot:
                 signal = 100
