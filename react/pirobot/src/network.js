@@ -39,7 +39,7 @@ class Network extends React.Component {
             selected_network: null,
             password: "",
             robot_config: {},
-            wifi_status: null,
+            wifi_status: {},
             wifi_networks: [],
         }
     }
