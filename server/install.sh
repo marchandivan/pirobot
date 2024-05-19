@@ -14,10 +14,12 @@ sudo adduser www-data gpio
 sudo adduser www-data dialout
 sudo adduser www-data video
 sudo adduser www-data audio
+sudo mkdir -p /var/www/public
 sudo mkdir -p /var/www/static
 sudo mkdir -p /var/www/Pictures/PiRobot
 sudo mkdir -p /var/www/Videos/PiRobot
 sudo chown -R www-data:www-data /var/www/
+sudo cp -rf ../react/pirobot/public/* /var/www/public
 sudo cp -rf ../react/pirobot/build/static/* /var/www/static
 sudo cp -rf ../react/pirobot/build/index.html /var/www/
 

@@ -17,6 +17,8 @@ routes = web.RouteTableDef()
 
 ROOT_DIR_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 PUBLIC_DIR_PATH = os.path.join(ROOT_DIR_PATH, "react/pirobot/public")
+if not os.path.isdir(PUBLIC_DIR_PATH):
+    PUBLIC_DIR_PATH = "/var/www/public"
 STATIC_DIR_PATH = os.path.join(ROOT_DIR_PATH, "react/pirobot/build/static")
 if not os.path.isdir(STATIC_DIR_PATH):
     STATIC_DIR_PATH = "/var/www/static"
