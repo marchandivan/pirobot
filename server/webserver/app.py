@@ -1,13 +1,16 @@
-from aiohttp import web
 import cv2
-from dataclasses import dataclass
 import io
 import logging
 import os
-from PIL import Image
 import re
+import subprocess
 import uuid
+from dataclasses import dataclass
 
+from aiohttp import web
+from PIL import Image
+
+from logger import RobotLogger
 from models import Config
 from webserver.session_manager import RobotSessionManager, VideoSessionManager
 
@@ -87,6 +90,32 @@ def medias(media_dir):
                 )
 
     return web.json_response(sorted(media_list, key=lambda p: p["timestamp"], reverse=True))
+
+
+@routes.get("/logs")
+async def logs(request):
+    offset = int(request.rel_url.query.get("offset", 0))
+    limit = int(request.rel_url.query.get("limit", 100))
+    log_type = request.rel_url.query.get("type", "app")
+    if log_type == "app":
+        log_file = RobotLogger.app_log_file
+    elif log_type == "message":
+        log_file = RobotLogger.message_log_file
+    else:
+        log_file = None
+    if log_file is not None:
+        with open(log_file) as log_file:
+            if offset <= 0:
+                log_lines = log_file.readlines()[-limit:]
+            else:
+                log_lines = log_file.readlines()[-limit - offset:-offset]
+            log_lines.reverse()
+            return web.Response(body="".join(log_lines), content_type="text/plain")
+    elif log_type == "app":
+        result = subprocess.run(["journalctl", "-r", "-b", "-u",  "pirobot", "-n", str(limit)], capture_output=True, text=True)
+        return web.Response(body=result.stdout, content_type="text/plain")
+
+    return web.Response(body="No data found", content_type="text/plain")
 
 
 @routes.get("/api/v1/pictures")
